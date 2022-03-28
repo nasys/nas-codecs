@@ -1,0 +1,1010 @@
+function BitExtract(data_byte) {
+  // BINARY EXTRACTING UTILITIES - Many workarounds here are only because Dataview and other newer features are not available in ES5 (required by chirpstack).
+  // basically a class (which is not directly supported in ES5)
+  this.data = data_byte;
+  this.offset = 0;
+}
+
+  BitExtract.prototype._assertOnRemainingLength = function(length_bits) {
+      if(length_bits === 0)
+          throw Error("invalid zero length bit field");
+      if(this.offset + length_bits > 8)
+          throw Error("invalid number of bits extracted");
+  };
+
+  BitExtract.prototype.getBits = function(length_bits) {
+      this._assertOnRemainingLength(length_bits);
+      var mask = Math.pow(2, length_bits) - 1;
+      var res = (this.data >> this.offset) & mask;
+      this.offset += length_bits;
+      return length_bits == 1 ? Boolean(res) : res; 
+  };
+
+function BinaryExtract(buffer) {
+  // everything is little-endian for now
+  this.buffer = buffer;
+  this.offset = 0;
+}
+
+  BinaryExtract.prototype.availableLen = function() {
+      return this.buffer.length - this.offset;
+  };
+
+  BinaryExtract.prototype._assertOnRemainingLength = function(length) {
+      if(length > this.availableLen())
+          throw Error("invalid buffer length: too short");
+  };
+
+  BinaryExtract.prototype.getUint8 = function() {
+      this._assertOnRemainingLength(1);
+      return this.buffer[this.offset++];
+  };
+
+  BinaryExtract.prototype.getInt8 = function() {
+      var res = this.getUint8();
+      return res > 0x7F ? res - 0x100 : res;
+  };
+
+  BinaryExtract.prototype.getUint16 = function() {
+      this._assertOnRemainingLength(2);
+      var res = this.buffer[this.offset++] +
+          this.buffer[this.offset++] * 256;
+      return res;
+  };
+
+  BinaryExtract.prototype.getInt16 = function() {
+      var res = this.getUint16();
+      return res > 0x7FFF ? res - 0x10000 : res;
+  };
+
+  BinaryExtract.prototype.getUint24 = function() {
+      this._assertOnRemainingLength(3);
+      var res = this.buffer[this.offset++] +
+          this.buffer[this.offset++] * 256 + 
+          this.buffer[this.offset++] * 65536;
+      return res;
+  };
+
+  BinaryExtract.prototype.getUint32 = function() {
+      this._assertOnRemainingLength(4);
+      var res = this.buffer[this.offset++] +
+          this.buffer[this.offset++] * 256 + 
+          this.buffer[this.offset++] * 65536 +
+          this.buffer[this.offset++] * 16777216;
+      return res;
+  };
+
+  BinaryExtract.prototype.getInt32 = function() {
+      var res = this.getUint32();
+      return res > 0x7FFFFFFF ? res - 0x100000000 : res;
+  };
+
+  BinaryExtract.prototype.getUint64 = function() {
+      var first = this.getUint32();
+      var second = this.getUint32();
+      var res = first + second * 0x100000000; // since double can safely represent needed range, its used MAX_SAFE_INTEGER → 9_007_199_254_740_991
+      return res;
+  };
+
+  BinaryExtract.prototype.getTextUtf8 = function(len) {
+      this._assertOnRemainingLength(len);
+      var res = stringFromUTF8Array(this.buffer.slice(this.offset, this.offset + len));
+      this.offset += len;
+      return res;
+  };
+
+  BinaryExtract.prototype.getUint8Bits = function() {
+      return new BitExtract(this.getUint8());
+  };
+
+  BinaryExtract.prototype.getRaw = function(len) {
+      this._assertOnRemainingLength(len);
+      var res = this.buffer.slice(this.offset, this.offset + len);
+      this.offset += len;
+      return res;
+  };
+
+function stringFromUTF8Array(data)
+{
+  // from https://weblog.rogueamoeba.com/2017/02/27/javascript-correctly-converting-a-byte-array-to-a-utf-8-string/
+  var extraByteMap = [ 1, 1, 1, 1, 2, 2, 3, 0 ];
+  var count = data.length;
+  var str = "";    
+  for (var index = 0;index < count;)
+  {
+      var ch = data[index++];
+      if (ch & 0x80)
+      {
+          var extra = extraByteMap[(ch >> 3) & 0x07];
+          if (!(ch & 0x40) || !extra || ((index + extra) > count))
+              return null;            
+          ch = ch & (0x3F >> extra);
+          for (;extra > 0;extra -= 1)
+          {
+              var chx = data[index++];
+              if ((chx & 0xC0) != 0x80)
+                  return null;
+              ch = (ch << 6) | (chx & 0x3F);
+          }
+      }    
+      str += String.fromCharCode(ch);
+  }
+  return str;
+}
+
+function pad(number, length) {
+  var str = "" + number;
+  while (str.length < length) {
+      str = "0" + str;
+  }   
+  return str;
+}
+
+function bytesToHexStr(byte_arr) {
+  var res = "";
+  for(var i = 0; i<byte_arr.length; i++) {
+      res += ("00"+byte_arr[i].toString(16)).slice(-2).toUpperCase();
+  }
+  return res;
+}
+
+function bitFalseTrue(bit) {
+  return {value: bit ? true: false}
+}
+
+function profileOverrideReason(reason) {
+    switch(reason) {
+    case 246:
+        return "driver_not_found";
+    case 247:
+        return "calendar_active";
+    case 248:
+        return "init_active";
+    case 249:
+        return "profile_not_active";
+    case 250:
+        return "ldr_active";
+    case 251:
+        return "thr_active";
+    case 252:
+        return "dig_active";
+    case 253:
+        return "manual_active";
+    case 254:
+        return "value_differ";
+    case 255:
+        return "unknown";
+    default:
+        return "none";
+    }
+}
+
+function daliAddressParse(addr, ff_str, err) {
+    if(addr == 0xFE) {
+        return {"value": "broadcast", "raw": addr};
+    }
+    if(addr == 0xFF) {
+        if (ff_str) {
+            return {"value": ff_str, "raw": addr};
+        }
+        err.errors.push("invalid_dali_address");
+        return {"value": "invalid", "raw": addr};
+    }
+    if(addr & 0x01) {
+        err.errors.push("invalid_dali_address");
+        return {"value": "invalid", "raw": addr};
+    }
+    if(addr & 0x80) {
+        return {"value": "group "+((addr >> 1) & 0xF).toString(), "raw": addr};
+    }
+    else {
+        return {"value": "single "+((addr >> 1) & 0x3F).toString(), "raw": addr};
+    }
+}
+
+function profileParserPartial(dataView, profile, err) {
+    var id = dataView.getUint8();
+    var ver = dataView.getUint8();
+    var addr = dataView.getUint8();
+    var active_days = dataView.getUint8();
+
+    profile.profile_id = {"value": id == 255 ? "no_profile" : id, "raw": id};
+
+    profile.profile_version = {"value": ver > 240 ? "n/a" : ver, "raw": ver};
+
+    profile.profile_override = {"value": profileOverrideReason(ver), "raw": ver};
+
+    profile.dali_address_short = daliAddressParse(addr, null, err);
+
+    {
+        var bits = new BitExtract(active_days);
+        var days = [];
+        if(bits.getBits(1)) {
+            days.push("holiday");
+        }
+        if(bits.getBits(1)) {
+            days.push("mon");
+        }
+        if(bits.getBits(1)) {
+            days.push("tue");
+        }
+        if(bits.getBits(1)) {
+            days.push("wed");
+        }
+        if(bits.getBits(1)) {
+            days.push("thu");
+        }
+        if(bits.getBits(1)) {
+            days.push("fri");
+        }
+        if(bits.getBits(1)) {
+            days.push("sat");
+        }
+        if(bits.getBits(1)) {
+            days.push("sun");
+        }
+        profile.days_active = {"value": days, "raw": active_days};
+    }
+}
+
+function decodeUnixEpoch(epoch) {
+    var date = new Date(epoch * 1000);
+    var epoch_formatted = date.toISOString();
+    if (epoch < 946684800) { // before 2000-01-01
+        epoch_formatted = "invalid_timestamp";
+    }
+    else if (epoch < 1420070400) { // between 2000-01-01 and 2015-01-01
+        // ISO Period format. E.g. "P0003-06-04T12:30:05"
+        epoch_formatted = "P"+pad(date.getUTCFullYear()-2000, 4)+"-"+pad(date.getUTCMonth(), 2)+"-"+pad(date.getUTCDate()-1, 2)+"T"+pad(date.getUTCHours(), 2)+":"+pad(date.getUTCMinutes(),2)+":"+pad(date.getUTCSeconds(), 2);
+    }
+    return {"value": epoch_formatted, "raw": epoch};
+}
+
+function decodeLdrConfig(dataView, result) {
+    result.packet_type = {value: "ldr_config_packet"};
+
+    var high = dataView.getUint8();
+    result.switch_threshold_high = {"value": high == 0xFF ? "disabled" : high, "raw": high};
+
+    var low = dataView.getUint8();
+    result.switch_threshold_low = {"value": low == 0xFF ? "disabled" : low, "raw": low};
+
+    var behavior_bits = dataView.getUint8Bits();
+    behavior_bits.getBits(2);
+    result.switch_trigger_alert_enabled = bitFalseTrue(behavior_bits.getBits(1));
+}
+
+function decodeDigConfig(dataView, result, err) {
+    result.packet_type = {value: "dig_config_packet"};
+
+    var time = dataView.getUint16();
+    result.switch_time = {"value": time == 0xFFFF ? "disabled" : time, "raw": time, "unit": "s"};
+
+    var behavior_bits = dataView.getUint8Bits();
+    behavior_bits.getBits(1);
+    var edge = behavior_bits.getBits(1);
+    result.switch_transition = {"value": edge ? "enabled": "disabled", "raw": edge};
+    result.switch_trigger_alert_enabled = bitFalseTrue(behavior_bits.getBits(1));
+
+    var addr = dataView.getUint8();
+    result.dali_address_short = daliAddressParse(addr, null, err);
+
+    var level = dataView.getUint8();
+    result.dimming_level = {"value": level, "unit": "%"};
+}
+
+function decodeStepTime(inByte, result) {
+    var min_total = inByte * 10;
+    var hour = Math.trunc(min_total / 60);
+    var mn = min_total - hour * 60;
+    result.step_time = {"value": pad(hour, 2) + ":" + pad(mn, 2), "raw": min_total};
+}
+
+function decodeOdRelaySwStep(dataView) {
+    var res = {};
+
+    decodeStepTime(dataView.getUint8(), res);
+
+    var state = dataView.getUint8() != 0;
+    res.open_drain_out_state = bitFalseTrue(state);
+    return res;
+}
+
+function decodeCalendarConfig(dataView, result) {
+    result.packet_type = {value: "calendar_config_packet"};
+
+    var sunrise = dataView.getInt8();
+    var sunset = dataView.getInt8();
+    var lat = dataView.getInt16() / 100;
+    var lon = dataView.getInt16() / 100;
+    
+    var clear = sunrise == -1 && sunset == -1;
+
+    result.sunrise_offset = {"value": clear ? "disabled" : sunrise, "unit": "min", "raw": sunrise};
+    result.sunset_offset = {"value": clear ? "disabled" : sunset, "unit": "min", "raw": sunset};
+
+    result.latitude = {"value": lat, "unit": "°"};
+    result.longitude = {"value": lon, "unit": "°"};
+}
+
+function decodeStatusConfig(dataView, result) {
+    result.packet_type = {value: "status_config_packet"};
+    var interval = dataView.getUint32();
+    result.staus_interval = {"value": interval, "unit": "s"};
+}
+
+function decodeDimmingStep(dataView) {
+    var time = dataView.getUint8();
+    var lvl = dataView.getUint8();
+    var res = {};
+    decodeStepTime(time, res);
+
+    res.dimming_level = {"value": lvl, "unit": "%"};
+    return res;
+}
+
+function decodeProfileConfig(dataView, result, err) {
+    result.packet_type = {value: "profile_config_packet"};
+    profileParserPartial(dataView, result, err);
+    result.dimming_steps = [];
+    while(dataView.availableLen()) {
+        result.dimming_steps.push(decodeDimmingStep(dataView));
+    }
+}
+
+function decodeTimeConfig(dataView, result) {
+    result.packet_type = {value: "time_config_packet"};
+
+    var epoch = dataView.getUint32();
+    result.device_unix_epoch = decodeUnixEpoch(epoch);
+}
+
+function decodeLegacyDefaultsConfig(dataView, result) {
+    result.packet_type = {value: "legacy_defaults_config_packet"};
+
+    var dim = dataView.getUint8();
+    result.default_dim = {"value": dim, "unit": "%"};
+    
+    var alerts = dataView.getUint8Bits();
+    result.ldr_alert_enabled = bitFalseTrue(alerts.getBits(1));
+    alerts.getBits(1);
+    result.dig_alert_enabled = bitFalseTrue(alerts.getBits(1));
+    result.dali_alert_enabled = bitFalseTrue(alerts.getBits(1));
+}
+
+function decodeUsageConfig(dataView, result) {
+    result.packet_type = {value: "usage_config_packet"};
+    var interval = dataView.getUint32();
+    var volt = dataView.getUint8();
+    result.usage_interval = {"value": interval, "unit": "s"};
+    result.mains_voltage = {"value": volt, "unit": "V"};
+}
+
+function decodeHolidayConfig(dataView, result) {
+    result.packet_type = {value: "holiday_config_packet"};
+    result.holidays = [];
+    while(dataView.availableLen()) {
+        var month = dataView.getUint8();
+        var day = dataView.getUint8();
+        result.holidays.push({"value": pad(month, 2) + "-" + pad(day, 2), "raw": month << 8 | day});
+    }
+}
+
+function decodeBootDelayConfig(dataView, result) {
+    result.packet_type = {value: "boot_delay_config_packet"};
+    var legacy = dataView.availableLen() == 1;
+    var range = legacy ? dataView.getUint8() : dataView.getUint16();
+    result.boot_delay_range = {"value": range, "unit": "s"};
+}
+
+function decodeFade(fade) {
+    var lookup = [0.5, 0.71, 1.0, 1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51];
+    var val = fade > 16 ? "invalid_fade" : lookup[fade];
+    if (fade == 255) val = "ignore";
+    return {"value": val, "unit": "s", "raw": fade};
+}
+
+function decodeDefaultsConfig(dataView, result) {
+    result.packet_type = {value: "defaults_config_packet"};
+    var bits = dataView.getUint8Bits();
+    var dim = bits.getBits(1);
+    var max_dim = bits.getBits(1);
+    var fade = bits.getBits(1);
+    var sunset_mode = bits.getBits(1);
+    var legacy_mode = bits.getBits(1);
+    if(dim) {
+        var d = dataView.getUint8();
+        result.default_dim = {"value": d, "unit": "%"};
+    }
+    if(max_dim) {
+        var md = dataView.getUint8();
+        result.max_dim = {"value": md == 0xff ? "default" : md, "unit": "%", "raw": md};
+    }
+    if(fade) {
+        var f = dataView.getUint8();
+        result.fade_duration = decodeFade(f);
+    }
+    if(sunset_mode) {
+        var s = dataView.getUint8Bits().getBits(1);
+        result.switch_point_sunset = {"value": s ? "sunset" : "twilight", raw: s};
+    }
+    if(legacy_mode) {
+        var l = dataView.getUint8Bits().getBits(1);
+        result.legacy_mode_enabled = bitFalseTrue(l);
+    }
+}
+
+function decodeLocationConfig(dataView, result) {
+    result.packet_type = {value: "location_config_packet"};
+
+    var bits1 = dataView.getUint8Bits();
+    var position_sent = bits1.getBits(1);
+    var address_sent = bits1.getBits(1);
+
+    if(position_sent) {
+        result.position_latitude = {"value": dataView.getInt32() / 10000000.0, "unit": "°"};
+        result.position_longitude = {"value": dataView.getInt32() / 10000000.0, "unit": "°"};
+    }
+    if(address_sent) {
+        var address_len = dataView.getUint8();
+        result.address = {"value": dataView.getTextUtf8(address_len)};
+    }
+}
+
+function decodeLedConfig(dataView, result) {
+    result.packet_type = {value: "led_config_packet"};
+    var l = dataView.getUint8Bits().getBits(1);
+    result.status_led_enabled = bitFalseTrue(l);
+}
+
+function alertParamConfig(value, na_value, unit) {
+    var val = value == na_value ? "alert_off" : value;
+    var res = {"value": val, "raw": value};
+    if (unit) res["unit"] = value == na_value ? "" : unit;
+    return res;
+}
+
+function decodeMeteringAlertConfig(dataView, result, err) {
+    result.packet_type = {value: "metering_alert_config_packet"};
+    var header = dataView.getUint8();
+    if(header != 0x01) {
+        err.errors.push("invalid_header");
+        return;
+    }
+    var min_power = dataView.getUint16();
+    var max_power = dataView.getUint16();
+    var min_voltage = dataView.getUint16();
+    var max_voltage = dataView.getUint16();
+    var min_pf = dataView.getUint8();
+
+    result.min_power = alertParamConfig(min_power, 0xFFFF, "W");
+    result.max_power = alertParamConfig(max_power, 0xFFFF, "W");
+    result.min_voltage = alertParamConfig(min_voltage, 0xFFFF, "V");
+    result.max_voltage = alertParamConfig(max_voltage, 0xFFFF, "V");
+    result.min_power_factor = {"value": min_pf == 0xFF ? "alert_off" : min_pf / 100.0, "raw": min_pf};
+}
+
+function decodeMulticastConfig(dataView, result, err) {
+    result.packet_type = {value: "multicast_config_packet"};
+    var dev = dataView.getUint8();
+    if(dev == 0 || dev > 4) {
+        err.errors.push("invalid_multicast_device");
+        return;
+    }
+    result.multicast_device = {"value": dev};
+    var devaddr = dataView.getRaw(4).reverse();
+    result.device_address = {"value": bytesToHexStr(devaddr)};
+
+    var nwkskey = dataView.getRaw(16);
+    result.network_security_key = {"value": bytesToHexStr(nwkskey)};
+
+    var appskey = dataView.getRaw(16);
+    result.application_security_key = {"value": bytesToHexStr(appskey)};
+}
+
+function decodeClearConfig(dataView, result, err) {
+    result.packet_type = {value: "clear_config_packet"};
+    var typ = dataView.getUint8();
+    switch(typ) {
+        case 0x01:
+            result.reset_target = "ldr_config";
+            return;
+        case 0x03:
+            result.reset_target = "dig_config";
+            return;
+        case 0x04:
+            result.reset_target = "profile_config";
+            var addr = dataView.getUint8();
+            result.dali_address_short = daliAddressParse(addr, "all_profiles", err);
+            if (dataView.availableLen()) {
+                var id = dataView.getUint8();
+                result.profile_id = {"value": id == 0xFF ? "all_used_profiles" : id, "raw": id};
+            }
+            return;
+        case 0x06:
+            result.reset_target = "holiday_config";
+            return;
+        case 0x52:
+            result.reset_target = "multicast_config";
+            var device = dataView.getUint8();
+            result.multicast_device = {"value": device == 0xff ? "all_multicast_devices" : device, "raw": device};
+            return;
+        case 0xFF:
+            result.reset_target = "factory_reset";
+            var ser = dataView.getRaw(4);
+            result.device_serial = {"value": bytesToHexStr(ser)};
+    }
+}
+
+function decodeFport50(buffer, result, err) {
+    var dataView = new BinaryExtract(buffer);
+    var header = dataView.getUint8();
+    switch(header) {
+        case 0x01:
+            decodeLdrConfig(dataView, result);
+            return;
+        case 0x03:
+            decodeDigConfig(dataView, result, err);
+            return;
+        case 0x05:
+            result.packet_type = {value: "open_drain_out_config_packet"};
+            result.switching_steps = [];
+            while(dataView.availableLen()) {
+                result.switching_steps.push(decodeOdRelaySwStep(dataView));
+            }
+            return;
+        case 0x06:
+            decodeCalendarConfig(dataView, result);
+            return;
+        case 0x07:
+            decodeStatusConfig(dataView, result);
+            return;
+        case 0x08:
+            decodeProfileConfig(dataView, result, err);
+            return;
+        case 0x09:
+            decodeTimeConfig(dataView, result);
+            return;
+        case 0x0A:
+            decodeLegacyDefaultsConfig(dataView, result);
+            return;
+        case 0x0B:
+            decodeUsageConfig(dataView, result);
+            return;
+        case 0x0C:
+            decodeHolidayConfig(dataView, result);
+            return;
+        case 0x0D:
+            decodeBootDelayConfig(dataView, result);
+            return;
+        case 0x0E:
+            decodeDefaultsConfig(dataView, result);
+            return;
+        case 0x13:
+            decodeLocationConfig(dataView, result);
+            return;
+        case 0x15:
+            decodeLedConfig(dataView, result);
+            return;
+        case 0x16:
+            decodeMeteringAlertConfig(dataView, result, err);
+            return;
+        case 0x52:
+            decodeMulticastConfig(dataView, result, err);
+            return;
+        case 0xFF:
+            decodeClearConfig(dataView, result, err);
+            return;
+        default:
+            err.errors.push("invalid_header");
+    }
+}
+
+function decodeDaliStatus(dataView, err) {
+    var result = {};
+    var addr = dataView.getUint8();
+    result.dali_address_short = daliAddressParse(addr, null, err);
+
+    var stat = dataView.getUint8Bits();
+    var control_gear_failure = stat.getBits(1);
+    result.control_gear_failure = bitFalseTrue(control_gear_failure);
+    var lamp_failure = stat.getBits(1);
+    result.lamp_failure = bitFalseTrue(lamp_failure);
+    result.lamp_on = bitFalseTrue(stat.getBits(1));
+    var limit_error = stat.getBits(1);
+    result.limit_error = bitFalseTrue(limit_error);
+    result.fade_running = bitFalseTrue(stat.getBits(1));
+    result.reset_state = bitFalseTrue(stat.getBits(1));
+    result.short_address = bitFalseTrue(stat.getBits(1));
+    result.power_cycle_seen = bitFalseTrue(stat.getBits(1));
+
+    var alerts = [];
+    if(control_gear_failure) alerts.push("control gear failure");
+    if(lamp_failure) alerts.push("lamp failure");
+    if(limit_error) alerts.push("limit error");
+    if(alerts.length) {
+        err.errors.push("Dali address: "+result.dali_address_short.value+" errors: "+alerts.join(", "));
+    }
+    return result;
+}
+
+function decodeDaliStatusReq(dataView, result, err, isUplink) {
+    result.packet_type = {value: "dali_status_request"};
+    if(isUplink) {
+        result.dali_statuses = [];
+        while(dataView.availableLen()) {
+            result.dali_statuses.push(decodeDaliStatus(dataView, err));
+        }        
+    }
+    else {
+        var addr = dataView.getUint8();
+        if(addr == 0xFE) {
+            result.dali_address_short = {"value": "all_drivers", "raw": addr};
+        }
+        else {
+            result.dali_address_short = daliAddressParse(addr, null, err);
+        }    
+    }
+}
+
+function decodeDimming(dataView, err) {
+    var result = {};
+    var addr = dataView.getUint8();
+    result.dali_address_short = daliAddressParse(addr, null, err);
+
+    var level = dataView.getUint8();
+    result.dimming_level = {"value": level == 0xFF ? "resume" : level, "unit": "%", "raw": level};
+    return result;
+}
+
+function decodeDimmingCommand(dataView, result, err) {
+    result.packet_type = {value: "manual_dimming_command"};
+    result.manual_commands = [];
+    while(dataView.availableLen()) {
+        result.manual_commands.push(decodeDimming(dataView, err));
+    }
+}
+
+function decodeCustomDali(dataView, err, isUplink) {
+    var result = {};
+    var addr = dataView.getUint8();
+    result.dali_address_short = daliAddressParse(addr, null, err);
+
+    var query = dataView.getUint8();
+    result.dali_query = {"value": query};
+
+    if(isUplink) {
+        var ans = dataView.getUint8();
+        result.dali_answer = {"value": ans};    
+    }
+    return result;
+}
+
+function decodeCustomDaliReq(dataView, result, err, isUplink) {
+    result.packet_type = {value: "custom_dali_request"};
+    result.queries = [];
+    while(dataView.availableLen()) {
+        result.queries.push(decodeCustomDali(dataView, err, isUplink));
+    }
+}
+
+function decodeCustomDaliCommand(dataView, result) {
+    result.packet_type = {value: "custom_dali_command"};
+
+    var data = dataView.getRaw(dataView.availableLen());
+    result.dali_command = {"value": bytesToHexStr(data)};
+}
+
+function decodeStatusRequest(dataView, result) {
+    result.packet_type = {value: "status_or_usage_request"};
+
+    var bits = dataView.getUint8Bits();
+    result.usage_requested = bitFalseTrue(bits.getBits(1));
+    result.status_requested = bitFalseTrue(bits.getBits(1));
+}
+
+function decodeDigVal(val) {
+    if(val == 0x00) return "off";
+    if(val == 0x01) return "on";
+    if(val == 0xFF) return "n/a";
+    return "invalid_value";
+}
+
+function decodeInterfacesRequest(dataView, result, err, isUplink) {
+    if(dataView.availableLen() == 1) {
+        result.packet_type = {value: "interface_request"};
+        return;
+    }
+    if(isUplink) {
+        result.packet_type = {value: "interface_request"};
+        var dig = dataView.getUint8();
+        var dig_val = dataView.getUint8();
+        var ldr = dataView.getUint8();
+        var ldr_val = dataView.getUint8();
+        var thr = dataView.getUint8();
+        dataView.getUint8();
+        var relay = dataView.getUint8();
+        var relay_bits = dataView.getUint8Bits();
+        if(dig != 0x01 || ldr != 0x02 || thr != 0x03 || relay != 0x04) {
+            err.errors.push("invalid_interface");
+            return;
+        }
+        
+        result.dig = {"value": decodeDigVal(dig_val), "raw": dig_val};
+        result.ldr = {"value": ldr_val == 0xFF ? "n/a" : ldr_val, "raw": ldr_val};
+        // thr deprecated
+        result.main_relay_state = bitFalseTrue(relay_bits.getBits(1));
+        result.open_drain_out_state = bitFalseTrue(relay_bits.getBits(1));    
+    }
+}
+
+function decodeDriverMemory(dataView, result, err) {
+    var addr = dataView.getUint8();
+    result.dali_address_short = daliAddressParse(addr, null, err);
+    
+    var bank = dataView.getUint8();
+    result.memory_bank = {"value": bank};
+
+    var mem_addr = dataView.getUint8();
+    result.memory_address = {"value": mem_addr};
+
+    var size = dataView.getUint8();
+    result.read_size = {"value": size, "unit": "bytes"};
+    return size;
+}
+
+function decodeReadDriverMemory(dataView, result, err, isUplink) {
+    result.packet_type = {value: "driver_memory_read"};
+    if(isUplink && dataView.availableLen() == 0) {
+        err.errors.push("driver_memory_read_failed");
+        return;
+    }
+
+    var size = decodeDriverMemory(dataView, result, err);
+
+    if(dataView.availableLen()) {
+        var data = dataView.getRaw(size);
+        result.memory_value = {"value": bytesToHexStr(data)};
+    }
+}
+
+function decodeWriteDriverMemory(dataView, result, err, isUplink) {
+    result.packet_type = {value: "driver_memory_write"};
+    if(isUplink && dataView.availableLen() == 0) {
+        err.errors.push("driver_memory_write_failed");
+        return;
+    }
+    var size = decodeDriverMemory(dataView, result);
+    var data = dataView.getRaw(size);
+    result.memory_value = {"value": bytesToHexStr(data)};
+}
+
+function decodeTimedDimming(dataView, err) {
+    var result = {};
+    var addr = dataView.getUint8();
+    result.dali_address_short = daliAddressParse(addr, null, err);
+
+    var lvl = dataView.getUint8();
+    result.dimming_level = {"value": lvl, "unit": "%"};
+
+    var dur = dataView.getUint8();
+    result.duration = {"value": dur, "unit": "min"};
+    return result    
+}
+
+function decodeTimedDimmingCommand(dataView, result, err) {
+    result.packet_type = {value: "timed_dimming_command"};
+    result.timed_commands = [];
+    while(dataView.availableLen()) {
+        result.timed_commands.push(decodeTimedDimming(dataView, err));
+    }
+}
+
+function decodeOpenDrainSwitching(dataView, result) {
+    result.packet_type = {value: "open_drain_out_control"};
+    var sw = dataView.getUint8Bits().getBits(1);
+    result.open_drain_out_state = bitFalseTrue(sw);
+}
+
+
+
+function decodeFport60(buffer, result, err, isUplink) {
+    var dataView = new BinaryExtract(buffer);
+    var header = dataView.getUint8();
+    switch(header) {
+        case 0x00:
+            decodeDaliStatusReq(dataView, result, err, isUplink);
+            return;
+        case 0x01:
+            decodeDimmingCommand(dataView, result, err);
+            return;
+        case 0x03:
+            decodeCustomDaliReq(dataView, result, err, isUplink);
+            return;
+        case 0x04:
+            decodeCustomDaliCommand(dataView, result);
+            return;
+        case 0x05:
+            decodeStatusRequest(dataView, result);
+            return;
+        case 0x06:
+            decodeInterfacesRequest(dataView, result, err, isUplink);
+            return;
+        case 0x07:
+            decodeReadDriverMemory(dataView, result, err, isUplink);
+            return;
+        case 0x08:
+            decodeWriteDriverMemory(dataView, result, err, isUplink);
+            return;
+        case 0x09:
+            decodeTimedDimmingCommand(dataView, result, err);
+            return;
+        case 0x0C:
+            decodeOpenDrainSwitching(dataView, result);
+            return;
+        default:
+            err.errors.push("invalid_command");
+        }
+}
+
+function decodeFport49(buffer, result, err) {
+    var dataView = new BinaryExtract(buffer);
+    var header = dataView.getUint8();
+    switch(header) {
+        case 0x01:
+            result.packet_type = {value: "ldr_config_request"};
+            return;
+        case 0x02:
+            result.packet_type = {value: "thr_config_request"};
+            return;
+        case 0x03:
+            result.packet_type = {value: "dig_config_request"};
+            return;
+        case 0x05:
+            result.packet_type = {value: "open_drain_out_config_request"};
+            return;
+        case 0x06:
+            result.packet_type = {value: "calendar_config_request"};
+            return;
+        case 0x07:
+            result.packet_type = {value: "status_config_request"};
+            return;
+        case 0x08:
+            result.packet_type = {value: "profile_config_request"};
+            var id = dataView.getUint8();
+            result.profile_id = {"value": id == 0xFF ? "all_used_profiles" : id, "raw": id};
+            return;
+        case 0x0A:
+            result.packet_type = {value: "default_dim_config_request"};
+            return;
+        case 0x0B:
+            result.packet_type = {value: "usage_config_request"};
+            return;
+        case 0x0C:
+            result.packet_type = {value: "holiday_config_request"};
+            return;
+        case 0x0D:
+            result.packet_type = {value: "boot_delay_config_request"};
+            return;
+        case 0x0E:
+            result.packet_type = {value: "defaults_config_request"};
+            return;
+        case 0x13:
+            result.packet_type = {value: "meta_pos_config_request"};
+            return;
+        case 0x15:
+            result.packet_type = {value: "led_config_request"};
+            return;
+        case 0x16:
+            result.packet_type = {value: "metering_alert_confic_request"};
+            return;
+        case 0x52:
+            result.packet_type = {value: "multicast_config_request"};
+            result.multicast_device = {"value": dataView.getUint8()};
+            return;
+        default:
+            err.errors.push("invalid_header");
+    }
+}
+
+function decodeFport51(buffer, result, err) {
+    var dataView = new BinaryExtract(buffer);
+    var header = dataView.getUint8();
+    switch(header) {
+        case 0xFF:
+            result.packet_type = {value: "activate_dfu_command"};
+            return;
+        default:
+            err.errors.push("invalid_command");
+            return result;
+        }
+}
+
+function decodeDownlinkByFport(fport, bytes, result, err, isUplink) {
+    if(bytes.length == 0)
+        err.errors.push("empty_payload");
+    else if(fport == 49)
+        decodeFport49(bytes, result, err);
+    else if(fport == 50)
+        decodeFport50(bytes, result, err);
+    else if(fport == 51)
+        decodeFport51(bytes, result, err);
+    else if(fport == 60)
+        decodeFport60(bytes, result, err, isUplink);
+    else
+        err.errors.push("invalid_fport");
+}
+
+function decodeRawDownlink(fport, bytes) {
+    var isUplink = false;
+    var res = {};
+    var err = {errors: [], warnings: []};
+    try {
+        decodeDownlinkByFport(fport, bytes, res, err, isUplink);
+    } catch(error) {
+        console.log(error.stack);
+        err.errors.push(error.message);
+    }
+    return {data: res, errors: err.errors, warnings: err.warnings};
+}
+
+function isObj(a) {
+    return typeof(a) === "object" && a !== null;
+}
+
+function isArray(a) {
+    return Array.isArray(a) === true;
+}
+
+function replaceAll(string, search, replace) {
+    return string.toString().split(search).join(replace);
+}
+
+function formatRecursive(obj) {
+    if (isArray(obj)) {
+        var res = [];
+        for (let o of obj) {
+            res.push(formatRecursive(o));
+        }
+        return res;
+    }
+    if (isObj(obj)) {
+        if ("value" in obj) {
+            var val = obj["value"];
+            var date = new Date(val);
+            if (date != "Invalid Date" && date.toISOString() == val) {
+                val = val.replace("T", " ").replace(".000Z", " UTC");
+            }
+            if ("unit" in obj)
+                return "" + val + " " + obj["unit"];
+            return replaceAll(obj["value"], "_", " ");
+        }
+        else {
+            var res2 = {};
+            for (var k in obj) {
+                res2[k] = formatRecursive(obj[k]);
+            }
+            return res2;
+        }
+    }
+    return obj;
+}
+
+function toFormatted(decoded) {
+    var res = formatRecursive(decoded.data);
+    var output = {"data": res};
+    if(decoded.warnings.length)
+        output.warnings = decoded.warings;
+    if(decoded.errors.length)
+        output.errors = decoded.errors;    
+    return output;
+}
+
+// TTN new api
+function decodeDownlink(input) {
+    var dec = decodeRawDownlink(input.fPort, input.bytes);
+    var res = toFormatted(dec);
+    return res;
+}
+
+

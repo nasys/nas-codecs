@@ -1,0 +1,4 @@
+node_modules/*
+based on binary-parser/*
+coverage
+package-lock.json

@@ -1,0 +1,39 @@
+{
+  "name": "nas-codecs",
+  "type": "module",
+  "devDependencies": {
+    "@babel/preset-env": "^7.16.11",
+    "babel-jest": "^27.5.1",
+    "eslint": "^7.32.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.2.0",
+    "jest": "^27.5.1",
+    "rollup": "^2.70.1"
+  },
+  "version": "0.1.0",
+  "description": "NAS device payload codecs",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest",
+    "build_lcu_uplink": "rollup config/lcu_uplink_decoder.js --file generated/lcu_uplink_decoder.js --validate && node post_process.js generated/lcu_uplink_decoder.js",
+    "build_lcu_downlink": "rollup config/lcu_downlink_decoder.js --file generated/lcu_downlink_decoder.js --validate && node post_process.js generated/lcu_downlink_decoder.js",
+    "build_lcu_up_and_downlink": "rollup config/lcu_up_and_downlink_decoder.js --file generated/lcu_up_and_downlink_decoder.js --validate && node post_process.js generated/lcu_up_and_downlink_decoder.js",
+    "prebuild_lcu_html": "npm run build_lcu_up_and_downlink",
+    "build_lcu_html": "node html_generate.js generated/lcu_up_and_downlink_decoder.js 'Luminaire Controller Unit'"
+  },
+  "author": "NAS",
+  "license": "MIT",
+  "jest": {
+    "collectCoverage": false,
+    "collectCoverageFrom": [
+      "src/**",
+      "!src/lcu/lcu_both_decoders.js"
+    ],
+    "testRegex": ".*.test.js$"
+  }
+}
