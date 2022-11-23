@@ -11,7 +11,7 @@
 - Serves as annex for respective Payload Description documents.
 
 ## Live decoding example
-Download Html file in generated folder and open in brower to decode packets.
+Download .html file in [generated](https://github.com/nasys/nas-codecs/tree/main/generated) folder and open in brower to decode payloads.
 
 # Reporting errors
 Please report issues in Github Issues page.
