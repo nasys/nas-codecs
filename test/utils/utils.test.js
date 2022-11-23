@@ -1,4 +1,4 @@
-import {BitExtract, BinaryExtract} from '../src/util/extract.js';
+import {BitExtract, BinaryExtract} from '../../src/util/extract.js';
 
 describe("BitExtract tests", () => {
     test("grab entire byte from 0xAC", () => {

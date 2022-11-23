@@ -105,7 +105,26 @@ export function BinaryExtract(buffer) {
       return res;
   }
 
-export function stringFromUTF8Array(data)
+  BinaryExtract.prototype.getFloat = function() {
+    var bytes = this.getUint32();
+    // from https://stackoverflow.com/a/16001019/12636611
+    var sign = (bytes & 0x80000000) ? -1 : 1;
+    var exponent = ((bytes >> 23) & 0xFF) - 127;
+    var significand = (bytes & ~(-1 << 23));
+
+    if (exponent == 128) 
+        return sign * ((significand) ? Number.NaN : Number.POSITIVE_INFINITY);
+
+    if (exponent == -127) {
+        if (significand == 0) return sign * 0.0;
+        exponent = -126;
+        significand /= (1 << 22);
+    } else significand = (significand | (1 << 23)) / (1 << 23);
+    return sign * significand * Math.pow(2, exponent);
+    };
+
+
+function stringFromUTF8Array(data)
 {
   // from https://weblog.rogueamoeba.com/2017/02/27/javascript-correctly-converting-a-byte-array-to-a-utf-8-string/
   var extraByteMap = [ 1, 1, 1, 1, 2, 2, 3, 0 ];

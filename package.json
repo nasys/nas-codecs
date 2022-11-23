@@ -20,11 +20,12 @@
   },
   "scripts": {
     "test": "jest",
-    "build_lcu_uplink": "rollup config/lcu_uplink_decoder.js --file generated/lcu_uplink_decoder.js --validate && node post_process.js generated/lcu_uplink_decoder.js",
-    "build_lcu_downlink": "rollup config/lcu_downlink_decoder.js --file generated/lcu_downlink_decoder.js --validate && node post_process.js generated/lcu_downlink_decoder.js",
-    "build_lcu_up_and_downlink": "rollup config/lcu_up_and_downlink_decoder.js --file generated/lcu_up_and_downlink_decoder.js --validate && node post_process.js generated/lcu_up_and_downlink_decoder.js",
-    "prebuild_lcu_html": "npm run build_lcu_up_and_downlink",
-    "build_lcu_html": "node html_generate.js generated/lcu_up_and_downlink_decoder.js 'Luminaire Controller Unit'"
+    "build_cm30xx": "rollup config/cm30xx_decoder_entry.js --file generated/cm30xx_decoder.js --validate && node html/post_process.js generated/cm30xx_decoder.js",
+    "build_cm30xx_html": "node html/html_generate.js 'CM30xx'",
+    "build_um30xx": "rollup config/um30xx_decoder_entry.js --file generated/um30xx_decoder.js --validate && node html/post_process.js generated/um30xx_decoder.js",
+    "build_um30xx_html": "node html/html_generate.js 'UM30xx'",
+    "build_ul20xx": "rollup config/ul20xx_decoder_entry.js --file generated/ul20xx_decoder.js --validate && node html/post_process.js generated/ul20xx_decoder.js",
+    "build_ul20xx_html": "node html/html_generate.js 'UL20xx'"
   },
   "author": "NAS",
   "license": "MIT",
