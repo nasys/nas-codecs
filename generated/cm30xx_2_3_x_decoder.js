@@ -220,7 +220,7 @@ function meterUnitFormat(unit) {
 }
 
 function serialFormat(serial) {
-    if (serial == 0xFFFFFFFF)
+    if (serial === 0xFFFFFFFF)
         return "not_available";
     var hex = serial.toString(16).toUpperCase();
     return pad(hex, 8);
@@ -235,7 +235,7 @@ function actualityDurationToMinutesFormat(actuality_raw) {
         return (actuality_raw - 156) * 24 * 60;
     if (actuality_raw < 253)
         return (actuality_raw - 200) * 7 * 24 * 60;
-    if (actuality_raw == 253)
+    if (actuality_raw === 253)
         return 365 * 24 * 60;
     return null;
 }
@@ -250,7 +250,7 @@ function actualityDurationToFormatStr(actuality_raw) {
         return (minutes / (60 * 24)).toFixed(2) + " days";
     if (actuality_raw < 253)
         return (minutes / (60 * 24 * 7)).toFixed(2) + " weeks";
-    if (actuality_raw == 253)
+    if (actuality_raw === 253)
         return (minutes / (60 * 24 * 365)).toFixed(2) + " years";
     return null;
 }
@@ -286,7 +286,7 @@ function activeAlertsFormat(alerts_obj) {
     var res = [];
     for (var key in alerts_obj) {
         if (alerts_obj.hasOwnProperty(key)) {
-            if (alerts_obj[key] && (key != "any_alert_active_now")) {
+            if (alerts_obj[key] && (key !== "any_alert_active_now")) {
                 res.push(key);
             }
         }
@@ -437,7 +437,7 @@ function usageParser(buffer, result) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
-    if (packet_type == 0x04)
+    if (packet_type === 0x04)
         result._packet_type = "usage_packet";
     else {
         result._error = ["invalid_packet_type " + packet_type];
@@ -546,7 +546,7 @@ function generalConfigurationParser(dataView, result) {
         result.meter_unit = meterUnitFormat(bits2.getBits(2));
         result.privacy_mode_active = bits2.getBits(1);
     }
-    var unit_post = result.meter_unit != "" ? "__" + result.meter_unit : "";
+    var unit_post = result.meter_unit !== "" ? "__" + result.meter_unit : "";
     if (configured_parameters.meter_volume_sent)
         result['meter_accumulated_volume' + unit_post] = dataView.getUint64() / 1000.0;
     if (configured_parameters.meter_volume_offset_sent)
@@ -555,25 +555,25 @@ function generalConfigurationParser(dataView, result) {
         result['meter_nominal_flow' + unit_post] = dataView.getUint16() / 10.0;
     if (configured_parameters.alert_backflow_sent) {
         var val = dataView.getUint16();
-        result['alert_backflow_threshold' + unit_post] = val == 0 ? "disabled" : val / 1000.0;
+        result['alert_backflow_threshold' + unit_post] = val === 0 ? "disabled" : val / 1000.0;
     }
     if (configured_parameters.alert_broken_pipe_sent) {
         var val = dataView.getUint32();
-        result['alert_broken_pipe_threshold' + unit_post] = val == 0 ? "disabled" : val / 1000.0;
+        result['alert_broken_pipe_threshold' + unit_post] = val === 0 ? "disabled" : val / 1000.0;
     }
     if (configured_parameters.alert_continuous_flow_sent)
         result.alert_continuous_flow_enabled = Boolean(dataView.getUint8());
     if (configured_parameters.alert_no_usage_sent) {
         var val = dataView.getUint16();
-        result.alert_no_usage_interval__days = val == 0 ? "disabled" : val;
+        result.alert_no_usage_interval__days = val === 0 ? "disabled" : val;
     }
     if (configured_parameters.alert_tamper_sent)
         result.alert_tamper_enabled = Boolean(dataView.getUint8());
     if (configured_parameters.alert_temperature_sent) {
         var low = dataView.getInt8();
-        result.alert_temperature_threshold_low__C = low == -128 ? "disabled" : low;
+        result.alert_temperature_threshold_low__C = low === -128 ? "disabled" : low;
         var high = dataView.getInt8();
-        result.alert_temperature_threshold_high__C = high == -128 ? "disabled" : high;
+        result.alert_temperature_threshold_high__C = high === -128 ? "disabled" : high;
     }
 }
 
@@ -613,9 +613,9 @@ function configurationParser(buffer, result) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
-    if (packet_type == 0x20)
+    if (packet_type === 0x20)
         generalConfigurationParser(dataView, result);
-    else if (packet_type == 0x21)
+    else if (packet_type === 0x21)
         locationConfigurationParser(dataView, result);
     else {
         result._error = ["invalid_configuration_type " + packet_type];
@@ -627,9 +627,9 @@ function configurationRequestsParser(buffer, result) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
-    if (packet_type == 0x20)
+    if (packet_type === 0x20)
         result._packet_type = "general_configuration_request";
-    else if (packet_type == 0x21)
+    else if (packet_type === 0x21)
         result._packet_type = "location_configuration_request";
     else {
         result._error = ["invalid_request_type " + packet_type];
@@ -640,8 +640,8 @@ function commandParser(buffer, result) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
-    if (packet_type == 0x03) {
-        if (buffer.length == 1) {
+    if (packet_type === 0x03) {
+        if (buffer.length === 1) {
             result._packet_type = "local_time_request";
             return;
         }
@@ -654,7 +654,7 @@ function commandParser(buffer, result) {
         if (result.device_local_time__s < start_of_2020)
             result.device_local_time_formatted = "invalid";
     }
-    else if (packet_type == 0xFF)
+    else if (packet_type === 0xFF)
         result._packet_type = "enter_dfu_command";
     else {
         result._error = ["invalid_command_type " + packet_type];
@@ -666,12 +666,12 @@ function sysMessagesParser(buffer, result) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
-    if (packet_type == 0x13) {
+    if (packet_type === 0x13) {
         result._packet_type = "faulty_downlink_packet";
         result.packet_fport = dataView.getUint8();
         result.packet_error_reason = packetErrorReasonFormatter(dataView.getUint8());
     }
-    else if (packet_type == 0x00) {
+    else if (packet_type === 0x00) {
         result._packet_type = "boot_packet";
         result.device_serial = serialFormat(dataView.getUint32());
 
@@ -699,7 +699,7 @@ function sysMessagesParser(buffer, result) {
         dataView.getUint8();
         result.device_uptime_accumulated__days = parseFloat((dataView.getUint24() / 24.0).toFixed(2));
     }
-    else if (packet_type == 0x01) {
+    else if (packet_type === 0x01) {
         var shutdown_reason = shutdownEeasonFormat(dataView.getUint8());
         var buffer_usage = buffer.slice(2);
         usageParser(buffer_usage, result);
@@ -710,41 +710,21 @@ function sysMessagesParser(buffer, result) {
         result._error = ["invalid_command_type " + packet_type];
     }
 }
-/*
-function decodeByFport(fport, bytes, result) {
-    if(bytes.length == 0)
-        result._error = ["empty_payload"];
-    else if(fport == 25)
-        usageParser(bytes, result);
-    else if(fport == 49)
-        configurationRequestsParser(bytes, result);
-    else if(fport == 50)
-        configurationParser(bytes, result);
-    else if(fport == 60)
-        commandParser(bytes, result);
-    else if(fport == 99)
-        sysMessagesParser(bytes, result);
-    else {
-        result._error = ["invalid_fport"];
-    }
-    return result;
-}
-*/
 
 function checkFport(fport, expectedFport, result) {
-    if (fport != expectedFport)
+    if (fport !== expectedFport)
         result._error = ["wrong fport or header"];
 }
 
 function decodeByPacketHeader(fport, bytes, result) {
-    if (bytes.length == 0)
+    if (bytes.length === 0)
         result._error = ["empty_payload"];
-    else if (bytes[0] == 0x04) {
+    else if (bytes[0] === 0x04) {
         usageParser(bytes, result);
         checkFport(fport, 25, result);
     }
-    else if (bytes[0] == 0x20 || bytes[0] == 0x21) {
-        if (bytes.length == 1) {
+    else if (bytes[0] === 0x20 || bytes[0] === 0x21) {
+        if (bytes.length === 1) {
             configurationRequestsParser(bytes, result);
             checkFport(fport, 49, result);
         }
@@ -753,11 +733,11 @@ function decodeByPacketHeader(fport, bytes, result) {
             checkFport(fport, 50, result);
         }
     }
-    else if (bytes[0] == 0x03 || bytes[0] == 0xFF) {
+    else if (bytes[0] === 0x03 || bytes[0] === 0xFF) {
         commandParser(bytes, result);
         checkFport(fport, 60, result);
     }
-    else if (bytes[0] == 0x00 || bytes[0] == 0x01 || bytes[0] == 0x13) {
+    else if (bytes[0] === 0x00 || bytes[0] === 0x01 || bytes[0] === 0x13) {
         sysMessagesParser(bytes, result);
         checkFport(fport, 99, result);
     }
@@ -772,14 +752,13 @@ function decodeRaw(fport, bytes) {
     var res = {};
     try {
         decodeByPacketHeader(fport, bytes, res);
-        //        decodeByFport(fport, bytes, res);
     } catch (err) {
         res._error = [err.message];
     }
     res._raw_payload = bytesToHexStr(bytes);
     // brings values containing 'invalid_' out to _errors list.
     for (var key in res) {
-        if (typeof res[key] == "string" && res[key].indexOf("invalid_") > -1) {
+        if (typeof res[key] === "string" && res[key].indexOf("invalid_") > -1) {
             if (!('_error' in res))
                 res._error = [];
             res._error.push(res[key]);
@@ -787,20 +766,6 @@ function decodeRaw(fport, bytes) {
     }
     return res;
 }
-
-/*
-export function decodeRawUplink(fport, bytes) {
-    var res = {};
-    var err = { errors: [], warnings: [] };
-    try {
-        decodeUplinkByFport(fport, bytes, res, err);
-    } catch (error) {
-        console.log(error.stack);
-        err.errors.push(error.message);
-    }
-    return { data: res, errors: err.errors, warnings: err.warnings };
-}
-*/
 
 // Functions for post-proccessing the cm30xx and um30xx decoder result
 

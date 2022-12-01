@@ -43,8 +43,17 @@ describe("Status and usage", () => {
         testPacket({
             decoderFn: decodeRaw,
             fport: 25,
-            data: 'ff800000000002cf000000000000000000000000a81f000011000000',
-            expected: {"data":{"packet_type":{"value":"usage_packet"},"reports":[{"dali_address_short":{"value":"internal_measurement","raw":255},"lamp_on_time":{"value":0,"unit":"h"}},{"dali_address_short":{"value":"single 1","raw":2},"active_energy_total":{"value":0,"unit":"Wh"},"active_energy_instant":{"value":0,"unit":"W"},"load_side_energy_total":{"value":0,"unit":"Wh"},"load_side_energy_instant":{"value":0,"unit":"W"},"driver_operating_time":{"value":8104,"unit":"s"},"lamp_on_time":{"value":17,"unit":"s"}}]},"errors":[],"warnings":[]},
+            data: 'ff830100000004000000000012cf1e000000000000000000000070de060011000000',
+            expected: {"data":{"packet_type":{"value":"usage_packet"},"reports":[{"dali_address_short":{"value":"internal_measurement","raw":255},"active_energy_total":{"value":1,"unit":"Wh"},"active_energy_instant":{"value":4,"unit":"W"},"lamp_on_time":{"value":0,"unit":"h"}},{"dali_address_short":{"value":"single 9","raw":18},"active_energy_total":{"value":30,"unit":"Wh"},"active_energy_instant":{"value":0,"unit":"W"},"load_side_energy_total":{"value":0,"unit":"Wh"},"load_side_energy_instant":{"value":0,"unit":"W"},"driver_operating_time":{"value":450160,"unit":"s"},"lamp_on_time":{"value":17,"unit":"s"}}]},"errors":[],"warnings":[]},
+        });
+    });
+
+    test("usage d4i invalid address", () => {
+        testPacket({
+            decoderFn: decodeRaw,
+            fport: 25,
+            data: 'ff830100000004000000000009cf1e000000000000000000000070de060011000000',
+            expected: {"data":{"packet_type":{"value":"usage_packet"},"reports":[{"dali_address_short":{"value":"internal_measurement","raw":255},"active_energy_total":{"value":1,"unit":"Wh"},"active_energy_instant":{"value":4,"unit":"W"},"lamp_on_time":{"value":0,"unit":"h"}},{"dali_address_short":{"value":"invalid","raw":9},"active_energy_total":{"value":30,"unit":"Wh"},"active_energy_instant":{"value":0,"unit":"W"},"load_side_energy_total":{"value":0,"unit":"Wh"},"load_side_energy_instant":{"value":0,"unit":"W"},"driver_operating_time":{"value":450160,"unit":"s"},"lamp_on_time":{"value":17,"unit":"s"}}]},"errors":["invalid_dali_address"],"warnings":[]},
         });
     });
 });

@@ -509,7 +509,7 @@ function pulseUsageParse(interfaceName, dataView, result) {
     }
 }
 
-function usageAndStatusParser(buffer, result) {
+function usageAndStatusParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var device_status_sent = false;
@@ -522,7 +522,7 @@ function usageAndStatusParser(buffer, result) {
         device_status_sent = true;
     }
     else {
-        result._error = ["invalid_packet_type " + packet_type];
+        err.errors.push("invalid_packet_type " + packet_type);
         return;
     }
 
@@ -638,14 +638,14 @@ function pulseConfigParse(interfaceName, dataView, result) {
     }
 }
 
-function generalConfigurationParser(buffer, result) {
+function generalConfigurationParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
     if(packet_type == 0x12)
         result._packet_type = "general_configuration_packet";
     else {
-        result._error = ["invalid_configuration_type " + packet_type];
+        err.errors.push("invalid_configuration_type " + packet_type);
         return;
     }
 
@@ -670,21 +670,21 @@ function generalConfigurationParser(buffer, result) {
     }
 }
 
-function mbusConfigurationParser(buffer, result) {
+function mbusConfigurationParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
     if(packet_type == 0x14)
         result._packet_type = "mbus_configuration_packet";
     else {
-        result._error = ["invalid_configuration_type " + packet_type];
+        err.errors.push("invalid_configuration_type " + packet_type);
         return;
     }
     var bits1 = dataView.getUint8Bits();
     var usage_count = bits1.getBits(4);
     var status_count = bits1.getBits(4);
     if(usage_count > 10 || status_count > 10) {
-        result._error = ["invalid_usage_or_status_count"];
+        err.errors.push("invalid_usage_or_status_count");
         return;
     }
     result.mbus_data_record_headers_unparsed = "";
@@ -693,14 +693,14 @@ function mbusConfigurationParser(buffer, result) {
     }
 }
 
-function locationConfigurationParser(buffer, result) {
+function locationConfigurationParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
     if(packet_type == 0x21)
         result._packet_type = "location_configuration_packet";
     else {
-        result._error = ["invalid_configuration_type " + packet_type];
+        err.errors.push("invalid_configuration_type " + packet_type);
         return;
     }
     var configured_parameters = {};
@@ -734,7 +734,7 @@ function locationConfigurationParser(buffer, result) {
 
 
 // CONFIGURATION REQUESTS AND COMMANDS
-function configurationRequestsParser(buffer, result) {
+function configurationRequestsParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
@@ -745,13 +745,13 @@ function configurationRequestsParser(buffer, result) {
     else if(packet_type == 0x21) 
         result._packet_type = "location_configuration_request";
     else {
-        result._error = ["invalid_request_type " + packet_type];
+        err.errors.push("invalid_request_type " + packet_type);
     }
 }
 
 
 
-function commandParser(buffer, result) {
+function commandParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
@@ -799,16 +799,17 @@ function commandParser(buffer, result) {
     else if(packet_type == 0xFF) 
         result._packet_type = "enter_dfu_command";
     else {
-        result._error = ["invalid_command_type " + packet_type];
+        err.errors.push("invalid_command_type " + packet_type);
     }
 }
 
 // SYSTEM MESSAGES
-function sysMessagesParser(buffer, result) {
+function sysMessagesParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
     if(packet_type == 0x13) {
+        err.warnings.push("faulty_downlink_packet");
         result._packet_type = "faulty_downlink_packet";
         result.packet_fport = dataView.getUint8();
         result.packet_error_reason = packetErrorReasonFormatter(dataView.getUint8());
@@ -847,103 +848,82 @@ function sysMessagesParser(buffer, result) {
         result._shutdown_reason = shutdown_reason;
     }
     else {
-        result._error = ["invalid_command_type " + packet_type];
+        err.errors.push("invalid_command_type " + packet_type);
     }
 }
-/*
-function decodeByFport(fport, bytes, result) {
-    if(bytes.length == 0)
-        result._error = ["empty_payload"];
-    else if(fport == 25)
-        usageParser(bytes, result);
-    else if(fport == 49)
-        configurationRequestsParser(bytes, result);
-    else if(fport == 50)
-        configurationParser(bytes, result);
-    else if(fport == 60)
-        commandParser(bytes, result);
-    else if(fport == 99)
-        sysMessagesParser(bytes, result);
-    else {
-        result._error = ["invalid_fport"];
-    }
-    return result;
-}
-*/
 
-function checkFport(fport, expectedFport, result) {
+function checkFport(fport, expectedFport, err) {
     if(fport != expectedFport) 
-        result._error = ["wrong fport or header"];
+        err.errors.push("wrong fport or header");
 }
 
 
-function decodeByPacketHeader(fport, bytes, result) {
+function decodeByPacketHeader(fport, bytes, result, err) {
     if(bytes.length == 0)
-        result._error = ["empty_payload"];
+        err.errors.push("empty_payload");
     else if(bytes[0] == 0x02) {
-        usageAndStatusParser(bytes, result);
-        checkFport(fport, 25, result);
+        usageAndStatusParser(bytes, result, err);
+        checkFport(fport, 25, err);
     }
     else if(bytes[0] == 0x82) {
-        usageAndStatusParser(bytes, result);
-        checkFport(fport, 24, result);
+        usageAndStatusParser(bytes, result, err);
+        checkFport(fport, 24, err);
     }
     else if(bytes[0] == 0x12) {
         if (bytes.length == 1) {
-            configurationRequestsParser(bytes, result);
-            checkFport(fport, 49, result);    
+            configurationRequestsParser(bytes, result, err);
+            checkFport(fport, 49, err);    
         }
         else {
-            generalConfigurationParser(bytes, result);
-            checkFport(fport, 50, result);    
+            generalConfigurationParser(bytes, result, err);
+            checkFport(fport, 50, err);    
         }
     }
     else if(bytes[0] == 0x21) {
         if (bytes.length == 1) {
-            configurationRequestsParser(bytes, result);
-            checkFport(fport, 49, result);    
+            configurationRequestsParser(bytes, result, err);
+            checkFport(fport, 49, err);    
         }
         else {
-            locationConfigurationParser(bytes, result);
-            checkFport(fport, 50, result);    
+            locationConfigurationParser(bytes, result, err);
+            checkFport(fport, 50, err);    
         }
     }
     else if(bytes[0] == 0x14) {
         if (bytes.length == 1) {
-            configurationRequestsParser(bytes, result);
-            checkFport(fport, 49, result);    
+            configurationRequestsParser(bytes, result, err);
+            checkFport(fport, 49, err);    
         }
         else {
-            mbusConfigurationParser(bytes, result);
-            checkFport(fport, 50, result);    
+            mbusConfigurationParser(bytes, result, err);
+            checkFport(fport, 50, err);    
         }
     }    
     else if(bytes[0] == 0x03 || bytes[0] == 0x81 || bytes[0] == 0xFF) {
-        commandParser(bytes, result);
+        commandParser(bytes, result, fport);
         if(bytes.length == 1)
-            checkFport(fport, 60, result);
+            checkFport(fport, 60, err);
         else {
             if(bytes[0] == 0x03)
-                checkFport(fport, 60, result);
+                checkFport(fport, 60, err);
             else
-                checkFport(fport, 61, result);
+                checkFport(fport, 61, err);
         }
     }
     else if(bytes[0] == 0x00 || bytes[0] == 0x01 || bytes[0] == 0x13) {
-        sysMessagesParser(bytes, result);
-        checkFport(fport, 99, result);
+        sysMessagesParser(bytes, result, err);
+        checkFport(fport, 99, err);
     }
     else {
-        result._error = ["invalid_header"];
+        err.errors.push("invalid_header");
     }
-    return result;
 }
 
 function decodeRaw(fport, bytes) {
     var res = {};
+    var err = { errors: [], warnings: [] };
     try {
-        decodeByPacketHeader(fport, bytes, res);
-//        decodeByFport(fport, bytes, res);
+        decodeByPacketHeader(fport, bytes, res, err);
     } catch(err) {
         res._error = [err.message];
     }

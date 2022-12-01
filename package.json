@@ -4,12 +4,14 @@
   "devDependencies": {
     "@babel/preset-env": "^7.16.11",
     "babel-jest": "^27.5.1",
-    "eslint": "^7.32.0",
+    "eslint": "^8.28.0",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-standard": "^16.0.3",
-    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.2.0",
     "jest": "^27.5.1",
+    "minify": "^9.1.0",
     "rollup": "^2.70.1"
   },
   "version": "0.1.0",
@@ -20,12 +22,12 @@
   },
   "scripts": {
     "test": "jest",
-    "build_cm30xx": "rollup config/cm30xx_decoder_entry.js --file generated/cm30xx_decoder.js --validate && node html/post_process.js generated/cm30xx_decoder.js",
-    "build_cm30xx_html": "node html/html_generate.js 'CM30xx'",
-    "build_um30xx": "rollup config/um30xx_decoder_entry.js --file generated/um30xx_decoder.js --validate && node html/post_process.js generated/um30xx_decoder.js",
-    "build_um30xx_html": "node html/html_generate.js 'UM30xx'",
-    "build_ul20xx": "rollup config/ul20xx_decoder_entry.js --file generated/ul20xx_decoder.js --validate && node html/post_process.js generated/ul20xx_decoder.js",
-    "build_ul20xx_html": "node html/html_generate.js 'UL20xx'"
+    "build_cm30xx_2_3_x": "rollup config/cm30xx_2_3_x_decoder_entry.js --file generated/cm30xx_2_3_x_decoder.js --validate && node html/post_process.js generated/cm30xx_2_3_x_decoder.js && minify generated/cm30xx_2_3_x_decoder.js > generated/cm30xx_2_3_x_decoder.min.js",
+    "build_cm30xx_2_3_x_html": "node html/html_generate.js 'CM30xx' '2.3.x'",
+    "build_um30xx_4_0_x": "rollup config/um30xx_4_0_x_decoder_entry.js --file generated/um30xx_4_0_x_decoder.js --validate && node html/post_process.js generated/um30xx_4_0_x_decoder.js && minify generated/um30xx_4_0_x_decoder.js > generated/um30xx_4_0_x_decoder.min.js",
+    "build_um30xx_4_0_x_html": "node html/html_generate.js 'UM30xx' '4.0.x'",
+    "build_ul20xx_1_0_x": "rollup config/ul20xx_1_0_x_decoder_entry.js --file generated/ul20xx_1_0_x_decoder.js --validate && node html/post_process.js generated/ul20xx_1_0_x_decoder.js && minify generated/ul20xx_1_0_x_decoder.js > generated/ul20xx_1_0_x_decoder.min.js",
+    "build_ul20xx_1_0_x_html": "node html/html_generate.js 'UL20xx' '1.0.x'"
   },
   "author": "NAS",
   "license": "MIT",

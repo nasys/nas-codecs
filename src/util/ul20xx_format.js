@@ -41,6 +41,7 @@ function convertObjRecursive(element, elementFormatter) {
         });
         return output;
     }
+    return element;
 }
 
 export function convertObjToFormatted(decoded, elementFormatter) {

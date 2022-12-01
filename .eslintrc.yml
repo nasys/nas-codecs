@@ -1,0 +1,17 @@
+env:
+  browser: true
+  es2021: true
+extends: airbnb-base
+overrides: []
+parserOptions:
+  ecmaVersion: latest
+  sourceType: module
+rules:
+  no-var: 0
+  prefer-template: 0
+  eslintvars-on-top: 0
+  vars-on-top: 0
+  no-underscore-dangle: 0
+  no-param-reassign: 0
+  prefer-destructuring: 1
+  no-restricted-syntax: 1

@@ -199,18 +199,18 @@ function profileOverrideReason(reason) {
 }
 
 function daliAddressParse(addr, ff_str, err) {
-    if(addr == 0xFE) {
+    if(addr === 0xFE) {
         return {"value": "broadcast", "raw": addr};
     }
-    if(addr == 0xFF) {
+    if(addr === 0xFF) {
         if (ff_str) {
             return {"value": ff_str, "raw": addr};
         }
-        err.errors.push("invalid_dali_address");
+        err.warnings.push("invalid_dali_address");
         return {"value": "invalid", "raw": addr};
     }
     if(addr & 0x01) {
-        err.errors.push("invalid_dali_address");
+        err.warnings.push("invalid_dali_address");
         return {"value": "invalid", "raw": addr};
     }
     if(addr & 0x80) {
@@ -227,7 +227,7 @@ function profileParserPartial(dataView, profile, err) {
     var addr = dataView.getUint8();
     var active_days = dataView.getUint8();
 
-    profile.profile_id = {"value": id == 255 ? "no_profile" : id, "raw": id};
+    profile.profile_id = {"value": id === 255 ? "no_profile" : id, "raw": id};
 
     profile.profile_version = {"value": ver > 240 ? "n/a" : ver, "raw": ver};
 
@@ -283,10 +283,10 @@ function decodeLdrConfig(dataView, result) {
     result.packet_type = {value: "ldr_config_packet"};
 
     var high = dataView.getUint8();
-    result.switch_threshold_high = {"value": high == 0xFF ? "disabled" : high, "raw": high};
+    result.switch_threshold_high = {"value": high === 0xFF ? "disabled" : high, "raw": high};
 
     var low = dataView.getUint8();
-    result.switch_threshold_low = {"value": low == 0xFF ? "disabled" : low, "raw": low};
+    result.switch_threshold_low = {"value": low === 0xFF ? "disabled" : low, "raw": low};
 
     var behavior_bits = dataView.getUint8Bits();
     behavior_bits.getBits(2);
@@ -297,7 +297,7 @@ function decodeDigConfig(dataView, result, err) {
     result.packet_type = {value: "dig_config_packet"};
 
     var time = dataView.getUint16();
-    result.switch_time = {"value": time == 0xFFFF ? "disabled" : time, "raw": time, "unit": "s"};
+    result.switch_time = {"value": time === 0xFFFF ? "disabled" : time, "raw": time, "unit": "s"};
 
     var behavior_bits = dataView.getUint8Bits();
     behavior_bits.getBits(1);
@@ -324,7 +324,7 @@ function decodeOdRelaySwStep(dataView) {
 
     decodeStepTime(dataView.getUint8(), res);
 
-    var state = dataView.getUint8() != 0;
+    var state = dataView.getUint8() !== 0;
     res.open_drain_out_state = bitFalseTrue(state);
     return res;
 }
@@ -337,7 +337,7 @@ function decodeCalendarConfig(dataView, result) {
     var lat = dataView.getInt16() / 100;
     var lon = dataView.getInt16() / 100;
     
-    var clear = sunrise == -1 && sunset == -1;
+    var clear = sunrise === -1 && sunset === -1;
 
     result.sunrise_offset = {"value": clear ? "disabled" : sunrise, "unit": "min", "raw": sunrise};
     result.sunset_offset = {"value": clear ? "disabled" : sunset, "unit": "min", "raw": sunset};
@@ -411,7 +411,7 @@ function decodeHolidayConfig(dataView, result) {
 
 function decodeBootDelayConfig(dataView, result) {
     result.packet_type = {value: "boot_delay_config_packet"};
-    var legacy = dataView.availableLen() == 1;
+    var legacy = dataView.availableLen() === 1;
     var range = legacy ? dataView.getUint8() : dataView.getUint16();
     result.boot_delay_range = {"value": range, "unit": "s"};
 }
@@ -419,7 +419,7 @@ function decodeBootDelayConfig(dataView, result) {
 function decodeFade(fade) {
     var lookup = [0.5, 0.71, 1.0, 1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 11.31, 16.0, 22.63, 32.0, 45.25, 64.0, 90.51];
     var val = fade > 16 ? "invalid_fade" : lookup[fade];
-    if (fade == 255) val = "ignore";
+    if (fade === 255) val = "ignore";
     return {"value": val, "unit": "s", "raw": fade};
 }
 
@@ -437,7 +437,7 @@ function decodeDefaultsConfig(dataView, result) {
     }
     if(max_dim) {
         var md = dataView.getUint8();
-        result.max_dim = {"value": md == 0xff ? "default" : md, "unit": "%", "raw": md};
+        result.max_dim = {"value": md === 0xff ? "default" : md, "unit": "%", "raw": md};
     }
     if(fade) {
         var f = dataView.getUint8();
@@ -477,16 +477,16 @@ function decodeLedConfig(dataView, result) {
 }
 
 function alertParamConfig(value, na_value, unit) {
-    var val = value == na_value ? "alert_off" : value;
+    var val = value === na_value ? "alert_off" : value;
     var res = {"value": val, "raw": value};
-    if (unit) res["unit"] = value == na_value ? "" : unit;
+    if (unit) res["unit"] = value === na_value ? "" : unit;
     return res;
 }
 
 function decodeMeteringAlertConfig(dataView, result, err) {
     result.packet_type = {value: "metering_alert_config_packet"};
     var header = dataView.getUint8();
-    if(header != 0x01) {
+    if(header !== 0x01) {
         err.errors.push("invalid_header");
         return;
     }
@@ -500,13 +500,13 @@ function decodeMeteringAlertConfig(dataView, result, err) {
     result.max_power = alertParamConfig(max_power, 0xFFFF, "W");
     result.min_voltage = alertParamConfig(min_voltage, 0xFFFF, "V");
     result.max_voltage = alertParamConfig(max_voltage, 0xFFFF, "V");
-    result.min_power_factor = {"value": min_pf == 0xFF ? "alert_off" : min_pf / 100.0, "raw": min_pf};
+    result.min_power_factor = {"value": min_pf === 0xFF ? "alert_off" : min_pf / 100.0, "raw": min_pf};
 }
 
 function decodeMulticastConfig(dataView, result, err) {
     result.packet_type = {value: "multicast_config_packet"};
     var dev = dataView.getUint8();
-    if(dev == 0 || dev > 4) {
+    if(dev === 0 || dev > 4) {
         err.errors.push("invalid_multicast_device");
         return;
     }
@@ -537,7 +537,7 @@ function decodeClearConfig(dataView, result, err) {
             result.dali_address_short = daliAddressParse(addr, "all_profiles", err);
             if (dataView.availableLen()) {
                 var id = dataView.getUint8();
-                result.profile_id = {"value": id == 0xFF ? "all_used_profiles" : id, "raw": id};
+                result.profile_id = {"value": id === 0xFF ? "all_used_profiles" : id, "raw": id};
             }
             return;
         case 0x06:
@@ -546,7 +546,7 @@ function decodeClearConfig(dataView, result, err) {
         case 0x52:
             result.reset_target = "multicast_config";
             var device = dataView.getUint8();
-            result.multicast_device = {"value": device == 0xff ? "all_multicast_devices" : device, "raw": device};
+            result.multicast_device = {"value": device === 0xff ? "all_multicast_devices" : device, "raw": device};
             return;
         case 0xFF:
             result.reset_target = "factory_reset";
@@ -649,9 +649,9 @@ function decodeDaliStatus(dataView, err) {
 
 function decodeDaliStatusReq(dataView, result, err) {
     result.packet_type = {value: "dali_status_request"};
-    if (dataView.availableLen() == 1) {
+    if (dataView.availableLen() === 1) {
         var addr = dataView.getUint8();
-        if(addr == 0xFE) {
+        if(addr === 0xFE) {
             result.dali_address_short = {"value": "all_drivers", "raw": addr};
         }
         else {
@@ -672,7 +672,7 @@ function decodeDimming(dataView, err) {
     result.dali_address_short = daliAddressParse(addr, null, err);
 
     var level = dataView.getUint8();
-    result.dimming_level = {"value": level == 0xFF ? "resume" : level, "unit": "%", "raw": level};
+    result.dimming_level = {"value": level === 0xFF ? "resume" : level, "unit": "%", "raw": level};
     return result;
 }
 
@@ -703,7 +703,7 @@ function decodeCustomDaliReq(dataView, result, err) {
     var query = dataView.getUint8();
     result.dali_query = {"value": query};
 
-    if (dataView.availableLen() == 1) { 
+    if (dataView.availableLen() === 1) { 
         var ans = dataView.getUint8();
         result.dali_answer = {"value": ans};    
     }
@@ -725,14 +725,14 @@ function decodeStatusRequest(dataView, result) {
 }
 
 function decodeDigVal(val) {
-    if(val == 0x00) return "off";
-    if(val == 0x01) return "on";
-    if(val == 0xFF) return "n/a";
+    if(val === 0x00) return "off";
+    if(val === 0x01) return "on";
+    if(val === 0xFF) return "n/a";
     return "invalid_value";
 }
 
 function decodeInterfacesRequest(dataView, result, err,) {
-    if(dataView.availableLen() == 1) {
+    if(dataView.availableLen() === 1) {
         result.packet_type = {value: "interface_request"};
         return;
     }
@@ -746,13 +746,13 @@ function decodeInterfacesRequest(dataView, result, err,) {
     dataView.getUint8();
     var relay = dataView.getUint8();
     var relay_bits = dataView.getUint8Bits();
-    if(dig != 0x01 || ldr != 0x02 || thr != 0x03 || relay != 0x04) {
+    if(dig !== 0x01 || ldr !== 0x02 || thr !== 0x03 || relay !== 0x04) {
         err.errors.push("invalid_interface");
         return;
     }
     
     result.dig = {"value": decodeDigVal(dig_val), "raw": dig_val};
-    result.ldr = {"value": ldr_val == 0xFF ? "n/a" : ldr_val, "raw": ldr_val};
+    result.ldr = {"value": ldr_val === 0xFF ? "n/a" : ldr_val, "raw": ldr_val};
     // thr deprecated
     result.main_relay_state = bitFalseTrue(relay_bits.getBits(1));
     result.open_drain_out_state = bitFalseTrue(relay_bits.getBits(1));    
@@ -778,8 +778,8 @@ function decodeDriverMemoryPartialSized(dataView, result, err) {
 
 function decodeReadDriverMemory(dataView, result, err) {
     result.packet_type = {value: "driver_memory_read"};
-    if(dataView.availableLen() == 0) {
-        err.errors.push("driver_memory_read_failed");
+    if(dataView.availableLen() === 0) {
+        err.warning.push("driver_memory_read_failed");
         return;
     }
 
@@ -792,8 +792,8 @@ function decodeReadDriverMemory(dataView, result, err) {
 
 function decodeWriteDriverMemory(dataView, result, err) {
     result.packet_type = {value: "driver_memory_write"};
-    if(dataView.availableLen() == 0) {
-        err.errors.push("driver_memory_write_failed");
+    if(dataView.availableLen() === 0) {
+        err.warning.push("driver_memory_write_failed");
         return;
     }
 
@@ -897,7 +897,7 @@ function statusParser(buffer, result, err) {
 
         var dali_err_ext = bits.getBits(1);
         status_field.dali_error_external = bitFalseTrue(dali_err_ext);
-        if (dali_err_ext) err.errors.push("dali external error reported by status packet");
+        if (dali_err_ext) err.warning.push("dali external error reported by status packet");
 
         var dali_err_conn = bits.getBits(1);
         status_field.dali_error_connection = bitFalseTrue(dali_err_conn);
@@ -975,7 +975,7 @@ function usageConsumptionParse(dataView, err) {
             result.driver_operating_time = { "value": dataView.getUint32(), "unit": "s" };
         }
         if (bits.getBits(1)) {
-            result.lamp_on_time = { "value": dataView.getUint32(), "unit": addr == 0xFF ? "h" : "s" };
+            result.lamp_on_time = { "value": dataView.getUint32(), "unit": addr === 0xFF ? "h" : "s" };
         }
     }
     return result;
@@ -1210,7 +1210,7 @@ function decodeFport61(buffer, result, err) {
     switch (header) {
         case 0x80:
             result.packet_type = { value: "dig_alert" };
-            if (len != 2) {
+            if (len !== 2) {
                 err.errors.push("invalid_packet_length");
                 return;
             }
@@ -1219,7 +1219,7 @@ function decodeFport61(buffer, result, err) {
             return;
         case 0x81:
             result.packet_type = { value: "ldr_alert" };
-            if (len != 2) {
+            if (len !== 2) {
                 err.errors.push("invalid_packet_length");
                 return;
             }
@@ -1309,7 +1309,7 @@ function decodeFport49(buffer, result, err) {
         case 0x08:
             result.packet_type = {value: "profile_config_request"};
             var id = dataView.getUint8();
-            result.profile_id = {"value": id == 0xFF ? "all_used_profiles" : id, "raw": id};
+            result.profile_id = {"value": id === 0xFF ? "all_used_profiles" : id, "raw": id};
             return;
         case 0x0A:
             result.packet_type = {value: "default_dim_config_request"};
@@ -1356,57 +1356,27 @@ function decodeFport51(buffer, result, err) {
             return;
         }
 }
-/*
-function decodeDownlinkByFport(fport, bytes, result, err) {
-    if(bytes.length == 0)
-        err.errors.push("empty_payload");
-    else if(fport == 49)
-        decodeFport49(bytes, result, err);
-    else if(fport == 50)
-        decodeFport50(bytes, result, err);
-    else if(fport == 51)
-        decodeFport51(bytes, result, err);
-    else if(fport == 60)
-        decodeFport60(bytes, result, err);
-    else
-        err.errors.push("invalid_fport");
-}
-
-export function decodeRawDownlink(fport, bytes) {
-    var res = {};
-    var err = {errors: [], warnings: []};
-    try {
-        decodeDownlinkByFport(fport, bytes, res, err);
-    } catch(error) {
-        console.log(error.stack);
-        err.errors.push(error.message);
-    }
-    return {data: res, errors: err.errors, warnings: err.warnings};
-}
-*/
-
-
 
 
 
 function decodeByFport(fport, bytes, result, err) {
-    if (bytes.length == 0)
+    if (bytes.length === 0)
         err.errors.push("empty_payload");
-    else if (fport == 24)
+    else if (fport === 24)
         statusParser(bytes, result, err);
-    else if (fport == 25)
+    else if (fport === 25)
         usageParser(bytes, result, err);
-    else if(fport == 49)
+    else if(fport === 49)
         decodeFport49(bytes, result, err);
-    else if (fport == 50)
+    else if (fport === 50)
         decodeFport50(bytes, result, err);
-    else if(fport == 51)
+    else if(fport === 51)
         decodeFport51(bytes, result, err);
-    else if(fport == 60)
+    else if(fport === 60)
         decodeFport60(bytes, result, err);
-    else if (fport == 61)
+    else if (fport === 61)
         decodeFport61(bytes, result, err);
-    else if (fport == 99)
+    else if (fport === 99)
         decodeFport99(bytes, result, err);
     else
         err.errors.push("invalid_fport");
@@ -1463,6 +1433,7 @@ function convertObjRecursive(element, elementFormatter) {
         });
         return output;
     }
+    return element;
 }
 
 function convertObjToFormatted(decoded, elementFormatter) {

@@ -1,10 +1,12 @@
 import * as fs from 'fs';
 
-if (process.argv.length < 3) {
-    throw Error("Missing device title as arguments");
+if (process.argv.length < 4) {
+    throw Error("Missing device title and/or firmware as arguments");
 }
 
 var device_name = process.argv[2];
+var device_firmware = process.argv[3];
+console.log("Generating for: " + device_name + " " + device_firmware);
 
 var formatter_script_filename = "src/util/cm_um_30xx_format.js";
 var formatter_options = `
@@ -30,7 +32,16 @@ function applyFormatting(res, formatting) {
 
     
 if (device_name == "CM30xx") {
-    var script_filename = "generated/cm30xx_decoder.js";
+    if (device_firmware == "1.3.x") {
+        var script_filename = "generated/cm30xx_1_3_x_decoder.js";
+    }
+    else if (device_firmware == "2.3.x") {
+        var script_filename = "generated/cm30xx_2_3_x_decoder.js";
+    }
+    else {
+        throw Error("ERROR, unrecognized firmware version: " + device_firmware);
+    }
+
     var default_payload = "04C10084433F254E00752B036BD1164A337C44983938";
     var supported_devices = "Supported devices: CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares.";
     var fport_options = `
@@ -44,9 +55,15 @@ if (device_name == "CM30xx") {
         <option value="99">99 - System Messages</option>`;
 }
 else if (device_name == "UM30xx") {
-    var script_filename = "generated/um30xx_decoder.js";
+    if (device_firmware == "4.0.x") {
+        var script_filename = "generated/um30xx_4_0_x_decoder.js";
+    }
+    else { 
+        throw Error("ERROR, unrecognized firmware version: " + device_firmware);
+    }
+
     var default_payload = "82826BD1164A337C432326B29AD03C0138271501170600002090241262700374301C00";
-    var supported_devices = "Supported devices: UM3070, UM3081, UM3090, UM3100, UM3110 with 4.0.x firmware.";
+    var supported_devices = "Supported devices: UM3070, UM3081, UM3090, UM3100, UM3110 with "+device_firmware+" firmware.";
     var fport_options = `
         <option value="24">24 - Status</option>
         <option value="25">25 - Usage</option>
@@ -59,10 +76,18 @@ else if (device_name == "UM30xx") {
         <option value="99">99 - System Messages</option>`;
 }
 else if (device_name == "UL20xx") {
-    var script_filename = "generated/ul20xx_decoder.js";
+    if (device_firmware == "1.0.x") {
+        var script_filename = "generated/ul20xx_1_0_x_decoder.js";
+    }
+    else if (device_firmware == "1.1.x") {
+        var script_filename = "generated/ul20xx_1_1_x_decoder.js";
+    }
+    else { 
+        throw Error("ERROR, unrecognized firmware version: " + device_firmware);
+    }
     formatter_script_filename = "src/util/ul20xx_format.js";
     var default_payload = "DFD41D5E004B041502AE05050AFF32030306FF00";
-    var supported_devices = "Supported devices: UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x firmwares.";
+    var supported_devices = "Supported devices: UL2002, UL2014, UL2020, UL2021, UL2030 with "+device_firmware+" firmwares.";
     var fport_options = `
         <option value="24">24 - Status</option>
         <option value="25">25 - Usage</option>
@@ -111,7 +136,7 @@ var html = `
 </style>
 </head>
 <body>
-<h2>NAS ` + device_name + ` Payload Decoder</h2>
+<h2>NAS ` + device_name + ` Payload Decoder for ` + device_firmware + `</h2>
 <div style="padding-left: 10px;">
   <label>` + supported_devices + `</label><br><br>
   <label for="fport">fPort: </label>

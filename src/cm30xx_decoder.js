@@ -3,7 +3,7 @@ import {pad, bytesToHexStr} from './util/misc.js';
 
 
 // FORMATTER AND CONVERTER FUNCTIONS
-function meterStatusFormat(status) {
+function meterStatusFormat(status, err) {
     switch (status) {
         case 0:
             return "connected";
@@ -18,6 +18,7 @@ function meterStatusFormat(status) {
         case 5:
             return "bus_shorted";
         default:
+            err.errors.push("invalid_status");
             return "invalid_status";
     }
 }
@@ -28,7 +29,7 @@ export function meterMultiplierConvert(exp) {
     return Math.pow(10, exp - 6);
 }
 
-function meterMediumFormat(medium) {
+function meterMediumFormat(medium, err) {
     switch (medium) {
         case 0:
             return "water";
@@ -37,11 +38,12 @@ function meterMediumFormat(medium) {
         case 2:
             return "gas";
         default:
+            err.errors.push("invalid_medium");
             return "invalid_medium";
     }
 }
 
-function meterUnitFormat(unit) {
+function meterUnitFormat(unit, err) {
     switch (unit) {
         case 0:
             return "m3";
@@ -50,6 +52,7 @@ function meterUnitFormat(unit) {
         case 2:
             return "ft3";
         default:
+            err.errors.push("invalid_unit");
             return "invalid_unit";
     }
 }
@@ -129,7 +132,7 @@ function activeAlertsFormat(alerts_obj) {
     return res;
 }
 
-function lorawanProfileFormat(profile) {
+function lorawanProfileFormat(profile, err) {
     switch (profile) {
         case 0x00:
             return "lorawan_disabled";
@@ -148,11 +151,12 @@ function lorawanProfileFormat(profile) {
         case 0x18:
             return "lorawan_15_min_dynamic";
         default:
+            err.errors.push("invalid_lorawan_profile");
             return "invalid_lorawan_profile";
     }
 }
 
-function wmbusProfileFormat(profile) {
+function wmbusProfileFormat(profile, err) {
     switch (profile) {
         case 0x00:
             return "wmbus_disabled";
@@ -163,6 +167,7 @@ function wmbusProfileFormat(profile) {
         case 0x03:
             return "wmbus_fixnet";
         default:
+            err.errors.push("invalid_wmbus_profile");
             return "invalid_wmbus_profile";
     }
 }
@@ -202,7 +207,7 @@ function packetErrorReasonFormatter(reason) {
     }
 }
 
-function hardwareConfigFormat(hw) {
+function hardwareConfigFormat(hw, err) {
     switch (hw) {
         case 0x00:
             return "Modularis";
@@ -219,11 +224,12 @@ function hardwareConfigFormat(hw) {
         case 0x20:
             return "BK_G";
         default:
+            err.errors.push("invalid_hardware_config");
             return "invalid_hardware_config";
     }
 }
 
-function shutdownEeasonFormat(reason) {
+function shutdownReasonFormat(reason, err) {
     switch (reason) {
         case 0x10:
             return "calibration_timeout";
@@ -236,11 +242,12 @@ function shutdownEeasonFormat(reason) {
         case 0x34:
             return "switch_to_wmbus";
         default:
+            err.errors.push("invalid_shutdown_reason");
             return "invalid_shutdown_reason";
     }
 }
 
-function bootPacketReason(reason) {
+function bootPacketReason(reason, err) {
     switch (reason) {
         case 0:
             return "unknown_reset";
@@ -253,6 +260,7 @@ function bootPacketReason(reason) {
         case 3:
             return "lorawan_rejoin";
         default:
+            err.errors.push("invalid_packet_reason");
             return "invalid_packet_reason";
     }
 }
@@ -268,14 +276,14 @@ function wakeupReasonFormat(reasons_obj) {
 }
 
 // USAGE PAYLOAD
-function usageParser(buffer, result) {
+function usageParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
     if (packet_type == 0x04)
         result._packet_type = "usage_packet";
     else {
-        result._error = ["invalid_packet_type " + packet_type];
+        err.errors.push("invalid_packet_type " + packet_type);
         return;
     }
 
@@ -291,16 +299,16 @@ function usageParser(buffer, result) {
     active_alerts.any_alert_active_now = bits1.getBits(1);
     result.active_alerts = activeAlertsFormat(active_alerts);
 
-    result.meter_status = meterStatusFormat(dataView.getUint8());
+    result.meter_status = meterStatusFormat(dataView.getUint8(), err);
 
     var bits2 = dataView.getUint8Bits();
     result._meter_multiplier = meterMultiplierConvert(bits2.getBits(3));
     if (result._meter_multiplier < 0) {
-        result._error = ["invalid_multiplier"];
+        err.errors.push("invalid_multiplier");
         return;
     }
-    result._meter_medium = meterMediumFormat(bits2.getBits(2));
-    result._meter_unit = meterUnitFormat(bits2.getBits(2));
+    result._meter_medium = meterMediumFormat(bits2.getBits(2), err);
+    result._meter_unit = meterUnitFormat(bits2.getBits(2), err);
     var privacy_mode_active = bits2.getBits(1);
 
     var actuality = dataView.getUint8();
@@ -347,7 +355,7 @@ function usageParser(buffer, result) {
 }
 
 // CONFIGURATION PAYLOADS
-function generalConfigurationParser(dataView, result) {
+function generalConfigurationParser(dataView, result, err) {
     result._packet_type = "general_configuration_packet";
 
     var configured_parameters = {};
@@ -368,17 +376,17 @@ function generalConfigurationParser(dataView, result) {
     configured_parameters.alert_temperature_sent = bits2.getBits(1);
 
     if (configured_parameters.radio_lorawan_profile_sent)
-        result.radio_lorawan_profile = lorawanProfileFormat(dataView.getUint8());
+        result.radio_lorawan_profile = lorawanProfileFormat(dataView.getUint8(), err);
     if (configured_parameters.radio_wmbus_profile_sent)
-        result.radio_wmbus_profile = wmbusProfileFormat(dataView.getUint8());
+        result.radio_wmbus_profile = wmbusProfileFormat(dataView.getUint8(), err);
     if (configured_parameters.meter_serial_sent)
         result.meter_serial = serialFormat(dataView.getUint32());
     result.meter_unit = "";
     if (configured_parameters.meter_multiplier_sent) {
         var bits2 = dataView.getUint8Bits();
         result.meter_multiplier = meterMultiplierConvert(bits2.getBits(3));
-        result.meter_medium = meterMediumFormat(bits2.getBits(2));
-        result.meter_unit = meterUnitFormat(bits2.getBits(2));
+        result.meter_medium = meterMediumFormat(bits2.getBits(2), err);
+        result.meter_unit = meterUnitFormat(bits2.getBits(2), err);
         result.privacy_mode_active = bits2.getBits(1);
     }
     var unit_post = result.meter_unit != "" ? "__" + result.meter_unit : "";
@@ -412,7 +420,7 @@ function generalConfigurationParser(dataView, result) {
     }
 }
 
-function locationConfigurationParser(dataView, result) {
+function locationConfigurationParser(dataView, result, err) {
     result._packet_type = "location_configuration_packet";
 
     var configured_parameters = {};
@@ -444,21 +452,21 @@ function locationConfigurationParser(dataView, result) {
     }
 }
 
-function configurationParser(buffer, result) {
+function configurationParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
     if (packet_type == 0x20)
-        generalConfigurationParser(dataView, result);
+        generalConfigurationParser(dataView, result, err);
     else if (packet_type == 0x21)
-        locationConfigurationParser(dataView, result);
+        locationConfigurationParser(dataView, result, err);
     else {
-        result._error = ["invalid_configuration_type " + packet_type];
+        err.errors.push("invalid_configuration_type " + packet_type);
     }
 }
 
 // CONFIGURATION REQUESTS AND COMMANDS
-function configurationRequestsParser(buffer, result) {
+function configurationRequestsParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
@@ -467,11 +475,11 @@ function configurationRequestsParser(buffer, result) {
     else if (packet_type == 0x21)
         result._packet_type = "location_configuration_request";
     else {
-        result._error = ["invalid_request_type " + packet_type];
+        err.errors.push("invalid_request_type " + packet_type);
     }
 }
 
-function commandParser(buffer, result) {
+function commandParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
@@ -492,12 +500,12 @@ function commandParser(buffer, result) {
     else if (packet_type == 0xFF)
         result._packet_type = "enter_dfu_command";
     else {
-        result._error = ["invalid_command_type " + packet_type];
+        err.errors.push("invalid_command_type " + packet_type);
     }
 }
 
 // SYSTEM MESSAGES
-function sysMessagesParser(buffer, result) {
+function sysMessagesParser(buffer, result, err) {
     var dataView = new BinaryExtract(buffer);
 
     var packet_type = dataView.getUint8();
@@ -505,6 +513,7 @@ function sysMessagesParser(buffer, result) {
         result._packet_type = "faulty_downlink_packet";
         result.packet_fport = dataView.getUint8();
         result.packet_error_reason = packetErrorReasonFormatter(dataView.getUint8());
+        err.warnings.push("faulty_downlink_packet: " + result.packet_error_reason);
     }
     else if (packet_type == 0x00) {
         result._packet_type = "boot_packet";
@@ -526,58 +535,59 @@ function sysMessagesParser(buffer, result) {
 
         var bits2 = dataView.getUint8Bits();
         bits2.getBits(4);
-        result.packet_reason = bootPacketReason(bits2.getBits(3));
+        result.packet_reason = bootPacketReason(bits2.getBits(3), err);
         result.configuration_restored = bits2.getBits(1);
 
-        result.hardware_configuration = hardwareConfigFormat(dataView.getUint8());
+        result.hardware_configuration = hardwareConfigFormat(dataView.getUint8(), err);
         dataView.getUint8();
         dataView.getUint8();
         result.device_uptime_accumulated__days = parseFloat((dataView.getUint24() / 24.0).toFixed(2));
     }
     else if (packet_type == 0x01) {
-        var shutdown_reason = shutdownEeasonFormat(dataView.getUint8());
+        var shutdown_reason = shutdownReasonFormat(dataView.getUint8(), err);
         var buffer_usage = buffer.slice(2);
-        usageParser(buffer_usage, result);
+        usageParser(buffer_usage, result, err);
         result._packet_type = "shutdown_packet";
         result._shutdown_reason = shutdown_reason;
     }
     else {
-        result._error = ["invalid_command_type " + packet_type];
+        err.errors.push("invalid_sys_msg_type " + packet_type);
     }
 }
 
-function checkFport(fport, expectedFport, result) {
+function checkFport(fport, expectedFport, err) {
     if (fport != expectedFport)
-        result._error = ["wrong fport or header"];
+        err.errors.push("wrong fport or header");
 }
 
-function decodeByPacketHeader(fport, bytes, result) {
-    if (bytes.length == 0)
-        result._error = ["empty_payload"];
+function decodeByPacketHeader(fport, bytes, result, err) {
+    if (bytes.length == 0) {
+        err.errors.push("empty_payload");
+    }
     else if (bytes[0] == 0x04) {
-        usageParser(bytes, result);
-        checkFport(fport, 25, result);
+        usageParser(bytes, result, err);
+        checkFport(fport, 25, err);
     }
     else if (bytes[0] == 0x20 || bytes[0] == 0x21) {
         if (bytes.length == 1) {
-            configurationRequestsParser(bytes, result);
-            checkFport(fport, 49, result);
+            configurationRequestsParser(bytes, result, err);
+            checkFport(fport, 49, err);
         }
         else {
-            configurationParser(bytes, result);
-            checkFport(fport, 50, result);
+            configurationParser(bytes, result, err);
+            checkFport(fport, 50, err);
         }
     }
     else if (bytes[0] == 0x03 || bytes[0] == 0xFF) {
-        commandParser(bytes, result);
-        checkFport(fport, 60, result);
+        commandParser(bytes, result, err);
+        checkFport(fport, 60, err);
     }
     else if (bytes[0] == 0x00 || bytes[0] == 0x01 || bytes[0] == 0x13) {
-        sysMessagesParser(bytes, result);
-        checkFport(fport, 99, result);
+        sysMessagesParser(bytes, result, err);
+        checkFport(fport, 99, err);
     }
     else {
-        result._error = ["invalid_header"];
+        err.errors.push("invalid_header");
     }
     return result;
 }
@@ -585,19 +595,12 @@ function decodeByPacketHeader(fport, bytes, result) {
 
 export function decodeRaw(fport, bytes) {
     var res = {};
+    var err = { errors: [], warnings: [] };
     try {
-        decodeByPacketHeader(fport, bytes, res);
-    } catch (err) {
-        res._error = [err.message];
+        decodeByPacketHeader(fport, bytes, res, err);
+    } catch(err) {
+        err.errors.push(err.message);
     }
-    res._raw_payload = bytesToHexStr(bytes);
-    // brings values containing 'invalid_' out to _errors list.
-    for (var key in res) {
-        if (typeof res[key] == "string" && res[key].indexOf("invalid_") > -1) {
-            if (!('_error' in res))
-                res._error = [];
-            res._error.push(res[key]);
-        }
-    }
+    res._raw_payload = bytesToHexStr(bytes);  // TODO remove?
     return res;
 }
