@@ -1,6 +1,6 @@
 # NAS Payload Codec
 ## Supported devices
-- UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x firmwares. Note: does not support _legacy_status_packet_.
+- UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x and 1.1.x firmwares. Note: does not support _legacy_status_packet_.
 - CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares. Note: 1.3.x and 2.3.x protocol is identical, major version number signifies used radio chipset.
 - UM3070, UM3081, UM3090, UM3100, UM3110 with 4.0.x firmware.
 
@@ -28,20 +28,19 @@ Download .html file in [generated](https://github.com/nasys/nas-codecs/tree/main
   "data": {
     "packet_type": "status_packet",
     "device_unix_epoch": "2020-01-14T14:49:03.000Z",
-    "status_field": {
+    "status": {
       "dali_error_external": "false",
-      "dali_error_connection": "false",
-      "ldr_state": "false",
-      "dig_state": "false",
+      "dali_connection_error": "false",
+      "ldr_on": "false",
+      "dig_on": "false",
       "hardware_error": "false",
-      "firmware_error": "false",
-      "internal_relay_state": "false"
+      "internal_relay_closed": "false"
+      "open_drain_output_on": "false",
     },
     "downlink_rssi": "-75 dBm",
     "downlink_snr": "4 dB",
     "mcu_temperature": "21 °C",
     "analog_interfaces": {
-      "open_drain_out_state": "false",
       "voltage_alert_in_24h": "false",
       "lamp_error_alert_in_24h": "false",
       "power_alert_in_24h": "false",
@@ -53,7 +52,7 @@ Download .html file in [generated](https://github.com/nasys/nas-codecs/tree/main
         "profile_id": "5",
         "profile_version": "5",
         "profile_override": "none",
-        "dali_address_short": "single 5",
+        "dali_address_short": "dali_single_5",
         "days_active": "holiday,mon,tue,wed,thu,fri,sat,sun",
         "dimming_level": "50 %"
       },
@@ -61,7 +60,7 @@ Download .html file in [generated](https://github.com/nasys/nas-codecs/tree/main
         "profile_id": "3",
         "profile_version": "3",
         "profile_override": "none",
-        "dali_address_short": "single 3",
+        "dali_address_short": "dali_single_3",
         "days_active": "holiday,mon,tue,wed,thu,fri,sat,sun",
         "dimming_level": "0 %"
       }
@@ -93,14 +92,10 @@ Node must be installed. To install dependencies:
 `npm test`
 
 ## Rebuild
-`npm run build_cm30xx_2_3_x`
-`npm run build_cm30xx_2_3_x_html`
-
-`npm run build_um30xx_4_0_x`
-`npm run build_um30xx_4_0_x_html`
-
-`npm run build_ul20xx_1_0_x`
-`npm run build_ul20xx_1_0_x_html`
+`npm run build_cm30xx_2_3_x && npm run build_cm30xx_2_3_x_html`
+`npm run build_um30xx_4_0_x && npm run build_um30xx_4_0_x_html`
+`npm run build_ul20xx_1_0_x && npm run build_ul20xx_1_0_x_html`
+`npm run build_ul20xx_1_1_x && npm run build_ul20xx_1_1_x_html`
 
 
 ## Coverage overlay in VS Code

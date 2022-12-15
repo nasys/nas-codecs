@@ -16,3 +16,4 @@ rules:
   no-param-reassign: 0
   prefer-destructuring: 1
   no-restricted-syntax: 1
+  camelcase: 1

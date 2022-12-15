@@ -7,6 +7,10 @@ export function hexToBytes(hex) {
   return bytes;
 }
 
+const sortKeys = (obj) => Object.assign(...Object.entries(obj).sort().map(([key, value]) => ({
+  [key]: value,
+})));
+
 export function testPacket({
   decoderFn, fport, data, expected,
 }) {
@@ -14,14 +18,12 @@ export function testPacket({
   var res = decoderFn(fport, buffer);
 
   // sort to ignore order for tests
-  var sortedRes = Object.keys(res).sort().reduce((result, key) => {
-    result[key] = res[key];
-    return result;
-  }, {});
-  var sortedExp = Object.keys(expected).sort().reduce((result, key) => {
-    result[key] = res[key];
-    return result;
-  }, {});
+  var sortedRes = sortKeys(res);
+  var sortedExp = sortKeys(expected);
 
-  expect(JSON.stringify(sortedRes)).toEqual(JSON.stringify(sortedExp));
+  if (JSON.stringify(sortedRes) !== JSON.stringify(sortedExp)) {
+    console.log(JSON.stringify(res));
+  }
+  expect(sortedRes).toEqual(sortedExp);
+//  expect(JSON.stringify(sortedRes)).toEqual(JSON.stringify(sortedExp));
 }

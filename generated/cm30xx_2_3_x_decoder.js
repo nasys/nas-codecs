@@ -177,14 +177,6 @@ function intToHexStr(int, len) {
   return pad(int.toString(16).toUpperCase(), len);
 }
 
-function bytesToHexStr(byteArr) {
-  var res = '';
-  for (var i = 0; i < byteArr.length; i += 1) {
-    res += ('00' + byteArr[i].toString(16)).slice(-2).toUpperCase();
-  }
-  return res;
-}
-
 function objToList(obj) {
   var res = [];
   // eslint-disable-next-line no-restricted-syntax
@@ -479,6 +471,7 @@ function usageParser(buffer, result, err) {
   activeAlerts.temperature_pending = bits1.getBits(1);
   activeAlerts.low_battery = bits1.getBits(1);
   activeAlerts.no_usage = bits1.getBits(1);
+  // TODO add to warnings
   // var anyAlertActiveNow = bits1.getBits(1);
   result.active_alerts = objToList(activeAlerts);
 
@@ -725,6 +718,7 @@ function sysMessagesParser(buffer, result, err) {
     reason.reason_6 = bits1.getBits(1);
     reason.nfc_wakeup = bits1.getBits(1);
     result.wakeup_reason_mcu = objToList(reason);
+    // TODO add to warnings
 
     var bits2 = dataView.getUint8Bits();
     bits2.getBits(4);
@@ -786,8 +780,15 @@ function decodeRaw(fport, bytes) {
   } catch (error) {
     err.errors.push(error.message);
   }
-  res._raw_payload = bytesToHexStr(bytes); // TODO remove?
-  return res;
+  //  res._raw_payload = bytesToHexStr(bytes);
+  var out = { data: res };
+  if (err.errors.length) {
+    out.errors = err.errors;
+  }
+  if (err.warnings.length) {
+    out.warnings = err.warnings;
+  }
+  return out;
 }
 
 // Functions for post-proccessing the cm30xx and um30xx decoder result

@@ -18,19 +18,19 @@
   <label for="fport">fPort: </label>
   <select id="fport">
   
-        <option value="24">24 - Status</option>
-        <option value="25">25 - Usage</option>
-        <option value="49">49 - Config requests</option>
-        <option value="50">50 - Configuartions</option>
-        <option value="51">51 - DFU COMMAND</option>
-        <option value="60">60 - Commands</option>
-        <option value="61">61 - Event Notification</option>
-        <option value="99">99 - System Messages</option>
+    <option value="24">24 - Status</option>
+    <option value="25">25 - Usage</option>
+    <option value="49">49 - Config requests</option>
+    <option value="50">50 - Configuartions</option>
+    <option value="51">51 - DFU COMMAND</option>
+    <option value="60">60 - Commands</option>
+    <option value="61">61 - Event Notification</option>
+    <option value="99">99 - System Messages</option>
   </select><br><br>
   <label for="checkbox">Encoding Base64 / Hex: </label>
   <input type="checkbox" id="payload_is_base64"><br><br>
   <label for="payload_raw">Payload: </label>
-  <input type="text" id="payload_raw" size="50"><br><br>
+  <input type="text" id="payload_raw" size="100"><br><br>
   <label for="formatting">Formatting: </label>
   <select id="formatting">
   
@@ -40,7 +40,7 @@
   </select><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2022-12-01T13:39:33.039Z</div>
+<div class="footer">Generated at 2022-12-15T16:40:45.303Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -236,73 +236,77 @@ function bitFalseTrue(bit) {
   return { value: !!bit };
 }
 
-function profileOverrideReason(reason) {
+function profileReason(reason, err) {
+  if (reason < 240) {
+    return reason;
+  }
+
   switch (reason) {
-    case 246:
-      return 'driver_not_found';
     case 247:
       return 'calendar_active';
     case 248:
       return 'init_active';
     case 249:
       return 'profile_not_active';
+    case 254:
+      return 'value_differ';
+    case 246:
+      return 'driver_not_found';
     case 250:
       return 'ldr_active';
-    case 251:
-      return 'thr_active';
     case 252:
       return 'dig_active';
     case 253:
       return 'manual_active';
-    case 254:
-      return 'value_differ';
     case 255:
       return 'unknown';
     default:
-      return 'none';
+      err.errors.push('invalid_reason');
+      return 'invalid_reason';
   }
 }
 
-function daliAddressParse(addr, ffStr, err) {
+function addressParse(addr, ffStr, err) {
+  if (addr === 0x01) {
+    return { value: 'analog_0_10v', raw: addr };
+  }
   if (addr === 0xFE) {
-    return { value: 'broadcast', raw: addr };
+    return { value: 'dali_broadcast', raw: addr };
   }
   if (addr === 0xFF) {
     if (ffStr) {
       return { value: ffStr, raw: addr };
     }
-    err.warnings.push('invalid_dali_address');
+    err.warnings.push('invalid_address');
     return { value: 'invalid', raw: addr };
   }
   // eslint-disable-next-line no-bitwise
   if (addr & 0x01) {
-    err.warnings.push('invalid_dali_address');
+    err.warnings.push('invalid_address');
     return { value: 'invalid', raw: addr };
   }
   // eslint-disable-next-line no-bitwise
   if (addr & 0x80) {
     // eslint-disable-next-line no-bitwise
-    return { value: 'group ' + ((addr >> 1) & 0xF).toString(), raw: addr };
+    return { value: 'dali_group_' + ((addr >> 1) & 0xF).toString(), raw: addr };
   }
 
   // eslint-disable-next-line no-bitwise
-  return { value: 'single ' + ((addr >> 1) & 0x3F).toString(), raw: addr };
+  return { value: 'dali_single_' + ((addr >> 1) & 0x3F).toString(), raw: addr };
 }
 
 function profileParserPartial(dataView, profile, err) {
   var id = dataView.getUint8();
-  var ver = dataView.getUint8();
-  var addr = dataView.getUint8();
-  var activeDays = dataView.getUint8();
-
   profile.profile_id = { value: id === 255 ? 'no_profile' : id, raw: id };
 
-  profile.profile_version = { value: ver > 240 ? 'n/a' : ver, raw: ver };
+  var length = 0;
+  var ver = dataView.getUint8();
+  profile.profile_version = { value: profileReason(ver, err), raw: ver };
 
-  profile.profile_override = { value: profileOverrideReason(ver), raw: ver };
+  var addr = dataView.getUint8();
+  profile.address = addressParse(addr, null, err);
 
-  profile.dali_address_short = daliAddressParse(addr, null, err);
-
+  var activeDays = dataView.getUint8();
   var bits = new BitExtract(activeDays);
   var days = [];
   if (bits.getBits(1)) {
@@ -330,16 +334,16 @@ function profileParserPartial(dataView, profile, err) {
     days.push('sun');
   }
   profile.days_active = { value: days, raw: activeDays };
+
+  return length;
 }
 
-function decodeUnixEpoch(epoch) {
+function decodeUnixEpoch(epoch, err) {
   var date = new Date(epoch * 1000);
   var epochFormatted = date.toISOString();
-  if (epoch < 946684800) { // before 2000-01-01
+  if (epoch < 1420070400) {
     epochFormatted = 'invalid_timestamp';
-  } else if (epoch < 1420070400) { // between 2000-01-01 and 2015-01-01
-    // ISO Period format. E.g. "P0003-06-04T12:30:05"
-    epochFormatted = 'P' + pad(date.getUTCFullYear() - 2000, 4) + '-' + pad(date.getUTCMonth(), 2) + '-' + pad(date.getUTCDate() - 1, 2) + 'T' + pad(date.getUTCHours(), 2) + ':' + pad(date.getUTCMinutes(), 2) + ':' + pad(date.getUTCSeconds(), 2);
+    err.warnings.push('invalid_timestamp');
   }
   return { value: epochFormatted, raw: epoch };
 }
@@ -348,53 +352,60 @@ function decodeLdrConfig(dataView, result) {
   result.packet_type = { value: 'ldr_config_packet' };
 
   var high = dataView.getUint8();
-  result.switch_threshold_high = { value: high === 0xFF ? 'disabled' : high, raw: high };
+  result.ldr_off_threshold_high = { value: high === 0xFF ? 'disabled' : high, raw: high };
 
   var low = dataView.getUint8();
-  result.switch_threshold_low = { value: low === 0xFF ? 'disabled' : low, raw: low };
+  result.ldr_on_threshold_low = { value: low === 0xFF ? 'disabled' : low, raw: low };
 
   var behaviorBits = dataView.getUint8Bits();
   behaviorBits.getBits(2);
-  result.switch_trigger_alert_enabled = bitFalseTrue(behaviorBits.getBits(1));
+  result.trigger_alert_enabled = bitFalseTrue(behaviorBits.getBits(1));
+}
+
+function decodeDimmingLevel(level, ffName) {
+  if (level === 0xFF) {
+    return { value: ffName, raw: level, unit: '' };
+  }
+  return { value: level, raw: level, unit: '%' };
 }
 
 function decodeDigConfig(dataView, result, err) {
   result.packet_type = { value: 'dig_config_packet' };
 
   var time = dataView.getUint16();
-  result.switch_time = { value: time === 0xFFFF ? 'disabled' : time, raw: time, unit: 's' };
+  result.light_on_duration = { value: time === 0xFFFF ? 'dig_disabled' : time, raw: time, unit: 's' };
 
   var behaviorBits = dataView.getUint8Bits();
   behaviorBits.getBits(1);
   var edge = behaviorBits.getBits(1);
-  result.switch_transition = { value: edge ? 'enabled' : 'disabled', raw: edge };
-  result.switch_trigger_alert_enabled = bitFalseTrue(behaviorBits.getBits(1));
+  var trigger = behaviorBits.getBits(1);
+  result.signal_edge_rising = bitFalseTrue(edge);
+  result.trigger_alert_enabled = bitFalseTrue(trigger);
 
   var addr = dataView.getUint8();
-  result.dali_address_short = daliAddressParse(addr, null, err);
+  result.address = addressParse(addr, null, err);
 
   var level = dataView.getUint8();
-  result.dimming_level = { value: level, unit: '%' };
+  result.dimming_level = decodeDimmingLevel(level, 'disabled');
 }
 
-function decodeStepTime(inByte, result) {
+function decodeStepTime(inByte) {
   var minTotal = inByte * 10;
   var hour = Math.trunc(minTotal / 60);
   var mn = minTotal - hour * 60;
-  result.step_time = { value: pad(hour, 2) + ':' + pad(mn, 2), raw: minTotal };
+  return { value: pad(hour, 2) + ':' + pad(mn, 2), raw: minTotal };
 }
 
 function decodeOdRelaySwStep(dataView) {
   var res = {};
-
-  decodeStepTime(dataView.getUint8(), res);
+  res.step_time = decodeStepTime(dataView.getUint8());
 
   var state = dataView.getUint8() !== 0;
-  res.open_drain_out_state = bitFalseTrue(state);
+  res.open_drain_output_on = bitFalseTrue(state);
   return res;
 }
 
-function decodeCalendarConfig(dataView, result) {
+function decodeCalendarConfigV10(dataView, result) {
   result.packet_type = { value: 'calendar_config_packet' };
 
   var sunrise = dataView.getInt8();
@@ -418,12 +429,11 @@ function decodeStatusConfig(dataView, result) {
 }
 
 function decodeDimmingStep(dataView) {
-  var time = dataView.getUint8();
-  var lvl = dataView.getUint8();
   var res = {};
-  decodeStepTime(time, res);
+  res.step_time = decodeStepTime(dataView.getUint8());
 
-  res.dimming_level = { value: lvl, unit: '%' };
+  var dim = dataView.getUint8();
+  res.dimming_level = decodeDimmingLevel(dim, 'inactive');
   return res;
 }
 
@@ -431,16 +441,17 @@ function decodeProfileConfig(dataView, result, err) {
   result.packet_type = { value: 'profile_config_packet' };
   profileParserPartial(dataView, result, err);
   result.dimming_steps = [];
+
   while (dataView.availableLen()) {
     result.dimming_steps.push(decodeDimmingStep(dataView));
   }
 }
 
-function decodeTimeConfig(dataView, result) {
+function decodeTimeConfig(dataView, result, err) {
   result.packet_type = { value: 'time_config_packet' };
 
   var epoch = dataView.getUint32();
-  result.device_unix_epoch = decodeUnixEpoch(epoch);
+  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
 }
 
 function decodeLegacyDefaultsConfig(dataView, result) {
@@ -461,17 +472,24 @@ function decodeUsageConfig(dataView, result) {
   var interval = dataView.getUint32();
   var volt = dataView.getUint8();
   result.usage_interval = { value: interval, unit: 's' };
-  result.mains_voltage = { value: volt, unit: 'V' };
+  if (volt !== 0xFF) {
+    result.mains_voltage = { value: volt, unit: 'V' };
+  }
+}
+
+function decodeMonthDay(dataView) {
+  var month = dataView.getUint8();
+  var day = dataView.getUint8();
+  // eslint-disable-next-line no-bitwise
+  return { value: pad(month, 2) + '/' + pad(day, 2), raw: (month << 8) | day };
 }
 
 function decodeHolidayConfig(dataView, result) {
   result.packet_type = { value: 'holiday_config_packet' };
   result.holidays = [];
+
   while (dataView.availableLen()) {
-    var month = dataView.getUint8();
-    var day = dataView.getUint8();
-    // eslint-disable-next-line no-bitwise
-    result.holidays.push({ value: pad(month, 2) + '-' + pad(day, 2), raw: (month << 8) | day });
+    result.holidays.push(decodeMonthDay(dataView));
   }
 }
 
@@ -482,15 +500,24 @@ function decodeBootDelayConfig(dataView, result) {
   result.boot_delay_range = { value: range, unit: 's' };
 }
 
-function decodeFade(fade) {
+function decodeFade(fade, err) {
   var lookup = [0.5, 0.71, 1.0, 1.41, 2.0, 2.83, 4.0, 5.66, 8.0, 11.31,
     16.0, 22.63, 32.0, 45.25, 64.0, 90.51];
-  var val = fade > 16 ? 'invalid_fade' : lookup[fade];
-  if (fade === 255) val = 'ignore';
-  return { value: val, unit: 's', raw: fade };
+  var unitStr = '';
+  var val = '';
+  if (fade === 255) {
+    val = 'ignore';
+  } else if (fade >= 16) {
+    val = 'invalid_fade';
+    err.errors.push('invalid_fade');
+  } else {
+    unitStr = 's';
+    val = lookup[fade];
+  }
+  return { value: val, unit: unitStr, raw: fade };
 }
 
-function decodeDefaultsConfig(dataView, result) {
+function decodeDefaultsConfig(dataView, result, err) {
   result.packet_type = { value: 'defaults_config_packet' };
   var bits = dataView.getUint8Bits();
   var dim = bits.getBits(1);
@@ -508,7 +535,7 @@ function decodeDefaultsConfig(dataView, result) {
   }
   if (fade) {
     var f = dataView.getUint8();
-    result.fade_duration = decodeFade(f);
+    result.fade_duration = decodeFade(f, err);
   }
   if (sunsetMode) {
     var s = dataView.getUint8Bits().getBits(1);
@@ -520,7 +547,7 @@ function decodeDefaultsConfig(dataView, result) {
   }
 }
 
-function decodeLocationConfig(dataView, result) {
+function decodeLocationConfigV10(dataView, result) {
   result.packet_type = { value: 'location_config_packet' };
 
   var bits1 = dataView.getUint8Bits();
@@ -528,8 +555,8 @@ function decodeLocationConfig(dataView, result) {
   var addressSent = bits1.getBits(1);
 
   if (positionSent) {
-    result.position_latitude = { value: dataView.getInt32() / 10000000.0, unit: '°' };
-    result.position_longitude = { value: dataView.getInt32() / 10000000.0, unit: '°' };
+    result.latitude = { value: dataView.getInt32() / 10000000.0, unit: '°' };
+    result.longitude = { value: dataView.getInt32() / 10000000.0, unit: '°' };
   }
   if (addressSent) {
     var addressLen = dataView.getUint8();
@@ -573,19 +600,22 @@ function decodeMeteringAlertConfig(dataView, result, err) {
 function decodeMulticastConfig(dataView, result, err) {
   result.packet_type = { value: 'multicast_config_packet' };
   var dev = dataView.getUint8();
-  if (dev === 0 || dev > 4) {
+
+  var invalidMc = dev > 3;
+  invalidMc = dev === 0 || dev > 4;
+  if (invalidMc) {
     err.errors.push('invalid_multicast_device');
     return;
   }
   result.multicast_device = { value: dev };
   var devaddr = dataView.getRaw(4).reverse();
-  result.device_address = { value: bytesToHexStr(devaddr) };
+  result.devaddr = { value: bytesToHexStr(devaddr) };
 
   var nwkskey = dataView.getRaw(16);
-  result.network_security_key = { value: bytesToHexStr(nwkskey) };
+  result.nwkskey = { value: bytesToHexStr(nwkskey) };
 
   var appskey = dataView.getRaw(16);
-  result.application_security_key = { value: bytesToHexStr(appskey) };
+  result.appskey = { value: bytesToHexStr(appskey) };
 }
 
 function decodeClearConfig(dataView, result, err) {
@@ -593,40 +623,37 @@ function decodeClearConfig(dataView, result, err) {
   var typ = dataView.getUint8();
   switch (typ) {
     case 0x01:
-      result.reset_target = 'ldr_config';
+      result.reset_target = { value: 'ldr_config' };
       break;
     case 0x03:
-      result.reset_target = 'dig_config';
+      result.reset_target = { value: 'dig_config' };
       break;
     case 0x04:
-      result.reset_target = 'profile_config';
-      var addr = dataView.getUint8();
-      result.dali_address_short = daliAddressParse(addr, 'all_profiles', err);
+      result.reset_target = { value: 'profile_config' };
+      result.address = addressParse(dataView.getUint8(), 'all_profiles', err);
       if (dataView.availableLen()) {
         var id = dataView.getUint8();
-        result.profile_id = { value: id === 0xFF ? 'all_used_profiles' : id, raw: id };
+        result.profile_id = { value: id };
       }
       break;
     case 0x06:
-      result.reset_target = 'holiday_config';
+      result.reset_target = { value: 'holiday_config' };
       break;
     case 0x52:
-      result.reset_target = 'multicast_config';
+      result.reset_target = { value: 'multicast_config' };
       var device = dataView.getUint8();
-      result.multicast_device = { value: device === 0xff ? 'all_multicast_devices' : device, raw: device };
+      result.multicast_device = { value: device === 0xff ? 'all_multicast_devices' : 'multicast_device_' + device, raw: device };
       break;
     case 0xFF:
-      result.reset_target = 'factory_reset';
-      var ser = dataView.getRaw(4);
-      result.device_serial = { value: bytesToHexStr(ser) };
+      result.reset_target = { value: 'factory_reset' };
+      result.device_serial = { value: intToHexStr(dataView.getUint32(), 8) };
       break;
     default:
       err.errors.push('invalid_clear_config_target');
   }
 }
 
-function decodeFport50(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
+function decodeFport50(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
     case 0x01:
@@ -636,41 +663,23 @@ function decodeFport50(buffer, result, err) {
       decodeDigConfig(dataView, result, err);
       return;
     case 0x05:
-      result.packet_type = { value: 'open_drain_out_config_packet' };
+      result.packet_type = { value: 'open_drain_output_config_packet' };
       result.switching_steps = [];
       while (dataView.availableLen()) {
         result.switching_steps.push(decodeOdRelaySwStep(dataView));
       }
       return;
-    case 0x06:
-      decodeCalendarConfig(dataView, result);
-      return;
     case 0x07:
       decodeStatusConfig(dataView, result);
       return;
-    case 0x08:
-      decodeProfileConfig(dataView, result, err);
-      return;
     case 0x09:
-      decodeTimeConfig(dataView, result);
-      return;
-    case 0x0A:
-      decodeLegacyDefaultsConfig(dataView, result);
+      decodeTimeConfig(dataView, result, err);
       return;
     case 0x0B:
       decodeUsageConfig(dataView, result);
       return;
-    case 0x0C:
-      decodeHolidayConfig(dataView, result);
-      return;
     case 0x0D:
       decodeBootDelayConfig(dataView, result);
-      return;
-    case 0x0E:
-      decodeDefaultsConfig(dataView, result);
-      return;
-    case 0x13:
-      decodeLocationConfig(dataView, result);
       return;
     case 0x15:
       decodeLedConfig(dataView, result);
@@ -684,6 +693,26 @@ function decodeFport50(buffer, result, err) {
     case 0xFF:
       decodeClearConfig(dataView, result, err);
       return;
+
+    case 0x06:
+      decodeCalendarConfigV10(dataView, result);
+      return;
+    case 0x08:
+      decodeProfileConfig(dataView, result, err);
+      return;
+    case 0x0A:
+      decodeLegacyDefaultsConfig(dataView, result);
+      return;
+    case 0x0C:
+      decodeHolidayConfig(dataView, result);
+      return;
+    case 0x0E:
+      decodeDefaultsConfig(dataView, result, err);
+      return;
+    case 0x13:
+      decodeLocationConfigV10(dataView, result);
+      return;
+
     default:
       err.errors.push('invalid_header');
   }
@@ -692,7 +721,7 @@ function decodeFport50(buffer, result, err) {
 function decodeDaliStatus(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.dali_address_short = daliAddressParse(addr, null, err);
+  result.address = addressParse(addr, null, err);
 
   var stat = dataView.getUint8Bits();
   var controlGearFailure = stat.getBits(1);
@@ -712,7 +741,7 @@ function decodeDaliStatus(dataView, err) {
   if (lampFailure) alerts.push('lamp failure');
   if (limitError) alerts.push('limit error');
   if (alerts.length) {
-    err.errors.push('Dali address: ' + result.dali_address_short.value + ' errors: ' + alerts.join(', '));
+    err.warnings.push(result.address.value + ' errors: ' + alerts.join(', '));
   }
   return result;
 }
@@ -722,9 +751,9 @@ function decodeDaliStatusReq(dataView, result, err) {
   if (dataView.availableLen() === 1) {
     var addr = dataView.getUint8();
     if (addr === 0xFE) {
-      result.dali_address_short = { value: 'all_drivers', raw: addr };
+      result.address = { value: 'all_drivers', raw: addr };
     } else {
-      result.dali_address_short = daliAddressParse(addr, null, err);
+      result.address = addressParse(addr, null, err);
     }
   } else {
     result.dali_statuses = [];
@@ -737,18 +766,18 @@ function decodeDaliStatusReq(dataView, result, err) {
 function decodeDimming(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.dali_address_short = daliAddressParse(addr, null, err);
+  result.address = addressParse(addr, null, err);
 
   var level = dataView.getUint8();
-  result.dimming_level = { value: level === 0xFF ? 'resume' : level, unit: '%', raw: level };
+  result.dimming_level = decodeDimmingLevel(level, 'resume');
   return result;
 }
 
 function decodeDimmingCommand(dataView, result, err) {
-  result.packet_type = { value: 'manual_dimming_command' };
-  result.manual_commands = [];
+  result.packet_type = { value: 'manual_dimming' };
+  result.destination = [];
   while (dataView.availableLen()) {
-    result.manual_commands.push(decodeDimming(dataView, err));
+    result.destination.push(decodeDimming(dataView, err));
   }
 }
 
@@ -756,25 +785,26 @@ function decodeCustomDaliReq(dataView, result, err) {
   result.packet_type = { value: 'custom_dali_request' };
 
   var { offset } = dataView;
-  result.custom_dali_data = { value: bytesToHexStr(dataView.getRaw(dataView.availableLen())) };
+  result.query_data_raw = { value: bytesToHexStr(dataView.getRaw(dataView.availableLen())) };
   // restore previous offset like the getRaw read never happened
   dataView.offset = offset;
 
   // if lengt is 2 then address+query, 3 then address+query+asnwer.
-  // If length is more, we cant assume anything.
+  // If length is more, we cant assume anything, because we dont know if its uplink or downlink.
   if (dataView.availableLen() > 3) {
+    dataView.getRaw(dataView.availableLen());
     return;
   }
 
   var addr = dataView.getUint8();
-  result.dali_address_short = daliAddressParse(addr, null, err);
+  result.address = addressParse(addr, null, err);
 
   var query = dataView.getUint8();
   result.dali_query = { value: query };
 
   if (dataView.availableLen() === 1) {
     var ans = dataView.getUint8();
-    result.dali_answer = { value: ans };
+    result.dali_response = { value: ans };
   }
 }
 
@@ -786,7 +816,7 @@ function decodeCustomDaliCommand(dataView, result) {
 }
 
 function decodeStatusRequest(dataView, result) {
-  result.packet_type = { value: 'status_or_usage_request' };
+  result.packet_type = { value: 'status_usage_request' };
 
   var bits = dataView.getUint8Bits();
   result.usage_requested = bitFalseTrue(bits.getBits(1));
@@ -802,6 +832,7 @@ function decodeDigVal(val) {
 
 function decodeInterfacesRequest(dataView, result, err) {
   if (dataView.availableLen() === 1) {
+    dataView.getUint8();
     result.packet_type = { value: 'interface_request' };
     return;
   }
@@ -823,13 +854,13 @@ function decodeInterfacesRequest(dataView, result, err) {
   result.dig = { value: decodeDigVal(digVal), raw: digVal };
   result.ldr = { value: ldrVal === 0xFF ? 'n/a' : ldrVal, raw: ldrVal };
   // thr deprecated
-  result.main_relay_state = bitFalseTrue(relayBits.getBits(1));
-  result.open_drain_out_state = bitFalseTrue(relayBits.getBits(1));
+  result.internal_relay_closed = bitFalseTrue(relayBits.getBits(1));
+  result.open_drain_output_on = bitFalseTrue(relayBits.getBits(1));
 }
 
 function decodeDriverMemoryPartial(dataView, result, err) {
   var addr = dataView.getUint8();
-  result.dali_address_short = daliAddressParse(addr, null, err);
+  result.address = addressParse(addr, null, err);
 
   var bank = dataView.getUint8();
   result.memory_bank = { value: bank };
@@ -874,10 +905,10 @@ function decodeWriteDriverMemory(dataView, result, err) {
 function decodeTimedDimming(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.dali_address_short = daliAddressParse(addr, null, err);
+  result.address = addressParse(addr, null, err);
 
   var lvl = dataView.getUint8();
-  result.dimming_level = { value: lvl, unit: '%' };
+  result.dimming_level = decodeDimmingLevel(lvl, 'resume');
 
   var dur = dataView.getUint8();
   result.duration = { value: dur, unit: 'min' };
@@ -885,26 +916,22 @@ function decodeTimedDimming(dataView, err) {
 }
 
 function decodeTimedDimmingCommand(dataView, result, err) {
-  result.packet_type = { value: 'timed_dimming_command' };
-  result.timed_commands = [];
+  result.packet_type = { value: 'manual_timed_dimming' };
+  result.destination = [];
   while (dataView.availableLen()) {
-    result.timed_commands.push(decodeTimedDimming(dataView, err));
+    result.destination.push(decodeTimedDimming(dataView, err));
   }
 }
 
 function decodeOpenDrainSwitching(dataView, result) {
-  result.packet_type = { value: 'open_drain_out_control' };
+  result.packet_type = { value: 'open_drain_output_control' };
   var sw = dataView.getUint8Bits().getBits(1);
-  result.open_drain_out_state = bitFalseTrue(sw);
+  result.open_drain_output_on = bitFalseTrue(sw);
 }
 
-function decodeFport60(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
+function decodeFport60(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
-    case 0x00:
-      decodeDaliStatusReq(dataView, result, err);
-      return;
     case 0x01:
       decodeDimmingCommand(dataView, result, err);
       return;
@@ -916,9 +943,6 @@ function decodeFport60(buffer, result, err) {
       return;
     case 0x05:
       decodeStatusRequest(dataView, result);
-      return;
-    case 0x06:
-      decodeInterfacesRequest(dataView, result, err);
       return;
     case 0x07:
       decodeReadDriverMemory(dataView, result, err);
@@ -932,6 +956,14 @@ function decodeFport60(buffer, result, err) {
     case 0x0C:
       decodeOpenDrainSwitching(dataView, result);
       return;
+
+    case 0x00:
+      decodeDaliStatusReq(dataView, result, err);
+      return;
+    case 0x06:
+      decodeInterfacesRequest(dataView, result, err);
+      return;
+
     default:
       err.errors.push('invalid_command');
   }
@@ -939,44 +971,48 @@ function decodeFport60(buffer, result, err) {
 
 // UPLINK ONLY THINGS
 
-function profileParser(dataView, err) {
+function statusProfileParser(dataView, err) {
   var profile = {};
   profileParserPartial(dataView, profile, err);
 
   var level = dataView.getUint8();
-  profile.dimming_level = {
-    value: level, unit: '%', min: 0, max: 100,
-  };
+  profile.dimming_level = decodeDimmingLevel(level, 'resume');
   return profile;
 }
 
-function statusParser(buffer, result, err) {
+function statusParser(dataView, result, err) {
   // does not support legacy mode status packet!
-  var dataView = new BinaryExtract(buffer);
-
   result.packet_type = { value: 'status_packet' };
 
+
   var epoch = dataView.getUint32();
-  result.device_unix_epoch = decodeUnixEpoch(epoch);
+  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
 
   var statusField = {};
   var bits = dataView.getUint8Bits();
 
   var daliErrExt = bits.getBits(1);
-  statusField.dali_error_external = bitFalseTrue(daliErrExt);
-  if (daliErrExt) err.warnings.push('dali external error reported by status packet');
-
   var daliErrConn = bits.getBits(1);
-  statusField.dali_error_connection = bitFalseTrue(daliErrConn);
-  if (daliErrConn) err.errors.push('dali connection error reported by status packet');
-
-  statusField.ldr_state = bitFalseTrue(bits.getBits(1));
+  var ldrOn = bits.getBits(1);
   bits.getBits(1);
-  statusField.dig_state = bitFalseTrue(bits.getBits(1));
-  statusField.hardware_error = bitFalseTrue(bits.getBits(1));
-  statusField.firmware_error = bitFalseTrue(bits.getBits(1));
-  statusField.internal_relay_state = bitFalseTrue(bits.getBits(1));
-  result.status_field = statusField;
+  var digOn = bits.getBits(1);
+  var err1 = bits.getBits(1);
+  bits.getBits(1);
+  var internalRelay = bits.getBits(1);
+
+  statusField.dali_error_external = bitFalseTrue(daliErrExt);
+  if (daliErrExt) err.warnings.push('dali_external_error');
+
+  statusField.dali_connection_error = bitFalseTrue(daliErrConn);
+  if (daliErrConn) err.warnings.push('dali_connection_error');
+
+  statusField.hardware_error = bitFalseTrue(err1);
+  if (err1) err.warnings.push('hardware_error');
+
+  statusField.internal_relay_closed = bitFalseTrue(internalRelay);
+  statusField.ldr_on = bitFalseTrue(ldrOn);
+  statusField.dig_on = bitFalseTrue(digOn);
+  result.status = statusField;
 
   result.downlink_rssi = { value: -1 * dataView.getUint8(), unit: 'dBm' };
 
@@ -984,53 +1020,51 @@ function statusParser(buffer, result, err) {
 
   result.mcu_temperature = { value: dataView.getInt8(), unit: '°C' };
 
-  var thrSent = false;
-  var ldrSent = false;
-  var analogInterfaces = {};
+  var reportedFields = {};
   var bits2 = dataView.getUint8Bits();
-  thrSent = bits2.getBits(1);
-  ldrSent = bits2.getBits(1);
-  analogInterfaces.open_drain_out_state = bitFalseTrue(bits2.getBits(1));
+  bits2.getBits(1); // legacy thr
+  var ldrSent = bits2.getBits(1);
+  var odOn = bits2.getBits(1);
   bits2.getBits(1);
-  analogInterfaces.voltage_alert_in_24h = bitFalseTrue(bits2.getBits(1));
-  analogInterfaces.lamp_error_alert_in_24h = bitFalseTrue(bits2.getBits(1));
-  analogInterfaces.power_alert_in_24h = bitFalseTrue(bits2.getBits(1));
-  analogInterfaces.power_factor_alert_in_24h = bitFalseTrue(bits2.getBits(1));
-  result.analog_interfaces = analogInterfaces;
 
-  if (thrSent) {
-    result.thr_value = { value: dataView.getUint8() };
-  }
+  result.status.open_drain_output_on = bitFalseTrue(odOn);
+
+  reportedFields.voltage_alert_in_24h = bitFalseTrue(bits2.getBits(1));
+  reportedFields.lamp_error_alert_in_24h = bitFalseTrue(bits2.getBits(1));
+  reportedFields.power_alert_in_24h = bitFalseTrue(bits2.getBits(1));
+  reportedFields.power_factor_alert_in_24h = bitFalseTrue(bits2.getBits(1));
+  result.analog_interfaces = reportedFields;
+
   if (ldrSent) {
     result.ldr_value = { value: dataView.getUint8() };
   }
 
   result.profiles = [];
   while (dataView.availableLen()) {
-    result.profiles.push(profileParser(dataView, err));
+    result.profiles.push(statusProfileParser(dataView, err));
   }
 }
 
 function usageConsumptionParse(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.dali_address_short = daliAddressParse(addr, 'internal_measurement', err);
+  result.address = addressParse(addr, 'internal_measurement', err);
 
   var bits = dataView.getUint8Bits();
   if (bits.getBits(1)) {
-    result.active_energy_total = { value: dataView.getUint32(), unit: 'Wh' };
+    result.active_energy = { value: dataView.getUint32(), unit: 'Wh' };
   }
   if (bits.getBits(1)) {
-    result.active_energy_instant = { value: dataView.getUint16(), unit: 'W' };
+    result.active_power = { value: dataView.getUint16(), unit: 'W' };
   }
   if (bits.getBits(1)) {
-    result.load_side_energy_total = { value: dataView.getUint32(), unit: 'Wh' };
+    result.load_side_energy = { value: dataView.getUint32(), unit: 'Wh' };
   }
   if (bits.getBits(1)) {
-    result.load_side_energy_instant = { value: dataView.getUint16(), unit: 'W' };
+    result.load_side_power = { value: dataView.getUint16(), unit: 'W' };
   }
   if (bits.getBits(1)) {
-    result.power_factor_instant = { value: dataView.getUint8() / 100 };
+    result.power_factor = { value: dataView.getUint8() / 100 };
   }
   if (bits.getBits(1)) {
     result.mains_voltage = { value: dataView.getUint8(), unit: 'V' };
@@ -1044,14 +1078,13 @@ function usageConsumptionParse(dataView, err) {
   return result;
 }
 
-function usageParser(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
+function usageParser(dataView, result, err) {
 
   result.packet_type = { value: 'usage_packet' };
 
-  result.reports = [];
+  result.consumption = [];
   while (dataView.availableLen()) {
-    result.reports.push(usageConsumptionParse(dataView, err));
+    result.consumption.push(usageConsumptionParse(dataView, err));
   }
 }
 
@@ -1080,32 +1113,20 @@ function deviceConfigParser(config, err) {
 }
 
 function optionalFeaturesParser(byte) {
-  var res = [];
+  var res = {};
   var bits = new BitExtract(byte);
   bits.getBits(1);
-  if (bits.getBits(1)) {
-    res.push('thr');
-  }
-  if (bits.getBits(1)) {
-    res.push('dig');
-  }
-  if (bits.getBits(1)) {
-    res.push('ldr');
-  }
-  if (bits.getBits(1)) {
-    res.push('open_drain_out');
-  }
-  if (bits.getBits(1)) {
-    res.push('metering');
-  }
   bits.getBits(1);
-  if (bits.getBits(1)) {
-    res.push('custom_request');
-  }
+  res.dig_in = bitFalseTrue(bits.getBits(1));
+  res.ldr_in = bitFalseTrue(bits.getBits(1));
+  res.open_drain_output = bitFalseTrue(bits.getBits(1));
+  res.metering = bitFalseTrue(bits.getBits(1));
+  bits.getBits(1);
+  bits.getBits(1);
   return res;
 }
 
-function daliInfoParse(data, err) {
+function daliSupplyParse(data, err) {
   var supply = data;
   if (supply < 0x70) {
     return { value: supply, raw: supply, unit: 'V' };
@@ -1114,14 +1135,14 @@ function daliInfoParse(data, err) {
     case 0x7E:
       return { value: 'bus_high', raw: supply };
     case 0x7f:
-      err.warnings.push('dali supply state: error');
-      return { value: 'dali_error', raw: supply };
+      err.warnings.push('dali_bus_error');
+      return { value: 'bus_error', raw: supply };
     default:
       return { value: 'invalid_value', raw: supply };
   }
 }
 
-function resetReasonParse(byte) {
+function resetReasonParse(byte, err) {
   var res = [];
   var bits = new BitExtract(byte);
   if (bits.getBits(1)) {
@@ -1129,6 +1150,7 @@ function resetReasonParse(byte) {
   }
   if (bits.getBits(1)) {
     res.push('watchdog_reset');
+    err.warnings.push('watchdog_reset');
   }
   if (bits.getBits(1)) {
     res.push('soft_reset');
@@ -1154,7 +1176,7 @@ function resetReasonParse(byte) {
 function bootParser(dataView, result, err) {
   result.packet_type = { value: 'boot_packet' };
 
-  result.device_serial = intToHexStr(dataView.getUint32(), 8);
+  result.device_serial = { value: intToHexStr(dataView.getUint32(), 8) };
 
   var maj = dataView.getUint8();
   var min = dataView.getUint8();
@@ -1164,18 +1186,18 @@ function bootParser(dataView, result, err) {
   result.firmware_version = { value: maj + '.' + min + '.' + patch, raw: (maj << 16) | (min << 8) | patch };
 
   var epoch = dataView.getUint32();
-  result.device_unix_epoch = decodeUnixEpoch(epoch);
+  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
 
   var config = dataView.getUint8();
   result.device_config = { value: deviceConfigParser(config, err), raw: config };
 
   var opt = dataView.getUint8();
-  result.optional_features = { value: optionalFeaturesParser(opt), raw: opt };
+  result.optional_features = optionalFeaturesParser(opt);
 
   var daliBits = dataView.getUint8Bits();
-  result.dali_supply_state = daliInfoParse(daliBits.getBits(7), err);
+  result.dali_supply_state = daliSupplyParse(daliBits.getBits(7), err);
   var busPower = daliBits.getBits(1);
-  result.dali_power_source = { value: busPower ? 'external' : 'internal', raw: busPower };
+  result.dali_power_source_external = { value: busPower ? 'external' : 'internal', raw: busPower };
 
   var driver = dataView.getUint8Bits();
   result.dali_addressed_driver_count = { value: driver.getBits(7) };
@@ -1184,7 +1206,7 @@ function bootParser(dataView, result, err) {
 
   if (dataView.availableLen()) {
     var resetReas = dataView.getUint8();
-    result.reset_reason = { value: resetReasonParse(resetReas), raw: resetReas };
+    result.reset_reason = { value: resetReasonParse(resetReas, err), raw: resetReas };
   }
 }
 
@@ -1220,22 +1242,18 @@ function errorCodeParser(reason) {
       return 'internal_error';
     case 0x0E:
       return 'packet_size_error';
-    case 128:
-      return 'no_room';
-    case 129:
-      return 'id_seq_error';
-    case 130:
-      return 'destination_eror';
-    case 131:
-      return 'days_error';
-    case 132:
-      return 'step_count_error';
-    case 133:
-      return 'step_value_error';
-    case 134:
-      return 'step_unsorted';
-    case 135:
-      return 'days_overlap';
+    case 0x81:
+      return 'profile_id_seq_error';
+    case 0x82:
+      return 'profile_destination_eror';
+    case 0x83:
+      return 'profile_days_error';
+    case 0x84:
+      return 'profile_step_count_error';
+    case 0x85:
+      return 'profile_step_value_error';
+    case 0x86:
+      return 'profile_step_unsorted_error';
     default:
       return 'invalid_error_code';
   }
@@ -1243,15 +1261,14 @@ function errorCodeParser(reason) {
 
 function configFailedParser(dataView, result, err) {
   result.packet_type = { value: 'invalid_downlink_packet' };
-  result.packet_from_fport = { value: dataView.getUint8() };
+  result.downlink_from_fport = { value: dataView.getUint8() };
   var errCode = dataView.getUint8();
   var error = errorCodeParser(errCode);
-  result.parse_error_code = { value: error, raw: errCode };
-  err.errors.push('Config failed: ' + error);
+  result.error_reason = { value: error, raw: errCode };
+  err.warnings.push('downlink_' + error);
 }
 
-function decodeFport99(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
+function decodeFport99(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
     case 0x00:
@@ -1265,8 +1282,7 @@ function decodeFport99(buffer, result, err) {
   }
 }
 
-function decodeFport61(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
+function decodeFport61(dataView, result, err) {
   var header = dataView.getUint8();
   var rawByte2 = dataView.getUint8();
   // eslint-disable-next-line no-bitwise
@@ -1289,7 +1305,7 @@ function decodeFport61(buffer, result, err) {
       }
       var state = dataView.getUint8Bits().getBits(1);
       var val = dataView.getUint8();
-      result.ldr_state = bitFalseTrue(state);
+      result.ldr_on = bitFalseTrue(state);
       result.ldr_value = { value: val };
       return;
     case 0x83:
@@ -1341,50 +1357,26 @@ function decodeFport61(buffer, result, err) {
 
 // DOWNLINK ONLY THINGS
 
-function decodeFport49(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
+function decodeFport49(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
     case 0x01:
       result.packet_type = { value: 'ldr_config_request' };
       return;
-    case 0x02:
-      result.packet_type = { value: 'thr_config_request' };
-      return;
     case 0x03:
       result.packet_type = { value: 'dig_config_request' };
-      return;
-    case 0x05:
-      result.packet_type = { value: 'open_drain_out_config_request' };
-      return;
-    case 0x06:
-      result.packet_type = { value: 'calendar_config_request' };
       return;
     case 0x07:
       result.packet_type = { value: 'status_config_request' };
       return;
-    case 0x08:
-      result.packet_type = { value: 'profile_config_request' };
-      var id = dataView.getUint8();
-      result.profile_id = { value: id === 0xFF ? 'all_used_profiles' : id, raw: id };
-      return;
-    case 0x0A:
-      result.packet_type = { value: 'default_dim_config_request' };
+    case 0x09:
+      result.packet_type = { value: 'time_config_packet' };
       return;
     case 0x0B:
       result.packet_type = { value: 'usage_config_request' };
       return;
-    case 0x0C:
-      result.packet_type = { value: 'holiday_config_request' };
-      return;
     case 0x0D:
       result.packet_type = { value: 'boot_delay_config_request' };
-      return;
-    case 0x0E:
-      result.packet_type = { value: 'defaults_config_request' };
-      return;
-    case 0x13:
-      result.packet_type = { value: 'meta_pos_config_request' };
       return;
     case 0x15:
       result.packet_type = { value: 'led_config_request' };
@@ -1394,15 +1386,35 @@ function decodeFport49(buffer, result, err) {
       return;
     case 0x52:
       result.packet_type = { value: 'multicast_config_request' };
-      result.multicast_device = { value: dataView.getUint8() };
+      var mcDevice = dataView.getUint8();
+      result.multicast_device = { value: mcDevice === 0xFF ? 'all' : mcDevice, raw: mcDevice };
+      return;
+    case 0x06:
+      result.packet_type = { value: 'calendar_config_request' };
+      return;
+    case 0x08:
+      result.packet_type = { value: 'profile_config_request' };
+      var id = dataView.getUint8();
+      result.profile_id = { value: id === 0xFF ? 'all_used_profiles' : id, raw: id };
+      return;
+    case 0x0A:
+      result.packet_type = { value: 'default_dim_config_request' };
+      return;
+    case 0x0C:
+      result.packet_type = { value: 'holiday_config_request' };
+      return;
+    case 0x0E:
+      result.packet_type = { value: 'defaults_config_request' };
+      return;
+    case 0x13:
+      result.packet_type = { value: 'location_config_request' };
       return;
     default:
       err.errors.push('invalid_header');
   }
 }
 
-function decodeFport51(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
+function decodeFport51(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
     case 0xFF:
@@ -1414,7 +1426,32 @@ function decodeFport51(buffer, result, err) {
 }
 
 function decodeByFport(fport, bytes, result, err) {
-  if (bytes.length === 0) { err.errors.push('empty_payload'); } else if (fport === 24) { statusParser(bytes, result, err); } else if (fport === 25) { usageParser(bytes, result, err); } else if (fport === 49) { decodeFport49(bytes, result, err); } else if (fport === 50) { decodeFport50(bytes, result, err); } else if (fport === 51) { decodeFport51(bytes, result, err); } else if (fport === 60) { decodeFport60(bytes, result, err); } else if (fport === 61) { decodeFport61(bytes, result, err); } else if (fport === 99) { decodeFport99(bytes, result, err); } else { err.errors.push('invalid_fport'); }
+  var dataView = new BinaryExtract(bytes);
+  if (dataView.availableLen() === 0) {
+    err.errors.push('empty_payload');
+  } else if (fport === 24) {
+    statusParser(dataView, result, err);
+  } else if (fport === 25) {
+    usageParser(dataView, result, err);
+  } else if (fport === 49) {
+    decodeFport49(dataView, result, err);
+  } else if (fport === 50) {
+    decodeFport50(dataView, result, err);
+  } else if (fport === 51) {
+    decodeFport51(dataView, result, err);
+  } else if (fport === 60) {
+    decodeFport60(dataView, result, err);
+  } else if (fport === 61) {
+    decodeFport61(dataView, result, err);
+  } else if (fport === 99) {
+    decodeFport99(dataView, result, err);
+  } else {
+    err.errors.push('invalid_fport');
+  }
+
+  if (dataView.availableLen() !== 0) {
+    err.errors.push('invalid_payload_length_long');
+  }
 }
 
 function decodeRaw(fport, bytes) {
@@ -1425,7 +1462,14 @@ function decodeRaw(fport, bytes) {
   } catch (error) {
     err.errors.push(error.message);
   }
-  return { data: res, errors: err.errors, warnings: err.warnings };
+  var out = { data: res };
+  if (err.errors.length) {
+    out.errors = err.errors;
+  }
+  if (err.warnings.length) {
+    out.warnings = err.warnings;
+  }
+  return out;
 }
 
 // Functions for post-proccessing the ul20xx decoder result
@@ -1488,29 +1532,28 @@ function convertObjToFormatted(decoded, elementFormatter) {
 // If raw formatting is desired, just return directly from decodeRaw() function
 // You need only one entrypoint, others can be removed.
 
-
 // entry point for TTN new api
 function decodeDownlink(input) {
-    var dec = decodeRaw(input.fPort, input.bytes);
-    return convertObjToFormatted(dec, formatElementStrValueUnit);
+  var dec = decodeRaw(input.fPort, input.bytes);
+  return convertObjToFormatted(dec, formatElementStrValueUnit);
 }
 
 // entry point for TTN new api
 function decodeUplink(input) {
-    var dec = decodeRaw(input.fPort, input.bytes);
-    return convertObjToFormatted(dec, formatElementStrValueUnit);
+  var dec = decodeRaw(input.fPort, input.bytes);
+  return convertObjToFormatted(dec, formatElementStrValueUnit);
 }
 
 // entry point for TTN old version
 function Decoder(bytes, fport) {
-    var dec = decodeRaw(fport, bytes);
-    return convertObjToFormatted(dec, formatElementStrValueUnit);
+  var dec = decodeRaw(fport, bytes);
+  return convertObjToFormatted(dec, formatElementStrValueUnit);
 }
 
 // entry point for Chirpstack
 function Decode(fport, bytes) {
-    var dec = decodeRaw(fport, bytes);
-    return convertObjToFormatted(dec, formatElementStrValueUnit);
+  var dec = decodeRaw(fport, bytes);
+  return convertObjToFormatted(dec, formatElementStrValueUnit);
 }
 
 
@@ -1637,25 +1680,44 @@ function jsonToHtmlFormatter(json_txt) {
     return html_out.replace(/(["{[\]},:])/g, '<span class="dim">$1</span>');
 }
 
+function setOutput(formatted_res) {
+  var str_json = JSON.stringify(formatted_res, null, 2);
+
+	str_html = jsonToHtmlFormatter(str_json);
+	console.log(str_html);
+    document.getElementById("demo").innerHTML = str_html;
+}
+
 const dataInputHandler = function(e) {
     var raw = document.getElementById('payload_raw').value;
     var fport = parseInt(document.getElementById('fport').value);
 
-    var filtered = is_base64() ? filterForBase64(raw) : filterForHex(raw);
-    document.getElementById('payload_raw').value = filtered;
-
-    var buffer = is_base64() ? base64ToBytes(filtered) : hexToBytes(filtered);
+    var buffer;
+    if (is_base64()) {
+      var filtered = filterForBase64(raw);
+      document.getElementById('payload_raw').value = filtered;
+  
+      var buffer = base64ToBytes(filtered);
+  
+    }
+    else {
+      var filtered = filterForHex(raw);
+      if (filtered.length % 2 !== 0) {
+        var formatted_res = { error: "invalid_hex_input" };
+        setOutput(formatted_res);
+        return;
+      }
+      document.getElementById('payload_raw').value = filtered;
+  
+      var buffer = hexToBytes(filtered);
+    }
     var res = decodeRaw(fport, buffer);
 
     var formatting = document.getElementById('formatting').value;
 
     var formatted_res = applyFormatting(res, formatting);
 
-    var str_json = JSON.stringify(formatted_res, null, 2);
-
-	str_html = jsonToHtmlFormatter(str_json);
-	console.log(str_html);
-    document.getElementById("demo").innerHTML = str_html;
+    setOutput(formatted_res);
 }
 
 document.getElementById('payload_raw').addEventListener('input', dataInputHandler);  

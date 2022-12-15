@@ -308,7 +308,7 @@ function ssiSensor(status, err) {
 // USAGE PAYLOAD
 function pulseUsageParse(interfaceName, dataView, result, err) {
   var bits4 = dataView.getUint8Bits();
-  result[interfaceName + '_input_state'] = bits4.getBits(1) === 1 ? 'closed' : 'open';
+  result[interfaceName + '_input_state'] = bits4.getBits(1) === true ? 'closed' : 'open';
   var serialSent = bits4.getBits(1);
   var multiplier = usagePulseMultiplier(bits4.getBits(2));
   result['_' + interfaceName + '_muliplier'] = multiplier;
@@ -344,6 +344,7 @@ function usageAndStatusParser(buffer, result, err) {
   activeAlerts.low_battery = bits1.getBits(1);
   result._app_connected_within_a_day = bits1.getBits(1);
   result.active_alerts = objToList(activeAlerts);
+  // TODO add to warnings
 
   if (deviceStatusSent) {
     result.battery_remaining__years = parseFloat((dataView.getUint8() / 12.0).toFixed(1));
@@ -621,6 +622,7 @@ function sysMessagesParser(buffer, result, err) {
     reason.reason_6 = bits1.getBits(1);
     reason.nfc_wakeup = bits1.getBits(1);
     result.wakeup_reason_mcu = objToList(reason);
+    // TODO add to alerts
 
     var bits2 = dataView.getUint8Bits();
     bits2.getBits(4);
@@ -701,6 +703,13 @@ export function decodeRaw(fport, bytes) {
   } catch (error) {
     err.errors.push(error.message);
   }
-  res._raw_payload = bytesToHexStr(bytes); // TODO remove?
-  return res;
+  //  res._raw_payload = bytesToHexStr(bytes);
+  var out = { data: res };
+  if (err.errors.length) {
+    out.errors = err.errors;
+  }
+  if (err.warnings.length) {
+    out.warnings = err.warnings;
+  }
+  return out;
 }

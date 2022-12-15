@@ -4,23 +4,8 @@ import {
 } from './util/misc';
 
 function profileReason(reason, err) {
-  // #ifdef VER1_0
-  if (reason < 240) {
-    return reason;
-  }
-  // #endif
 
   switch (reason) {
-    // #ifdef VER1_0
-    case 247:
-      return 'calendar_active';
-    case 248:
-      return 'init_active';
-    case 249:
-      return 'profile_not_active';
-    case 254:
-      return 'value_differ';
-    // #else
     case 0:
     case 1:
     case 2:
@@ -43,7 +28,6 @@ function profileReason(reason, err) {
       // eslint-disable-next-line no-duplicate-case
     case 248:
       return 'fallback_active';
-    // #endif
     case 246:
       return 'driver_not_found';
     case 250:
@@ -94,12 +78,7 @@ export function profileParserPartial(dataView, profile, err) {
   profile.profile_id = { value: id === 255 ? 'no_profile' : id, raw: id };
 
   var length = 0;
-  // #ifdef VER1_0
-  var ver = dataView.getUint8();
-  profile.profile_version = { value: profileReason(ver, err), raw: ver };
-  // #else
   length = dataView.getUint8();
-  // #endif
 
   var addr = dataView.getUint8();
   profile.address = addressParse(addr, null, err);
@@ -133,16 +112,14 @@ export function profileParserPartial(dataView, profile, err) {
   }
   profile.days_active = { value: days, raw: activeDays };
 
-  // #ifndef VER1_0
   dataView.getUint8();
-  // #endif
   return length;
 }
 
 export function decodeUnixEpoch(epoch, err) {
   var date = new Date(epoch * 1000);
   var epochFormatted = date.toISOString();
-  if (epoch < 1420070400) { // 1 January 2015 00:00:00
+  if (epoch < 1420070400) {
     epochFormatted = 'invalid_timestamp';
     err.warnings.push('invalid_timestamp');
   }
@@ -278,15 +255,9 @@ export function decodeProfileConfig(dataView, result, err) {
   var len = profileParserPartial(dataView, result, err);
   result.dimming_steps = [];
 
-  // #ifdef VER1_0
-  while (dataView.availableLen()) {
-    result.dimming_steps.push(decodeDimmingStep(dataView));
-  }
-  // #else
   for (var i = 0; i < len; i += 1) {
     result.dimming_steps.push(decodeDimmingStep(dataView));
   }
-  // #endif
 }
 
 export function decodeTimeConfig(dataView, result, err) {
@@ -330,16 +301,10 @@ export function decodeHolidayConfig(dataView, result) {
   result.packet_type = { value: 'holiday_config_packet' };
   result.holidays = [];
 
-  // #ifdef VER1_0
-  while (dataView.availableLen()) {
-    result.holidays.push(decodeMonthDay(dataView));
-  }
-  // #else
   var len = dataView.getUint8();
   for (var i = 0; i < len; i += 1) {
     result.holidays.push(decodeMonthDay(dataView));
   }
-  // #endif
 }
 
 export function decodeDaliMonitorConfig(dataView, result) {
@@ -494,9 +459,6 @@ export function decodeMulticastConfig(dataView, result, err) {
   var dev = dataView.getUint8();
 
   var invalidMc = dev > 3;
-  // #ifdef VER1_0
-  invalidMc = dev === 0 || dev > 4;
-  // #endif
   if (invalidMc) {
     err.errors.push('invalid_multicast_device');
     return;
@@ -522,19 +484,6 @@ export function decodeClearConfig(dataView, result, err) {
     case 0x03:
       result.reset_target = { value: 'dig_config' };
       break;
-    // #ifdef VER1_0
-    case 0x04:
-      result.reset_target = { value: 'profile_config' };
-      result.address = addressParse(dataView.getUint8(), 'all_profiles', err);
-      if (dataView.availableLen()) {
-        var id = dataView.getUint8();
-        result.profile_id = { value: id };
-      }
-      break;
-    case 0x06:
-      result.reset_target = { value: 'holiday_config' };
-      break;
-    // #else
     case 0x21:
       result.reset_target = { value: 'profile_config' };
       result.address = addressParse(dataView.getUint8(), 'all_profiles', err);
@@ -542,7 +491,6 @@ export function decodeClearConfig(dataView, result, err) {
     case 0x23:
       result.reset_target = { value: 'holiday_config' };
       break;
-    // #endif
     case 0x52:
       result.reset_target = { value: 'multicast_config' };
       var device = dataView.getUint8();
@@ -598,27 +546,6 @@ export function decodeFport50(dataView, result, err) {
       decodeClearConfig(dataView, result, err);
       return;
 
-    // #ifdef VER1_0
-    case 0x06:
-      decodeCalendarConfigV10(dataView, result);
-      return;
-    case 0x08:
-      decodeProfileConfig(dataView, result, err);
-      return;
-    case 0x0A:
-      decodeLegacyDefaultsConfig(dataView, result);
-      return;
-    case 0x0C:
-      decodeHolidayConfig(dataView, result);
-      return;
-    case 0x0E:
-      decodeDefaultsConfig(dataView, result, err);
-      return;
-    case 0x13:
-      decodeLocationConfigV10(dataView, result);
-      return;
-
-    // #else
     case 0x20:
       decodeCalendarConfigV11(dataView, result);
       return;
@@ -652,7 +579,6 @@ export function decodeFport50(dataView, result, err) {
         result.payloads.push(packet);
       }
       return;
-    // #endif
     default:
       err.errors.push('invalid_header');
   }
@@ -907,15 +833,6 @@ export function decodeFport60(dataView, result, err) {
       decodeOpenDrainSwitching(dataView, result);
       return;
 
-    // #ifdef VER1_0
-    case 0x00:
-      decodeDaliStatusReq(dataView, result, err);
-      return;
-    case 0x06:
-      decodeInterfacesRequest(dataView, result, err);
-      return;
-
-    // #else
     case 0x0A:
       decodeAddressDaliDriver(dataView, result, err);
       return;
@@ -923,7 +840,6 @@ export function decodeFport60(dataView, result, err) {
       decodeDaliIdentify(result);
       return;
 
-    // #endif
     default:
       err.errors.push('invalid_command');
   }
@@ -999,12 +915,10 @@ function statusParser(dataView, result, err) {
   // does not support legacy mode status packet!
   result.packet_type = { value: 'status_packet' };
 
-  // #ifndef VER1_0
   if (dataView.getUint8() !== 0) {
     err.errors.push('invalid_header');
     return;
   }
-  // #endif
 
   var epoch = dataView.getUint32();
   result.device_unix_epoch = decodeUnixEpoch(epoch, err);
@@ -1021,23 +935,14 @@ function statusParser(dataView, result, err) {
   var err2 = bits.getBits(1);
   var internalRelay = bits.getBits(1);
 
-  // #ifdef VER1_0
-  statusField.dali_error_external = bitFalseTrue(daliErrExt);
-  if (daliErrExt) err.warnings.push('dali_external_error');
-  // #endif
 
   statusField.dali_connection_error = bitFalseTrue(daliErrConn);
   if (daliErrConn) err.warnings.push('dali_connection_error');
 
-  // #ifdef VER1_0
-  statusField.hardware_error = bitFalseTrue(err1);
-  if (err1) err.warnings.push('hardware_error');
-  // #else
   statusField.metering_com_error = bitFalseTrue(err1);
   if (err1) err.warnings.push('metering_com_error');
   statusField.rtc_com_error = bitFalseTrue(err2);
   if (err2) err.warnings.push('rtc_com_error');
-  // #endif
 
   statusField.internal_relay_closed = bitFalseTrue(internalRelay);
   statusField.ldr_on = bitFalseTrue(ldrOn);
@@ -1059,26 +964,12 @@ function statusParser(dataView, result, err) {
 
   result.status.open_drain_output_on = bitFalseTrue(odOn);
 
-  // #ifdef VER1_0
-  reportedFields.voltage_alert_in_24h = bitFalseTrue(bits2.getBits(1));
-  reportedFields.lamp_error_alert_in_24h = bitFalseTrue(bits2.getBits(1));
-  reportedFields.power_alert_in_24h = bitFalseTrue(bits2.getBits(1));
-  reportedFields.power_factor_alert_in_24h = bitFalseTrue(bits2.getBits(1));
-  result.analog_interfaces = reportedFields;
-  // #else
   var alertsSent = bits2.getBits(1);
-  // #endif
 
   if (ldrSent) {
     result.ldr_value = { value: dataView.getUint8() };
   }
 
-  // #ifdef VER1_0
-  result.profiles = [];
-  while (dataView.availableLen()) {
-    result.profiles.push(statusProfileParser(dataView, err));
-  }
-  // #else
   if (alertsSent) {
     var bits4 = dataView.getUint8Bits();
     bits4.getBits(4);
@@ -1112,7 +1003,6 @@ function statusParser(dataView, result, err) {
   while (dataView.availableLen()) {
     result.dimming_source.push(dimmingSourceParser(dataView, err));
   }
-  // #endif
 }
 
 function usageConsumptionParse(dataView, err) {
@@ -1143,22 +1033,16 @@ function usageConsumptionParse(dataView, err) {
     result.driver_operating_time = { value: dataView.getUint32(), unit: 's' };
   }
   if (bits.getBits(1)) {
-    // #ifdef VER1_0
-    result.lamp_on_time = { value: dataView.getUint32(), unit: addr === 0xFF ? 'h' : 's' };
-    // #else
     result.lamp_on_time = { value: dataView.getUint32(), unit: 's' };
-    // #endif
   }
   return result;
 }
 
 function usageParser(dataView, result, err) {
-  // #ifndef VER1_0
   if (dataView.getUint8() !== 0) {
     err.errors.push('invalid_header');
     return;
   }
-  // #endif
 
   result.packet_type = { value: 'usage_packet' };
 
@@ -1469,28 +1353,6 @@ function decodeFport49(dataView, result, err) {
       var mcDevice = dataView.getUint8();
       result.multicast_device = { value: mcDevice === 0xFF ? 'all' : mcDevice, raw: mcDevice };
       return;
-    // #ifdef VER1_0
-    case 0x06:
-      result.packet_type = { value: 'calendar_config_request' };
-      return;
-    case 0x08:
-      result.packet_type = { value: 'profile_config_request' };
-      var id = dataView.getUint8();
-      result.profile_id = { value: id === 0xFF ? 'all_used_profiles' : id, raw: id };
-      return;
-    case 0x0A:
-      result.packet_type = { value: 'default_dim_config_request' };
-      return;
-    case 0x0C:
-      result.packet_type = { value: 'holiday_config_request' };
-      return;
-    case 0x0E:
-      result.packet_type = { value: 'defaults_config_request' };
-      return;
-    case 0x13:
-      result.packet_type = { value: 'location_config_request' };
-      return;
-      // #else
     case 0x20:
       result.packet_type = { value: 'calendar_config_request' };
       return;
@@ -1514,7 +1376,6 @@ function decodeFport49(dataView, result, err) {
     case 0x26:
       result.packet_type = { value: 'location_config_request' };
       return;
-      // #endif
     default:
       err.errors.push('invalid_header');
   }
@@ -1526,11 +1387,9 @@ function decodeFport51(dataView, result, err) {
     case 0xFF:
       result.packet_type = { value: 'activate_dfu_command' };
       return;
-    // #ifndef VER1_0
     case 0xFE:
       result.packet_type = { value: 'restart_controller_command' };
       return;
-    // #endif
     default:
       err.errors.push('invalid_command');
   }
@@ -1540,17 +1399,10 @@ function decodeByFport(fport, bytes, result, err) {
   var dataView = new BinaryExtract(bytes);
   if (dataView.availableLen() === 0) {
     err.errors.push('empty_payload');
-    // #ifdef VER1_0
-  } else if (fport === 24) {
-    statusParser(dataView, result, err);
-  } else if (fport === 25) {
-    usageParser(dataView, result, err);
-    // #else
   } else if (fport === 23) {
     statusParser(dataView, result, err);
   } else if (fport === 26) {
     usageParser(dataView, result, err);
-    // #endif
   } else if (fport === 49) {
     decodeFport49(dataView, result, err);
   } else if (fport === 50) {
@@ -1589,3 +1441,4 @@ export function decodeRaw(fport, bytes) {
   }
   return out;
 }
+

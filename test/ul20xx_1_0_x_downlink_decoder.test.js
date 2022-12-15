@@ -1,4 +1,4 @@
-import { decodeRaw } from '../src/ul20xx_decoder';
+import { decodeRaw } from '../src/ul20xx_1_0_x_decoder.processed';
 import { testPacket } from './utils/test_utils';
 
 describe('Config requests', () => {
@@ -7,7 +7,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '01',
-      expected: { data: { packet_type: { value: 'ldr_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'ldr_config_request' } } },
     });
   });
 
@@ -16,7 +16,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '03',
-      expected: { data: { packet_type: { value: 'dig_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'dig_config_request' } } },
     });
   });
 
@@ -25,7 +25,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '06',
-      expected: { data: { packet_type: { value: 'calendar_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'calendar_config_request' } } },
     });
   });
 
@@ -34,7 +34,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '07',
-      expected: { data: { packet_type: { value: 'status_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'status_config_request' } } },
     });
   });
 
@@ -43,7 +43,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '0806',
-      expected: { data: { packet_type: { value: 'profile_config_request' }, profile_id: { value: 6, raw: 6 } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'profile_config_request' }, profile_id: { value: 6, raw: 6 } } },
     });
   });
 
@@ -52,7 +52,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '08FF',
-      expected: { data: { packet_type: { value: 'profile_config_request' }, profile_id: { value: 'all_used_profiles', raw: 255 } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'profile_config_request' }, profile_id: { value: 'all_used_profiles', raw: 255 } } },
     });
   });
 
@@ -61,7 +61,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '0A',
-      expected: { data: { packet_type: { value: 'default_dim_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'default_dim_config_request' } } },
     });
   });
 
@@ -70,7 +70,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '0B',
-      expected: { data: { packet_type: { value: 'usage_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'usage_config_request' } } },
     });
   });
 
@@ -79,7 +79,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '0C',
-      expected: { data: { packet_type: { value: 'holiday_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'holiday_config_request' } } },
     });
   });
 
@@ -88,7 +88,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '0D',
-      expected: { data: { packet_type: { value: 'boot_delay_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'boot_delay_config_request' } } },
     });
   });
 
@@ -97,16 +97,16 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '0E',
-      expected: { data: { packet_type: { value: 'defaults_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'defaults_config_request' } } },
     });
   });
 
-  describe('meta_pos_config_request from DS', () => {
+  describe('location_config_request from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 49,
       data: '13',
-      expected: { data: { packet_type: { value: 'meta_pos_config_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'location_config_request' } } },
     });
   });
 
@@ -115,7 +115,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '16',
-      expected: { data: { packet_type: { value: 'metering_alert_confic_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'metering_alert_confic_request' } } },
     });
   });
 
@@ -124,7 +124,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '5202',
-      expected: { data: { packet_type: { value: 'multicast_config_request' }, multicast_device: { value: 2 } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'multicast_config_request' }, multicast_device: { value: 2, raw: 2 } } },
     });
   });
 });
@@ -135,7 +135,7 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 51,
       data: 'FF',
-      expected: { data: { packet_type: { value: 'activate_dfu_command' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'activate_dfu_command' } } },
     });
   });
 
@@ -144,7 +144,7 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '00FE',
-      expected: { data: { packet_type: { value: 'dali_status_request' }, dali_address_short: { value: 'all_drivers', raw: 254 } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'dali_status_request' }, address: { value: 'all_drivers', raw: 254 } } },
     });
   });
 
@@ -153,7 +153,7 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '00FE',
-      expected: { data: { packet_type: { value: 'dali_status_request' }, dali_address_short: { value: 'all_drivers', raw: 254 } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'dali_status_request' }, address: { value: 'all_drivers', raw: 254 } } },
     });
   });
 
@@ -162,7 +162,7 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '01fe64',
-      expected: { data: { packet_type: { value: 'manual_dimming_command' }, manual_commands: [{ dali_address_short: { value: 'broadcast', raw: 254 }, dimming_level: { value: 100, unit: '%', raw: 100 } }] }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'manual_dimming' }, destination: [{ address: { value: 'dali_broadcast', raw: 254 }, dimming_level: { value: 100, unit: '%', raw: 100 } }] } },
     });
   });
 
@@ -171,7 +171,7 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '0348A148A248A348A448A5',
-      expected: { data: { packet_type: { value: 'custom_dali_request' }, custom_dali_data: { value: '48A148A248A348A448A5' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'custom_dali_request' }, query_data_raw: { value: '48A148A248A348A448A5' } } },
     });
   });
 
@@ -180,16 +180,16 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '04027F0321032B',
-      expected: { data: { packet_type: { value: 'custom_dali_command' }, dali_command: { value: '027F0321032B' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'custom_dali_command' }, dali_command: { value: '027F0321032B' } } },
     });
   });
 
-  describe('status_or_usage_request from DS', () => {
+  describe('status_usage_request from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 60,
       data: '0501',
-      expected: { data: { packet_type: { value: 'status_or_usage_request' }, usage_requested: { value: true }, status_requested: { value: false } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'status_usage_request' }, usage_requested: { value: true }, status_requested: { value: false } } },
     });
   });
 
@@ -198,7 +198,7 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '06FF',
-      expected: { data: { packet_type: { value: 'interface_request' } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'interface_request' } } },
     });
   });
 
@@ -209,10 +209,8 @@ describe('Commands', () => {
       data: '0704000306',
       expected: {
         data: {
-          packet_type: { value: 'driver_memory_read' }, dali_address_short: { value: 'single 2', raw: 4 }, memory_bank: { value: 0 }, memory_address: { value: 3 }, read_size: { value: 6, unit: 'bytes' },
+          packet_type: { value: 'driver_memory_read' }, address: { value: 'dali_single_2', raw: 4 }, memory_bank: { value: 0 }, memory_address: { value: 3 }, read_size: { value: 6, unit: 'bytes' },
         },
-        errors: [],
-        warnings: [],
       },
     });
   });
@@ -224,10 +222,8 @@ describe('Commands', () => {
       data: '080400030607edface82e5',
       expected: {
         data: {
-          packet_type: { value: 'driver_memory_write' }, dali_address_short: { value: 'single 2', raw: 4 }, memory_bank: { value: 0 }, memory_address: { value: 3 }, memory_value: { value: '0607EDFACE82E5' },
+          packet_type: { value: 'driver_memory_write' }, address: { value: 'dali_single_2', raw: 4 }, memory_bank: { value: 0 }, memory_address: { value: 3 }, memory_value: { value: '0607EDFACE82E5' },
         },
-        errors: [],
-        warnings: [],
       },
     });
   });
@@ -237,16 +233,16 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '0C01',
-      expected: { data: { packet_type: { value: 'open_drain_out_control' }, open_drain_out_state: { value: true } }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'open_drain_output_control' }, open_drain_output_on: { value: true } } },
     });
   });
 
-  describe('timed_dimming_command from DS', () => {
+  describe('manual_timed_dimming from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 60,
       data: '09fe640f',
-      expected: { data: { packet_type: { value: 'timed_dimming_command' }, timed_commands: [{ dali_address_short: { value: 'broadcast', raw: 254 }, dimming_level: { value: 100, unit: '%' }, duration: { value: 15, unit: 'min' } }] }, errors: [], warnings: [] },
+      expected: { data: { packet_type: { value: 'manual_timed_dimming' }, destination: [{ address: { value: 'dali_broadcast', raw: 254 }, dimming_level: { value: 100, unit: '%', raw: 100 }, duration: { value: 15, unit: 'min' } }] } },
     });
   });
 });
