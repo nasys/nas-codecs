@@ -9,8 +9,8 @@ describe('toFormatted', () => {
         status: {
           dali_error_external: { value: false },
           dali_connection_error: { value: false },
-          ldr_on: { value: false },
-          dig_on: { value: false },
+          ldr_input_on: { value: false },
+          dig_input_on: { value: false },
           hardware_error: { value: false },
           internal_relay_closed: { value: false },
           open_drain_output_on: { value: false },
@@ -51,8 +51,8 @@ describe('toFormatted', () => {
         status: {
           dali_error_external: 'false',
           dali_connection_error: 'false',
-          ldr_on: 'false',
-          dig_on: 'false',
+          ldr_input_on: 'false',
+          dig_input_on: 'false',
           hardware_error: 'false',
           internal_relay_closed: 'false',
           open_drain_output_on: 'false',

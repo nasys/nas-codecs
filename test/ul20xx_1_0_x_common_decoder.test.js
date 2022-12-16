@@ -11,7 +11,7 @@ describe('decodeUnixTS tests', () => {
 });
 
 describe('Config packts', () => {
-  test('ldr_config_packet from DS', () => {
+  test('ldr_input_config_packet from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 50,
@@ -19,7 +19,7 @@ describe('Config packts', () => {
       expected: {
         data: {
           packet_type: {
-            value: 'ldr_config_packet',
+            value: 'ldr_input_config_packet',
           },
           ldr_off_threshold_high: {
             value: 160,
@@ -37,7 +37,7 @@ describe('Config packts', () => {
     });
   });
 
-  test('dig_config_packet from DS', () => {
+  test('dig_input_config_packet from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 50,
@@ -45,7 +45,7 @@ describe('Config packts', () => {
       expected: {
         data: {
           packet_type: {
-            value: 'dig_config_packet',
+            value: 'dig_input_config_packet',
           },
           light_on_duration: {
             value: 300,
@@ -240,7 +240,7 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: 'FF01',
-      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'ldr_config' } } },
+      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'ldr_input_config' } } },
     });
   });
 
@@ -249,7 +249,7 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: 'FF03',
-      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'dig_config' } } },
+      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'dig_input_config' } } },
     });
   });
 

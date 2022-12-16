@@ -14,8 +14,8 @@ describe('Status and usage', () => {
           status: {
             dali_error_external: { value: false },
             dali_connection_error: { value: false },
-            ldr_on: { value: false },
-            dig_on: { value: false },
+            ldr_input_on: { value: false },
+            dig_input_on: { value: false },
             hardware_error: { value: false },
             internal_relay_closed: { value: false },
             open_drain_output_on: { value: false },
@@ -29,7 +29,7 @@ describe('Status and usage', () => {
             power_alert_in_24h: { value: false },
             power_factor_alert_in_24h: { value: false },
           },
-          ldr_value: { value: 174 },
+          ldr_input_value: { value: 174 },
           profiles: [{
             profile_id: { value: 5, raw: 5 },
             profile_version: { value: 5, raw: 5 },
@@ -64,8 +64,8 @@ describe('Status and usage', () => {
           status: {
             dali_error_external: { value: true },
             dali_connection_error: { value: false },
-            ldr_on: { value: true },
-            dig_on: { value: false },
+            ldr_input_on: { value: true },
+            dig_input_on: { value: false },
             hardware_error: { value: false },
             internal_relay_closed: { value: false },
             open_drain_output_on: { value: false },
@@ -79,10 +79,10 @@ describe('Status and usage', () => {
             power_alert_in_24h: { value: false },
             power_factor_alert_in_24h: { value: false },
           },
-          ldr_value: { value: 219 },
+          ldr_input_value: { value: 219 },
           profiles: [{
             profile_id: { value: 2, raw: 2 },
-            profile_version: { value: 'ldr_active', raw: 250 },
+            profile_version: { value: 'ldr_input_active', raw: 250 },
             address: { value: 'dali_broadcast', raw: 254 },
             days_active: { value: ['holiday', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], raw: 255 },
             dimming_level: {
@@ -170,14 +170,23 @@ describe('Commands', () => {
         data: {
           packet_type: { value: 'dali_status_request' },
           dali_statuses: [{
-            address: { value: 'dali_single_1', raw: 2 }, control_gear_failure: { value: false }, lamp_failure: { value: false }, lamp_on: { value: true }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, short_address: { value: false }, power_cycle_seen: { value: false },
+            address: { value: 'dali_single_1', raw: 2 },
+            status: {
+              driver_error: { value: false }, lamp_failure: { value: false }, lamp_on: { value: true }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+            },
           }, {
-            address: { value: 'dali_single_3', raw: 6 }, control_gear_failure: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, short_address: { value: false }, power_cycle_seen: { value: false },
+            address: { value: 'dali_single_3', raw: 6 },
+            status: {
+              driver_error: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+            },
           }, {
-            address: { value: 'dali_single_6', raw: 12 }, control_gear_failure: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, short_address: { value: false }, power_cycle_seen: { value: false },
+            address: { value: 'dali_single_6', raw: 12 },
+            status: {
+              driver_error: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+            },
           }],
         },
-        warnings: ['dali_single_3 errors: lamp failure', 'dali_single_6 errors: lamp failure'],
+        warnings: ['dali_single_3 errors: lamp_failure', 'dali_single_6 errors: lamp_failure'],
       },
     });
   });
@@ -246,21 +255,21 @@ describe('Commands', () => {
 });
 
 describe('Alerts, notifications', () => {
-  test('dig_alert from DS', () => {
+  test('dig_input_alert from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 61,
       data: '80200600',
-      expected: { data: { packet_type: { value: 'dig_alert' }, dig_alert_counter: { value: 6 } } },
+      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_event_counter: { value: 6 } } },
     });
   });
 
-  test('ldr_alert from DS', () => {
+  test('ldr_input_alert from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 61,
       data: '81200079',
-      expected: { data: { packet_type: { value: 'ldr_alert' }, ldr_on: { value: false }, ldr_value: { value: 121 } } },
+      expected: { data: { packet_type: { value: 'ldr_input_alert' }, ldr_input_on: { value: false }, ldr_input_value: { value: 121 } } },
     });
   });
 
@@ -273,10 +282,13 @@ describe('Alerts, notifications', () => {
         data: {
           packet_type: { value: 'dali_driver_alert' },
           drivers: [{
-            address: { value: 'dali_single_1', raw: 2 }, control_gear_failure: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, short_address: { value: false }, power_cycle_seen: { value: false },
+            address: { value: 'dali_single_1', raw: 2 },
+            status: {
+              driver_error: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+            },
           }],
         },
-        warnings: ['dali_single_1 errors: lamp failure'],
+        warnings: ['dali_single_1 errors: lamp_failure'],
       },
     });
   });
@@ -310,7 +322,7 @@ describe('Boot, etc sys packets', () => {
           device_unix_epoch: { value: '2020-01-16T15:23:31.000Z', raw: 1579188211 },
           device_config: { value: 'dali', raw: 0 },
           optional_features: {
-            dig_in: { value: true }, ldr_in: { value: true }, metering: { value: false }, open_drain_output: { value: false },
+            dig_input: { value: true }, ldr_input: { value: true }, metering: { value: false }, open_drain_output: { value: false },
           },
           dali_supply_state: { value: 'bus_high', raw: 126 },
           dali_power_source_external: { value: 'external', raw: true },
@@ -335,7 +347,7 @@ describe('Boot, etc sys packets', () => {
           device_unix_epoch: { value: 'invalid_timestamp', raw: 946684814 },
           device_config: { value: 'analog_nc', raw: 3 },
           optional_features: {
-            dig_in: { value: false }, ldr_in: { value: true }, metering: { value: true }, open_drain_output: { value: false },
+            dig_input: { value: false }, ldr_input: { value: true }, metering: { value: true }, open_drain_output: { value: false },
           },
           dali_supply_state: { value: 'bus_high', raw: 126 },
           dali_power_source_external: { value: 'internal', raw: false },

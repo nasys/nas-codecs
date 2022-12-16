@@ -20,9 +20,9 @@ function profileReason(reason, err) {
     case 246:
       return 'driver_not_found';
     case 250:
-      return 'ldr_active';
+      return 'ldr_input_active';
     case 252:
-      return 'dig_active';
+      return 'dig_input_active';
     case 253:
       return 'manual_active';
     case 255:
@@ -108,7 +108,7 @@ export function profileParserPartial(dataView, profile, err) {
 export function decodeUnixEpoch(epoch, err) {
   var date = new Date(epoch * 1000);
   var epochFormatted = date.toISOString();
-  if (epoch < 1420070400) {
+  if (epoch < 1420070400) { // 1 January 2015 00:00:00
     epochFormatted = 'invalid_timestamp';
     err.warnings.push('invalid_timestamp');
   }
@@ -116,7 +116,7 @@ export function decodeUnixEpoch(epoch, err) {
 }
 
 export function decodeLdrConfig(dataView, result) {
-  result.packet_type = { value: 'ldr_config_packet' };
+  result.packet_type = { value: 'ldr_input_config_packet' };
 
   var high = dataView.getUint8();
   result.ldr_off_threshold_high = { value: high === 0xFF ? 'disabled' : high, raw: high };
@@ -137,10 +137,10 @@ export function decodeDimmingLevel(level, ffName) {
 }
 
 export function decodeDigConfig(dataView, result, err) {
-  result.packet_type = { value: 'dig_config_packet' };
+  result.packet_type = { value: 'dig_input_config_packet' };
 
   var time = dataView.getUint16();
-  result.light_on_duration = { value: time === 0xFFFF ? 'dig_disabled' : time, raw: time, unit: 's' };
+  result.light_on_duration = { value: time === 0xFFFF ? 'dig_input_disabled' : time, raw: time, unit: 's' };
 
   var behaviorBits = dataView.getUint8Bits();
   behaviorBits.getBits(1);
@@ -404,7 +404,7 @@ export function decodeLocationConfigV11(dataView, result) {
 }
 
 export function decodeLedConfig(dataView, result) {
-  result.packet_type = { value: 'led_config_packet' };
+  result.packet_type = { value: 'onboard_led_config_packet' };
   var l = dataView.getUint8Bits().getBits(1);
   result.status_led_enabled = bitFalseTrue(l);
 }
@@ -468,10 +468,10 @@ export function decodeClearConfig(dataView, result, err) {
   var typ = dataView.getUint8();
   switch (typ) {
     case 0x01:
-      result.reset_target = { value: 'ldr_config' };
+      result.reset_target = { value: 'ldr_input_config' };
       break;
     case 0x03:
-      result.reset_target = { value: 'dig_config' };
+      result.reset_target = { value: 'dig_input_config' };
       break;
     case 0x04:
       result.reset_target = { value: 'profile_config' };
@@ -563,31 +563,49 @@ export function decodeFport50(dataView, result, err) {
   }
 }
 
+function daliStatus(bits, address, err) {
+  var status = {};
+  var driverError = bits.getBits(1);
+  status.driver_error = bitFalseTrue(driverError);
+
+  var lampFailure = bits.getBits(1);
+  status.lamp_failure = bitFalseTrue(lampFailure);
+
+  status.lamp_on = bitFalseTrue(bits.getBits(1));
+
+  var limitError = bits.getBits(1);
+  status.limit_error = bitFalseTrue(limitError);
+
+  status.fade_running = bitFalseTrue(bits.getBits(1));
+
+  var resetState = bits.getBits(1);
+  status.reset_state = bitFalseTrue(resetState);
+
+  var missingAddress = bits.getBits(1);
+  status.missing_short_address = bitFalseTrue(missingAddress);
+
+  var powerFailure = bits.getBits(1);
+  status.power_failure = bitFalseTrue(powerFailure);
+
+  var alerts = [];
+  if (driverError) alerts.push('driver_error');
+  if (lampFailure) alerts.push('lamp_failure');
+  if (limitError) alerts.push('limit_error');
+  if (resetState) alerts.push('reset_state');
+  if (powerFailure) alerts.push('power_failure');
+  if (alerts.length) {
+    err.warnings.push(address + ' errors: ' + alerts.join(', '));
+  }
+  return status;
+}
+
 export function decodeDaliStatus(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.address = addressParse(addr, null, err);
+  var addrParsed = addressParse(addr, null, err);
+  result.address = addrParsed;
 
-  var stat = dataView.getUint8Bits();
-  var controlGearFailure = stat.getBits(1);
-  result.control_gear_failure = bitFalseTrue(controlGearFailure);
-  var lampFailure = stat.getBits(1);
-  result.lamp_failure = bitFalseTrue(lampFailure);
-  result.lamp_on = bitFalseTrue(stat.getBits(1));
-  var limitError = stat.getBits(1);
-  result.limit_error = bitFalseTrue(limitError);
-  result.fade_running = bitFalseTrue(stat.getBits(1));
-  result.reset_state = bitFalseTrue(stat.getBits(1));
-  result.short_address = bitFalseTrue(stat.getBits(1));
-  result.power_cycle_seen = bitFalseTrue(stat.getBits(1));
-
-  var alerts = [];
-  if (controlGearFailure) alerts.push('control gear failure');
-  if (lampFailure) alerts.push('lamp failure');
-  if (limitError) alerts.push('limit error');
-  if (alerts.length) {
-    err.warnings.push(result.address.value + ' errors: ' + alerts.join(', '));
-  }
+  result.status = daliStatus(dataView.getUint8Bits(), addrParsed.value, err);
   return result;
 }
 
@@ -835,58 +853,18 @@ function statusProfileParser(dataView, err) {
   return profile;
 }
 
-function dimmingStatus(bits, err) {
-  var status = {};
-  var ballastError = bits.getBits(1);
-  status.ballast_error = bitFalseTrue(ballastError);
-
-  var lampFailure = bits.getBits(1);
-  status.lamp_failure = bitFalseTrue(lampFailure);
-
-  status.lamp_arc_power_on = bitFalseTrue(bits.getBits(1));
-
-  var limitError = bits.getBits(1);
-  status.limit_error = bitFalseTrue(limitError);
-
-  status.fade_running = bitFalseTrue(bits.getBits(1));
-
-  var resetState = bits.getBits(1);
-  status.reset_state = bitFalseTrue(resetState);
-
-  var missingAddress = bits.getBits(1);
-  status.missing_short_address = bitFalseTrue(missingAddress);
-
-  var powerFailure = bits.getBits(1);
-  status.power_failure = bitFalseTrue(powerFailure);
-  if (ballastError) {
-    err.warnings.push('ballast_error');
-  }
-  if (lampFailure) {
-    err.warnings.push('lamp_failure');
-  }
-  if (limitError) {
-    err.warnings.push('limit_error');
-  }
-  if (resetState) {
-    err.warnings.push('reset_state');
-  }
-  if (missingAddress) {
-    err.warnings.push('missing_short_address');
-  }
-  if (powerFailure) {
-    err.warnings.push('power_failure');
-  }
-  return status;
-}
-
 function dimmingSourceParser(dataView, err) {
   var source = {};
 
-  source.address = addressParse(dataView.getUint8(), null, err);
+  var addrParsed = addressParse(dataView.getUint8(), null, err);
+  source.address = addrParsed;
+
   source.reason = profileReason(dataView.getUint8(), err);
+
   var level = dataView.getUint8();
   source.dimming_level = decodeDimmingLevel(level, 'ignore');
-  source.status = dimmingStatus(dataView.getUint8Bits(), err);
+
+  source.status = daliStatus(dataView.getUint8Bits(), addrParsed.value, err);
   return source;
 }
 
@@ -920,8 +898,8 @@ function statusParser(dataView, result, err) {
   if (err1) err.warnings.push('hardware_error');
 
   statusField.internal_relay_closed = bitFalseTrue(internalRelay);
-  statusField.ldr_on = bitFalseTrue(ldrOn);
-  statusField.dig_on = bitFalseTrue(digOn);
+  statusField.ldr_input_on = bitFalseTrue(ldrOn);
+  statusField.dig_input_on = bitFalseTrue(digOn);
   result.status = statusField;
 
   result.downlink_rssi = { value: -1 * dataView.getUint8(), unit: 'dBm' };
@@ -946,7 +924,7 @@ function statusParser(dataView, result, err) {
   result.analog_interfaces = reportedFields;
 
   if (ldrSent) {
-    result.ldr_value = { value: dataView.getUint8() };
+    result.ldr_input_value = { value: dataView.getUint8() };
   }
 
   result.profiles = [];
@@ -1027,8 +1005,8 @@ function optionalFeaturesParser(byte) {
   var bits = new BitExtract(byte);
   bits.getBits(1);
   bits.getBits(1);
-  res.dig_in = bitFalseTrue(bits.getBits(1));
-  res.ldr_in = bitFalseTrue(bits.getBits(1));
+  res.dig_input = bitFalseTrue(bits.getBits(1));
+  res.ldr_input = bitFalseTrue(bits.getBits(1));
   res.open_drain_output = bitFalseTrue(bits.getBits(1));
   res.metering = bitFalseTrue(bits.getBits(1));
   bits.getBits(1);
@@ -1199,24 +1177,24 @@ function decodeFport61(dataView, result, err) {
   var len = rawByte2 >> 4;
   switch (header) {
     case 0x80:
-      result.packet_type = { value: 'dig_alert' };
+      result.packet_type = { value: 'dig_input_alert' };
       if (len !== 2) {
         err.errors.push('invalid_packet_length');
         return;
       }
       var cnt = dataView.getUint16();
-      result.dig_alert_counter = { value: cnt };
+      result.dig_input_event_counter = { value: cnt };
       return;
     case 0x81:
-      result.packet_type = { value: 'ldr_alert' };
+      result.packet_type = { value: 'ldr_input_alert' };
       if (len !== 2) {
         err.errors.push('invalid_packet_length');
         return;
       }
       var state = dataView.getUint8Bits().getBits(1);
       var val = dataView.getUint8();
-      result.ldr_on = bitFalseTrue(state);
-      result.ldr_value = { value: val };
+      result.ldr_input_on = bitFalseTrue(state);
+      result.ldr_input_value = { value: val };
       return;
     case 0x83:
       result.packet_type = { value: 'dali_driver_alert' };
@@ -1271,10 +1249,10 @@ function decodeFport49(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
     case 0x01:
-      result.packet_type = { value: 'ldr_config_request' };
+      result.packet_type = { value: 'ldr_input_config_request' };
       return;
     case 0x03:
-      result.packet_type = { value: 'dig_config_request' };
+      result.packet_type = { value: 'dig_input_config_request' };
       return;
     case 0x07:
       result.packet_type = { value: 'status_config_request' };
@@ -1289,7 +1267,7 @@ function decodeFport49(dataView, result, err) {
       result.packet_type = { value: 'boot_delay_config_request' };
       return;
     case 0x15:
-      result.packet_type = { value: 'led_config_request' };
+      result.packet_type = { value: 'onboard_led_config_request' };
       return;
     case 0x16:
       result.packet_type = { value: 'metering_alert_confic_request' };

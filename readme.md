@@ -4,6 +4,14 @@
 - CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares. Note: 1.3.x and 2.3.x protocol is identical, major version number signifies used radio chipset.
 - UM3070, UM3081, UM3090, UM3100, UM3110 with 4.0.x firmware.
 
+## Using on TTN (or Chirpstack)
+- open minified .js file for appropriate device from gerenated folder.
+- click on file (like /generated/ul20xx_1_0_x_decoder.min.js)
+- click on Raw
+- copy everything
+- in e.g. TTN Select your LCU Application -> then Payload Formatters -> Uplink -> Formatter type: Custom Javascript Formatter and paste the code there.
+- repeat it for Downlink aswell
+
 ## Supported platforms
 - Chirpstack
 - The Things Network (add as Custom Javascript Formatter to both Uplink and Downlink)
@@ -16,6 +24,15 @@ TTN has maximum code limit of 40960 characters. No one thought that anyone needs
 - `decodeRaw()` output raw JSON objects. On UL20xx each data-point contains _value_ key plus optionally _raw_, _unit_ etc. On CM30xx and UM30xx key of data-point contains unit (e.g. accumulated_volume__m3) and sometimes __formatted field.
 - Raw output can be easily re-formatted or used programmatically. Default `convertToFormatted()` converts raw to compact format where _value_ and _unit_ are concatenated and serves as an example.
 - Serves as annex for respective Payload Description documents.
+
+## Structure
+```
+{
+  "data": {}, // decoded object
+  "errors": [], // payload parsing errors, field ommited if None
+  "warnings": [], // alerts from the device, field ommited if None
+}
+```
 
 ## Live decoding example
 Download .html file in [generated](https://github.com/nasys/nas-codecs/tree/main/generated) folder and open in brower to decode payloads.
@@ -88,14 +105,16 @@ Only needed if one wants to regenerate the output or run tests etc.
 Node must be installed. To install dependencies:
 `npm install`
 
-## Running tests:
-`npm test`
-
-## Rebuild
+## Build
 `npm run build_cm30xx_2_3_x && npm run build_cm30xx_2_3_x_html`
 `npm run build_um30xx_4_0_x && npm run build_um30xx_4_0_x_html`
 `npm run build_ul20xx_1_0_x && npm run build_ul20xx_1_0_x_html`
 `npm run build_ul20xx_1_1_x && npm run build_ul20xx_1_1_x_html`
+
+## Running tests:
+`npm test`
+If src folder has been modified, run at least first half of the build command (generating html not needed).
+`npm run build_cm30xx_2_3_x && npm run build_um30xx_4_0_x && npm run build_ul20xx_1_0_x && npm run build_ul20xx_1_1_x && npm test`
 
 
 ## Coverage overlay in VS Code

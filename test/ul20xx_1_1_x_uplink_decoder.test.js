@@ -30,10 +30,10 @@ describe('Status and usage', () => {
             internal_relay_closed: {
               value: true,
             },
-            ldr_on: {
+            ldr_input_on: {
               value: false,
             },
-            dig_on: {
+            dig_input_on: {
               value: true,
             },
             open_drain_output_on: {
@@ -65,13 +65,13 @@ describe('Status and usage', () => {
                 unit: '%',
               },
               status: {
-                ballast_error: {
+                driver_error: {
                   value: false,
                 },
                 lamp_failure: {
                   value: false,
                 },
-                lamp_arc_power_on: {
+                lamp_on: {
                   value: false,
                 },
                 limit_error: {
@@ -103,13 +103,13 @@ describe('Status and usage', () => {
                 unit: '%',
               },
               status: {
-                ballast_error: {
+                driver_error: {
                   value: false,
                 },
                 lamp_failure: {
                   value: false,
                 },
-                lamp_arc_power_on: {
+                lamp_on: {
                   value: false,
                 },
                 limit_error: {
@@ -255,21 +255,21 @@ describe('Commands', () => {
 });
 
 describe('Alerts, notifications', () => {
-  test('dig_alert from DS', () => {
+  test('dig_input_alert from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 61,
       data: '80200600',
-      expected: { data: { packet_type: { value: 'dig_alert' }, dig_alert_counter: { value: 6 } } },
+      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_event_counter: { value: 6 } } },
     });
   });
 
-  test('ldr_alert from DS', () => {
+  test('ldr_input_alert from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 61,
       data: '81200079',
-      expected: { data: { packet_type: { value: 'ldr_alert' }, ldr_on: { value: false }, ldr_value: { value: 121 } } },
+      expected: { data: { packet_type: { value: 'ldr_input_alert' }, ldr_input_on: { value: false }, ldr_input_value: { value: 121 } } },
     });
   });
 
@@ -282,10 +282,13 @@ describe('Alerts, notifications', () => {
         data: {
           packet_type: { value: 'dali_driver_alert' },
           drivers: [{
-            address: { value: 'dali_single_1', raw: 2 }, control_gear_failure: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, short_address: { value: false }, power_cycle_seen: { value: false },
+            address: { value: 'dali_single_1', raw: 2 },
+            status: {
+              driver_error: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+            },
           }],
         },
-        warnings: ['dali_single_1 errors: lamp failure'],
+        warnings: ['dali_single_1 errors: lamp_failure'],
       },
     });
   });
@@ -319,10 +322,10 @@ describe('Boot, etc sys packets', () => {
           device_unix_epoch: { value: '2020-01-16T15:23:31.000Z', raw: 1579188211 },
           device_config: { value: 'dali', raw: 0 },
           optional_features: {
-            dig_in: {
+            dig_input: {
               value: true,
             },
-            ldr_in: {
+            ldr_input: {
               value: true,
             },
             open_drain_output: {
@@ -368,10 +371,10 @@ describe('Boot, etc sys packets', () => {
             raw: 3,
           },
           optional_features: {
-            dig_in: {
+            dig_input: {
               value: false,
             },
-            ldr_in: {
+            ldr_input: {
               value: true,
             },
             open_drain_output: {

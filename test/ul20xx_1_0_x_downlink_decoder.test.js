@@ -2,21 +2,21 @@ import { decodeRaw } from '../src/ul20xx_1_0_x_decoder.processed';
 import { testPacket } from './utils/test_utils';
 
 describe('Config requests', () => {
-  test('ldr_config_request from DS', () => {
+  test('ldr_input_config_request from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 49,
       data: '01',
-      expected: { data: { packet_type: { value: 'ldr_config_request' } } },
+      expected: { data: { packet_type: { value: 'ldr_input_config_request' } } },
     });
   });
 
-  describe('dig_config_request from DS', () => {
+  describe('dig_input_config_request from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 49,
       data: '03',
-      expected: { data: { packet_type: { value: 'dig_config_request' } } },
+      expected: { data: { packet_type: { value: 'dig_input_config_request' } } },
     });
   });
 
