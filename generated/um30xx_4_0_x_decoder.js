@@ -906,7 +906,7 @@ function extractUnitFromKey(key) {
   var spl = key.split('__');
   var unit = spl.length > 1 ? spl[1] : '';
   if (unit === 'C') { unit = unit.replace('C', '°C'); }
-  unit = unit.replaceAll('_', '/');
+  unit = unit.replace('_', '/');
   unit = unit.replace('3', '³');
   unit = unit.replace('deg', '°');
   return unit;
@@ -925,42 +925,41 @@ function formatElementStrValueUnit(keyPrintable, value, formattedValue, unit) {
       res = res + ' ' + unit;
     }
   }
-  return res.replaceAll('_', ' ');
+  return res.split('_').join(' '); // workaround for missing replaceAll in ES5
 }
 
 function convertToFormatted(decoded, elementFormatter, outIsList) {
+  var dataOrig = decoded.data;
   var converted = outIsList ? [] : {};
-  var hidden = outIsList ? [] : {};
-  for (var key in decoded) {
+  for (var key in dataOrig) {
     if (key.split('_formatted').length > 1) {
       // key containing '_formatted' must have its pair, so skip _formatted
-      // e.g. with 'actuality_duration_formatted' also must exist e.g. 'actuality_duration__minutes'
+      // e.g. with 'actuality_duration__formatted' also must exist e.g. 'actuality_duration__minutes'
       continue;
     }
     var paramName = key.split('__')[0];
-    var value = decoded[key];
+    var value = dataOrig[key];
 
     var formattedValue = null;
-    if (paramName + '_formatted' in decoded) {
-      formattedValue = decoded[paramName + '_formatted'];
+    if (paramName + '_formatted' in dataOrig) {
+      formattedValue = dataOrig[paramName + '_formatted'];
     }
 
     var unit = extractUnitFromKey(key);
 
     var keyPrintable = paramName;
-    var isHiddenParam = keyPrintable[0] == '_';
+    var isHiddenParam = paramName[0] === '_';
     if (isHiddenParam) {
-      // remove first empty char
+      // remove first underscore (that signifies less important parameters)
       keyPrintable = keyPrintable.slice(1);
     }
 
     var element = elementFormatter(keyPrintable, value, formattedValue, unit);
 
-    if (isHiddenParam) {
-      if (outIsList) { hidden.push(element); } else { hidden[paramName] = element; }
-    } else if (outIsList) { converted.push(element); } else { converted[paramName] = element; }
+    if (outIsList) { converted.push(element); } else { converted[keyPrintable] = element; }
   }
-  return { hidden, data: converted };
+  decoded.data = converted; // decoded may still contain warnings and errors.
+  return decoded;
 }
 
 // Change formatElementStrValueUnit to formatElementStrValue if only values are needed

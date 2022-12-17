@@ -107,9 +107,9 @@ Node must be installed. To install dependencies:
 
 ## Build
 `npm run build_cm30xx_2_3_x && npm run build_cm30xx_2_3_x_html`
-`npm run build_um30xx_4_0_x && npm run build_um30xx_4_0_x_html`
 `npm run build_ul20xx_1_0_x && npm run build_ul20xx_1_0_x_html`
 `npm run build_ul20xx_1_1_x && npm run build_ul20xx_1_1_x_html`
+`npm run build_um30xx_4_0_x && npm run build_um30xx_4_0_x_html`
 
 ## Running tests:
 `npm test`
