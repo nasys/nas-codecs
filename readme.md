@@ -1,8 +1,8 @@
 # NAS Payload Codec
 ## Supported devices
-- cm30xx: CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares. Note: 1.3.x and 2.3.x protocol is identical, major version number signifies used radio chipset.
-- ul20xx: UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x and 1.1.x firmwares. Note: does not support _legacy_status_packet_.
-- um30xx: UM3070, UM3081, UM3090, UM3100, UM3110 with 4.0.x firmware.
+- __cm30xx__: _CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130_ with 1.3.x and 2.3.x firmwares. Note: 1.3.x and 2.3.x protocol is identical, major version number signifies used radio chipset.
+- __ul20xx__: _UL2002, UL2014, UL2020, UL2021, UL2030_ with 1.0.x and 1.1.x firmwares. Note: does not support _legacy_status_packet_.
+- __um30xx__: _UM3070, UM3081, UM3090, UM3100, UM3110_ with 4.0.x firmware.
 
 ## Live decoding example
 [CM30xx 1.3.x / 2.3.x live decoder](https://nasys.github.io/nas-codecs/generated/cm30xx_2_3_x_decoder.html)
@@ -37,17 +37,22 @@ TTN has maximum code limit of 40960 characters. No one thought that anyone needs
 - Serves as annex for respective Payload Description documents.
 
 ## Structure
+Structure is based on TTN.
+
+__data__ - the decoded output.
+
+__errors__ - payload parsing errors, field ommited if None 
+
+__warnings__ - alerts from the device, field ommited if None
 ```
 {
-  "data": {}, // decoded object
-  "errors": [], // payload parsing errors, field ommited if None
-  "warnings": [], // alerts from the device, field ommited if None
+  "data": {},
+  "errors": [],
+  "warnings": []
 }
 ```
 
 ## Decoding output Example
-<details>
-  <summary>Decoded UL20xx status packet</summary>
 ```
 {
   "data": {
@@ -90,18 +95,15 @@ TTN has maximum code limit of 40960 characters. No one thought that anyone needs
         "dimming_level": "0 %"
       }
     ]
-  },
-  "errors": [],
-  "warnings": []
+  }
 }
 ```  
-</details>
 
 # Reporting errors
 Please report issues in Github Issues page.
 
 # Getting started
-First test the codec in browser by opening generated/cm30xx_decoder.html.
+First test the codec Live - See Live decoding example above.
 
 For testing on your platform download respective file from generated/ folder and modify/replace the entry function to call `decodeRaw()`. Inside that function the output can also be reformatted however is needed.
 
