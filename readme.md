@@ -1,8 +1,15 @@
 # NAS Payload Codec
 ## Supported devices
-- UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x and 1.1.x firmwares. Note: does not support _legacy_status_packet_.
-- CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares. Note: 1.3.x and 2.3.x protocol is identical, major version number signifies used radio chipset.
-- UM3070, UM3081, UM3090, UM3100, UM3110 with 4.0.x firmware.
+- cm30xx: CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares. Note: 1.3.x and 2.3.x protocol is identical, major version number signifies used radio chipset.
+- ul20xx: UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x and 1.1.x firmwares. Note: does not support _legacy_status_packet_.
+- um30xx: UM3070, UM3081, UM3090, UM3100, UM3110 with 4.0.x firmware.
+
+## Live decoding example
+[CM30xx 1.3.x / 2.3.x live decoder](https://nasys.github.io/nas-codecs/generated/cm30xx_2_3_x_decoder.html)
+[UL20xx 1.0.x live decoder](https://nasys.github.io/nas-codecs/generated/ul20xx_1_0_x_decoder.html)
+[UL20xx 1.1.x live decoder](https://nasys.github.io/nas-codecs/generated/ul20xx_1_1_x_decoder.html)
+[UM30xx live decoder](https://nasys.github.io/nas-codecs/generated/um30xx_4_0_x_decoder.html)
+Or download respective .html file in [generated](https://github.com/nasys/nas-codecs/tree/main/generated) folder.
 
 ## Using on TTN (or Chirpstack)
 - open minified .js file for appropriate device from gerenated folder.
@@ -33,9 +40,6 @@ TTN has maximum code limit of 40960 characters. No one thought that anyone needs
   "warnings": [], // alerts from the device, field ommited if None
 }
 ```
-
-## Live decoding example
-Download .html file in [generated](https://github.com/nasys/nas-codecs/tree/main/generated) folder and open in brower to decode payloads.
 
 ## Decoding output Example
 <details>

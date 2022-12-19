@@ -302,7 +302,7 @@ describe('Alerts, notifications', () => {
         data: {
           packet_type: { value: 'metering_alert' }, lamp_error_alert: { value: false }, over_current_alert: { value: true }, under_voltage_alert: { value: false }, over_voltage_alert: { value: false }, low_power_factor_alert: { value: false }, power: { value: 89, unit: 'W' }, voltage: { value: 229, unit: 'V' }, power_factor: { value: 0.86 },
         },
-        warnings: ['Metering alerts: over_current'],
+        warnings: ['metering_alert: over_current'],
       },
     });
   });

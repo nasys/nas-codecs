@@ -1352,6 +1352,8 @@ function decodeFport61(dataView, result, err) {
         err.errors.push('invalid_packet_length');
         return;
       }
+      err.warnings.push('dig_input_alert');
+
       var cnt = dataView.getUint16();
       result.dig_input_event_counter = { value: cnt };
       return;
@@ -1361,6 +1363,8 @@ function decodeFport61(dataView, result, err) {
         err.errors.push('invalid_packet_length');
         return;
       }
+      err.warnings.push('ldr_input_alert');
+
       var state = dataView.getUint8Bits().getBits(1);
       var val = dataView.getUint8();
       result.ldr_input_on = bitFalseTrue(state);
@@ -1368,6 +1372,8 @@ function decodeFport61(dataView, result, err) {
       return;
     case 0x83:
       result.packet_type = { value: 'dali_driver_alert' };
+      err.warnings.push('dali_driver_alert');
+
       result.drivers = [];
       while (dataView.availableLen()) {
         result.drivers.push(decodeDaliStatus(dataView, err));
@@ -1396,7 +1402,7 @@ function decodeFport61(dataView, result, err) {
       if (overVoltage) conditions.push('over_voltage');
       if (lowPowerFactor) conditions.push('low_power_factor');
       if (conditions.length) {
-        err.warnings.push('Metering alerts: ' + conditions.join(', '));
+        err.warnings.push('metering_alert: ' + conditions.join(', '));
       }
 
       var pw = dataView.getUint16();
