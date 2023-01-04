@@ -564,7 +564,18 @@ export function decodeFport50(dataView, result, err) {
 }
 
 function daliStatus(bits, address, err) {
-  var status = {};
+  var status = {
+    driver_error: bitFalseTrue(false),
+    lamp_failure: bitFalseTrue(false),
+    lamp_on: bitFalseTrue(false),
+    limit_error: bitFalseTrue(false),
+    fade_running: bitFalseTrue(false),
+    reset_state: bitFalseTrue(false),
+    missing_short_address: bitFalseTrue(false),
+    power_failure: bitFalseTrue(false),
+  };
+  if (bits.data === 0xFF) return status;
+
   var driverError = bits.getBits(1);
   status.driver_error = bitFalseTrue(driverError);
 
@@ -587,15 +598,11 @@ function daliStatus(bits, address, err) {
   var powerFailure = bits.getBits(1);
   status.power_failure = bitFalseTrue(powerFailure);
 
-  var alerts = [];
-  if (driverError) alerts.push('driver_error');
-  if (lampFailure) alerts.push('lamp_failure');
-  if (limitError) alerts.push('limit_error');
-  if (resetState) alerts.push('reset_state');
-  if (powerFailure) alerts.push('power_failure');
-  if (alerts.length) {
-    err.warnings.push(address + ' errors: ' + alerts.join(', '));
-  }
+  if (driverError) err.warnings.push(address + ' driver_error');
+  if (lampFailure) err.warnings.push(address + ' lamp_failure');
+  if (limitError) err.warnings.push(address + ' limit_error');
+  if (resetState) err.warnings.push(address + ' reset_state');
+  if (powerFailure) err.warnings.push(address + ' power_failure');
   return status;
 }
 
@@ -1202,7 +1209,6 @@ function decodeFport61(dataView, result, err) {
       return;
     case 0x83:
       result.packet_type = { value: 'dali_driver_alert' };
-      err.warnings.push('dali_driver_alert');
 
       result.drivers = [];
       while (dataView.availableLen()) {
@@ -1225,15 +1231,11 @@ function decodeFport61(dataView, result, err) {
       result.over_voltage_alert = bitFalseTrue(overVoltage);
       result.low_power_factor_alert = bitFalseTrue(lowPowerFactor);
 
-      var conditions = [];
-      if (lampError) conditions.push('lamp_error');
-      if (overCurrent) conditions.push('over_current');
-      if (underVoltage) conditions.push('under_voltage');
-      if (overVoltage) conditions.push('over_voltage');
-      if (lowPowerFactor) conditions.push('low_power_factor');
-      if (conditions.length) {
-        err.warnings.push('metering_alert: ' + conditions.join(', '));
-      }
+      if (lampError) err.warnings.push('metering_lamp_error');
+      if (overCurrent) err.warnings.push('metering_over_current');
+      if (underVoltage) err.warnings.push('metering_under_voltage');
+      if (overVoltage) err.warnings.push('metering_over_voltage');
+      if (lowPowerFactor) err.warnings.push('metering_low_power_factor');
 
       var pw = dataView.getUint16();
       result.power = { value: pw, unit: 'W' };

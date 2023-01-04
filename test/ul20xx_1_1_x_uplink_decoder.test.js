@@ -138,6 +138,48 @@ describe('Status and usage', () => {
     });
   });
 
+  test('status with relay off', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 23,
+      data: '00F6E5853800340718000EF5FFFF',
+      expected: {
+        data: {
+          packet_type: { value: 'status_packet' },
+          device_unix_epoch: { value: 'invalid_timestamp', raw: 948299254 },
+          status: {
+            dali_connection_error: { value: false },
+            metering_com_error: { value: false },
+            rtc_com_error: { value: false },
+            internal_relay_closed: { value: false },
+            ldr_input_on: { value: false },
+            dig_input_on: { value: false },
+            open_drain_output_on: { value: false },
+          },
+          downlink_rssi: { value: -52, unit: 'dBm' },
+          downlink_snr: { value: 7, unit: 'dB' },
+          mcu_temperature: { value: 24, unit: '°C' },
+          dimming_source: [{
+            address: { value: 'dali_single_7', raw: 14 },
+            reason: 'relay_off',
+            dimming_level: { value: 'ignore', raw: 255, unit: '' },
+            status: {
+              driver_error: { value: false },
+              lamp_failure: { value: false },
+              lamp_on: { value: false },
+              limit_error: { value: false },
+              fade_running: { value: false },
+              reset_state: { value: false },
+              missing_short_address: { value: false },
+              power_failure: { value: false },
+            },
+          }],
+        },
+        warnings: ['invalid_timestamp'],
+      },
+    });
+  });
+
   test('usage from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
@@ -260,7 +302,8 @@ describe('Alerts, notifications', () => {
       decoderFn: decodeRaw,
       fport: 61,
       data: '80200600',
-      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_event_counter: { value: 6 } } },
+      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_event_counter: { value: 6 } }, warnings: ['dig_input_alert'] },
+
     });
   });
 
@@ -269,7 +312,7 @@ describe('Alerts, notifications', () => {
       decoderFn: decodeRaw,
       fport: 61,
       data: '81200079',
-      expected: { data: { packet_type: { value: 'ldr_input_alert' }, ldr_input_on: { value: false }, ldr_input_value: { value: 121 } } },
+      expected: { data: { packet_type: { value: 'ldr_input_alert' }, ldr_input_on: { value: false }, ldr_input_value: { value: 121 } }, warnings: ['ldr_input_alert'] },
     });
   });
 
@@ -284,11 +327,18 @@ describe('Alerts, notifications', () => {
           drivers: [{
             address: { value: 'dali_single_1', raw: 2 },
             status: {
-              driver_error: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+              driver_error: { value: false },
+              lamp_failure: { value: true },
+              lamp_on: { value: false },
+              limit_error: { value: false },
+              fade_running: { value: false },
+              reset_state: { value: false },
+              missing_short_address: { value: false },
+              power_failure: { value: false },
             },
           }],
         },
-        warnings: ['dali_single_1 errors: lamp_failure'],
+        warnings: ['dali_single_1 lamp_failure'],
       },
     });
   });
@@ -302,7 +352,7 @@ describe('Alerts, notifications', () => {
         data: {
           packet_type: { value: 'metering_alert' }, lamp_error_alert: { value: false }, over_current_alert: { value: true }, under_voltage_alert: { value: false }, over_voltage_alert: { value: false }, low_power_factor_alert: { value: false }, power: { value: 89, unit: 'W' }, voltage: { value: 229, unit: 'V' }, power_factor: { value: 0.86 },
         },
-        warnings: ['metering_alert: over_current'],
+        warnings: ['metering_over_current'],
       },
     });
   });

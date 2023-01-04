@@ -172,21 +172,42 @@ describe('Commands', () => {
           dali_statuses: [{
             address: { value: 'dali_single_1', raw: 2 },
             status: {
-              driver_error: { value: false }, lamp_failure: { value: false }, lamp_on: { value: true }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+              driver_error: { value: false },
+              lamp_failure: { value: false },
+              lamp_on: { value: true },
+              limit_error: { value: false },
+              fade_running: { value: false },
+              reset_state: { value: false },
+              missing_short_address: { value: false },
+              power_failure: { value: false },
             },
           }, {
             address: { value: 'dali_single_3', raw: 6 },
             status: {
-              driver_error: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+              driver_error: { value: false },
+              lamp_failure: { value: true },
+              lamp_on: { value: false },
+              limit_error: { value: false },
+              fade_running: { value: false },
+              reset_state: { value: false },
+              missing_short_address: { value: false },
+              power_failure: { value: false },
             },
           }, {
             address: { value: 'dali_single_6', raw: 12 },
             status: {
-              driver_error: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+              driver_error: { value: false },
+              lamp_failure: { value: true },
+              lamp_on: { value: false },
+              limit_error: { value: false },
+              fade_running: { value: false },
+              reset_state: { value: false },
+              missing_short_address: { value: false },
+              power_failure: { value: false },
             },
           }],
         },
-        warnings: ['dali_single_3 errors: lamp_failure', 'dali_single_6 errors: lamp_failure'],
+        warnings: ['dali_single_3 lamp_failure', 'dali_single_6 lamp_failure'],
       },
     });
   });
@@ -260,7 +281,8 @@ describe('Alerts, notifications', () => {
       decoderFn: decodeRaw,
       fport: 61,
       data: '80200600',
-      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_event_counter: { value: 6 } } },
+      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_event_counter: { value: 6 } }, warnings: ['dig_input_alert'] },
+
     });
   });
 
@@ -269,7 +291,8 @@ describe('Alerts, notifications', () => {
       decoderFn: decodeRaw,
       fport: 61,
       data: '81200079',
-      expected: { data: { packet_type: { value: 'ldr_input_alert' }, ldr_input_on: { value: false }, ldr_input_value: { value: 121 } } },
+      expected: { data: { packet_type: { value: 'ldr_input_alert' }, ldr_input_on: { value: false }, ldr_input_value: { value: 121 } }, warnings: ['ldr_input_alert'] },
+
     });
   });
 
@@ -284,11 +307,18 @@ describe('Alerts, notifications', () => {
           drivers: [{
             address: { value: 'dali_single_1', raw: 2 },
             status: {
-              driver_error: { value: false }, lamp_failure: { value: true }, lamp_on: { value: false }, limit_error: { value: false }, fade_running: { value: false }, reset_state: { value: false }, missing_short_address: { value: false }, power_failure: { value: false },
+              driver_error: { value: false },
+              lamp_failure: { value: true },
+              lamp_on: { value: false },
+              limit_error: { value: false },
+              fade_running: { value: false },
+              reset_state: { value: false },
+              missing_short_address: { value: false },
+              power_failure: { value: false },
             },
           }],
         },
-        warnings: ['dali_single_1 errors: lamp_failure'],
+        warnings: ['dali_single_1 lamp_failure'],
       },
     });
   });
@@ -302,7 +332,7 @@ describe('Alerts, notifications', () => {
         data: {
           packet_type: { value: 'metering_alert' }, lamp_error_alert: { value: false }, over_current_alert: { value: true }, under_voltage_alert: { value: false }, over_voltage_alert: { value: false }, low_power_factor_alert: { value: false }, power: { value: 89, unit: 'W' }, voltage: { value: 229, unit: 'V' }, power_factor: { value: 0.86 },
         },
-        warnings: ['metering_alert: over_current'],
+        warnings: ['metering_over_current'],
       },
     });
   });
@@ -322,7 +352,10 @@ describe('Boot, etc sys packets', () => {
           device_unix_epoch: { value: '2020-01-16T15:23:31.000Z', raw: 1579188211 },
           device_config: { value: 'dali', raw: 0 },
           optional_features: {
-            dig_input: { value: true }, ldr_input: { value: true }, metering: { value: false }, open_drain_output: { value: false },
+            dig_input: { value: true },
+            ldr_input: { value: true },
+            metering: { value: false },
+            open_drain_output: { value: false },
           },
           dali_supply_state: { value: 'bus_high', raw: 126 },
           dali_power_source_external: { value: 'external', raw: true },
@@ -347,7 +380,10 @@ describe('Boot, etc sys packets', () => {
           device_unix_epoch: { value: 'invalid_timestamp', raw: 946684814 },
           device_config: { value: 'analog_nc', raw: 3 },
           optional_features: {
-            dig_input: { value: false }, ldr_input: { value: true }, metering: { value: true }, open_drain_output: { value: false },
+            dig_input: { value: false },
+            ldr_input: { value: true },
+            metering: { value: true },
+            open_drain_output: { value: false },
           },
           dali_supply_state: { value: 'bus_high', raw: 126 },
           dali_power_source_external: { value: 'internal', raw: false },
