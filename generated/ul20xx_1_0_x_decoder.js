@@ -4,7 +4,7 @@ function stringFromUTF8Array(data) {
   var count = data.length;
   var str = '';
   for (var index = 0; index < count;) {
-  // eslint-disable-next-line no-plusplus
+    // eslint-disable-next-line no-plusplus
     var ch = data[index++];
     // eslint-disable-next-line no-bitwise
     if (ch & 0x80) {
@@ -16,7 +16,7 @@ function stringFromUTF8Array(data) {
       }
       // eslint-disable-next-line no-bitwise
       ch &= (0x3F >> extra);
-      for (;extra > 0; extra -= 1) {
+      for (; extra > 0; extra -= 1) {
         // eslint-disable-next-line no-plusplus
         var chx = data[index++];
         // eslint-disable-next-line no-bitwise
@@ -47,7 +47,7 @@ BitExtract.prototype._assertOnRemainingLength = function (lengthBits) {
 
 BitExtract.prototype.getBits = function (lengthBits) {
   this._assertOnRemainingLength(lengthBits);
-  var mask = 2 ** lengthBits - 1;
+  var mask = Math.pow(2, lengthBits) - 1;
   // eslint-disable-next-line no-bitwise
   var res = (this.data >> this.offset) & mask;
   this.offset += lengthBits;
@@ -95,8 +95,8 @@ BinaryExtract.prototype.getUint24 = function () {
   this._assertOnRemainingLength(3);
   // eslint-disable-next-line no-plusplus
   var res = this.buffer[this.offset++] + this.buffer[this.offset++] * 256
-  // eslint-disable-next-line no-plusplus
-      + this.buffer[this.offset++] * 65536;
+    // eslint-disable-next-line no-plusplus
+    + this.buffer[this.offset++] * 65536;
   return res;
 };
 
@@ -104,8 +104,8 @@ BinaryExtract.prototype.getUint32 = function () {
   this._assertOnRemainingLength(4);
   // eslint-disable-next-line no-plusplus
   var res = this.buffer[this.offset++] + this.buffer[this.offset++] * 256
-  // eslint-disable-next-line no-plusplus
-      + this.buffer[this.offset++] * 65536 + this.buffer[this.offset++] * 16777216;
+    // eslint-disable-next-line no-plusplus
+    + this.buffer[this.offset++] * 65536 + this.buffer[this.offset++] * 16777216;
   return res;
 };
 
@@ -162,7 +162,7 @@ BinaryExtract.prototype.getFloat = function () {
     // eslint-disable-next-line no-bitwise
     significand = (significand | (1 << 23)) / (1 << 23);
   }
-  return sign * significand * 2 ** exponent;
+  return sign * significand * Math.pow(2, exponent);
 };
 
 function pad(number, length) {
@@ -762,7 +762,7 @@ function decodeDimmingCommand(dataView, result, err) {
 function decodeCustomDaliReq(dataView, result, err) {
   result.packet_type = { value: 'custom_dali_request' };
 
-  var { offset } = dataView;
+  var offset = dataView.offset;
   result.query_data_raw = { value: bytesToHexStr(dataView.getRaw(dataView.availableLen())) };
   // restore previous offset like the getRaw read never happened
   dataView.offset = offset;
@@ -1042,7 +1042,8 @@ function usageConsumptionParse(dataView, err) {
     result.load_side_power = { value: dataView.getUint16(), unit: 'W' };
   }
   if (bits.getBits(1)) {
-    result.power_factor = { value: dataView.getUint8() / 100 };
+    var rawPf = dataView.getUint8();
+    result.power_factor = { value: rawPf === 0xFF ? 'unknown' : (rawPf / 100.0), raw: rawPf };
   }
   if (bits.getBits(1)) {
     result.mains_voltage = { value: dataView.getUint8(), unit: 'V' };
@@ -1488,7 +1489,7 @@ function convertObjRecursive(element, elementFormatter) {
   if (element instanceof Array) {
     // is array
     var output2 = [];
-    element.forEach((item) => {
+    element.forEach(function (item) {
       output2.push(convertObjRecursive(item, elementFormatter));
     });
     return output2;

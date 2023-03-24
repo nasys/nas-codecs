@@ -223,6 +223,7 @@ describe('Status and usage', () => {
                 unit: 'W',
               },
               power_factor: {
+                raw: 93,
                 value: 0.93,
               },
               mains_voltage: {

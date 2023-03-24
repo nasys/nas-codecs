@@ -41,7 +41,7 @@
   </select><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2022-12-16T22:02:00.204Z</div>
+<div class="footer">Generated at 2023-03-24T14:22:04.108Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -52,7 +52,7 @@ function stringFromUTF8Array(data) {
   var count = data.length;
   var str = '';
   for (var index = 0; index < count;) {
-  // eslint-disable-next-line no-plusplus
+    // eslint-disable-next-line no-plusplus
     var ch = data[index++];
     // eslint-disable-next-line no-bitwise
     if (ch & 0x80) {
@@ -64,7 +64,7 @@ function stringFromUTF8Array(data) {
       }
       // eslint-disable-next-line no-bitwise
       ch &= (0x3F >> extra);
-      for (;extra > 0; extra -= 1) {
+      for (; extra > 0; extra -= 1) {
         // eslint-disable-next-line no-plusplus
         var chx = data[index++];
         // eslint-disable-next-line no-bitwise
@@ -95,7 +95,7 @@ BitExtract.prototype._assertOnRemainingLength = function (lengthBits) {
 
 BitExtract.prototype.getBits = function (lengthBits) {
   this._assertOnRemainingLength(lengthBits);
-  var mask = 2 ** lengthBits - 1;
+  var mask = Math.pow(2, lengthBits) - 1;
   // eslint-disable-next-line no-bitwise
   var res = (this.data >> this.offset) & mask;
   this.offset += lengthBits;
@@ -143,8 +143,8 @@ BinaryExtract.prototype.getUint24 = function () {
   this._assertOnRemainingLength(3);
   // eslint-disable-next-line no-plusplus
   var res = this.buffer[this.offset++] + this.buffer[this.offset++] * 256
-  // eslint-disable-next-line no-plusplus
-      + this.buffer[this.offset++] * 65536;
+    // eslint-disable-next-line no-plusplus
+    + this.buffer[this.offset++] * 65536;
   return res;
 };
 
@@ -152,8 +152,8 @@ BinaryExtract.prototype.getUint32 = function () {
   this._assertOnRemainingLength(4);
   // eslint-disable-next-line no-plusplus
   var res = this.buffer[this.offset++] + this.buffer[this.offset++] * 256
-  // eslint-disable-next-line no-plusplus
-      + this.buffer[this.offset++] * 65536 + this.buffer[this.offset++] * 16777216;
+    // eslint-disable-next-line no-plusplus
+    + this.buffer[this.offset++] * 65536 + this.buffer[this.offset++] * 16777216;
   return res;
 };
 
@@ -210,7 +210,7 @@ BinaryExtract.prototype.getFloat = function () {
     // eslint-disable-next-line no-bitwise
     significand = (significand | (1 << 23)) / (1 << 23);
   }
-  return sign * significand * 2 ** exponent;
+  return sign * significand * Math.pow(2, exponent);
 };
 
 function pad(number, length) {
@@ -261,7 +261,7 @@ function meterMultiplierConvert(exp) {
   if (exp < 3 || exp > 7) {
     return -1;
   }
-  return 10 ** (exp - 6);
+  return Math.pow(10, exp - 6)
 }
 
 function meterMediumFormat(medium, err) {
@@ -563,7 +563,7 @@ function usageParser(buffer, result, err) {
 
   if (deviceStatusSent) {
     result.battery_remaining__years = parseFloat((dataView.getUint8() / 12.0).toFixed(1));
-    result._battery_voltage__V = dataView.getUint8() / 100.0 + 1.5;
+    result._battery_voltage__V = parseFloat((dataView.getUint8() / 100.0 + 1.5).toFixed(2));
 
     result.internal_temperature__C = dataView.getInt8();
     var bits6 = dataView.getUint8Bits();
@@ -906,29 +906,28 @@ function convertToFormatted(decoded, elementFormatter, outIsList) {
 // If raw formatting is desired, just return directly from decodeRaw() function
 // You need only one entrypoint, others can be removed.
 
-
 // entry point for TTN new api
 function decodeDownlink(input) {
-    var dec = decodeRaw(input.fPort, input.bytes);
-    return convertToFormatted(dec, formatElementStrValueUnit, false);
+  var dec = decodeRaw(input.fPort, input.bytes);
+  return convertToFormatted(dec, formatElementStrValueUnit, false);
 }
 
 // entry point for TTN new api
 function decodeUplink(input) {
-    var dec = decodeRaw(input.fPort, input.bytes);
-    return convertToFormatted(dec, formatElementStrValueUnit, false);
+  var dec = decodeRaw(input.fPort, input.bytes);
+  return convertToFormatted(dec, formatElementStrValueUnit, false);
 }
 
 // entry point for TTN old version
 function Decoder(bytes, fport) {
-    var dec = decodeRaw(fport, bytes);
-    return convertToFormatted(dec, formatElementStrValueUnit, false);
+  var dec = decodeRaw(fport, bytes);
+  return convertToFormatted(dec, formatElementStrValueUnit, false);
 }
 
 // entry point for Chirpstack
 function Decode(fport, bytes) {
-    var dec = decodeRaw(fport, bytes);
-    return convertToFormatted(dec, formatElementStrValueUnit, false);
+  var dec = decodeRaw(fport, bytes);
+  return convertToFormatted(dec, formatElementStrValueUnit, false);
 }
 
 

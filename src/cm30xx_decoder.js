@@ -28,7 +28,7 @@ export function meterMultiplierConvert(exp) {
   if (exp < 3 || exp > 7) {
     return -1;
   }
-  return 10 ** (exp - 6);
+  return Math.pow(10, exp - 6)
 }
 
 function meterMediumFormat(medium, err) {
@@ -330,7 +330,7 @@ function usageParser(buffer, result, err) {
 
   if (deviceStatusSent) {
     result.battery_remaining__years = parseFloat((dataView.getUint8() / 12.0).toFixed(1));
-    result._battery_voltage__V = dataView.getUint8() / 100.0 + 1.5;
+    result._battery_voltage__V = parseFloat((dataView.getUint8() / 100.0 + 1.5).toFixed(2));
 
     result.internal_temperature__C = dataView.getInt8();
     var bits6 = dataView.getUint8Bits();

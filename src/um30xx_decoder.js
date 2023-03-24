@@ -541,7 +541,13 @@ function configurationRequestsParser(buffer, result, err) {
   var dataView = new BinaryExtract(buffer);
 
   var packetType = dataView.getUint8();
-  if (packetType === 0x12) { result._packet_type = 'general_configuration_request'; } else if (packetType === 0x14) { result._packet_type = 'mbus_configuration_request'; } else if (packetType === 0x21) { result._packet_type = 'location_configuration_request'; } else {
+  if (packetType === 0x12) {
+    result._packet_type = 'general_configuration_request';
+  } else if (packetType === 0x14) {
+    result._packet_type = 'mbus_configuration_request';
+  } else if (packetType === 0x21) {
+    result._packet_type = 'location_configuration_request';
+  } else {
     err.errors.push('invalid_request_type ' + packetType);
   }
 }

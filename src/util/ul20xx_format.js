@@ -40,7 +40,7 @@ function convertObjRecursive(element, elementFormatter) {
   if (element instanceof Array) {
     // is array
     var output2 = [];
-    element.forEach((item) => {
+    element.forEach(function (item) {
       output2.push(convertObjRecursive(item, elementFormatter));
     });
     return output2;

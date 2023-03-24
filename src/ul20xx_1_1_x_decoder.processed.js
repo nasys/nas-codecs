@@ -25,7 +25,7 @@ function profileReason(reason, err) {
       return 'calendar_dusk_step';
     case 245:
       return 'relay_off';
-      // eslint-disable-next-line no-duplicate-case
+    // eslint-disable-next-line no-duplicate-case
     case 248:
       return 'fallback_active';
     case 246:
@@ -675,7 +675,7 @@ export function decodeDimmingCommand(dataView, result, err) {
 export function decodeCustomDaliReq(dataView, result, err) {
   result.packet_type = { value: 'custom_dali_request' };
 
-  var { offset } = dataView;
+  var offset = dataView.offset;
   result.query_data_raw = { value: bytesToHexStr(dataView.getRaw(dataView.availableLen())) };
   // restore previous offset like the getRaw read never happened
   dataView.offset = offset;
@@ -1009,7 +1009,8 @@ function usageConsumptionParse(dataView, err) {
     result.load_side_power = { value: dataView.getUint16(), unit: 'W' };
   }
   if (bits.getBits(1)) {
-    result.power_factor = { value: dataView.getUint8() / 100 };
+    var rawPf = dataView.getUint8();
+    result.power_factor = { value: rawPf === 0xFF ? 'unknown' : (rawPf / 100.0), raw: rawPf };
   }
   if (bits.getBits(1)) {
     result.mains_voltage = { value: dataView.getUint8(), unit: 'V' };
