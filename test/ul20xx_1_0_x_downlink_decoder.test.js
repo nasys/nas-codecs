@@ -52,7 +52,7 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '08FF',
-      expected: { data: { packet_type: { value: 'profile_config_request' }, profile_id: { value: 'all_used_profiles', raw: 255 } } },
+      expected: { data: { packet_type: { value: 'profile_config_request' }, profile_id: { value: 'all_profiles', raw: 255 } } },
     });
   });
 

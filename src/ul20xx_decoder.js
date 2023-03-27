@@ -780,12 +780,34 @@ export function decodeCustomDaliCommand(dataView, result) {
   result.dali_command = { value: bytesToHexStr(data) };
 }
 
-export function decodeStatusRequest(dataView, result) {
+// #ifndef VER1_0
+function decodeDimMap(dataView, err) {
+  var result = {};
+  result.address = addressParse(dataView.getUint8(), null, err);
+  result.dali_min_level = { value: dataView.getUint8() };
+  result.dali_max_level = { value: dataView.getUint8() };
+  var curve = dataView.getUint8();
+  result.dimming_curve = { value: curve === 0 ? 'logarithmic' : 'linear', raw: curve };
+  return result;
+}
+// #endif
+
+export function decodeStatusRequest(dataView, result, err) {
   result.packet_type = { value: 'status_usage_request' };
 
   var bits = dataView.getUint8Bits();
   result.usage_requested = bitFalseTrue(bits.getBits(1));
   result.status_requested = bitFalseTrue(bits.getBits(1));
+  // #ifndef VER1_0
+  result.dim_map_report_requested = bitFalseTrue(bits.getBits(1));
+
+  if (result.dim_map_report_requested && dataView.availableLen() > 0) {
+    result.drivers = [];
+    while (dataView.availableLen()) {
+      result.drivers.push(decodeDimMap(dataView, err));
+    }
+  }
+  // #endif
 }
 
 function decodeDigVal(val) {
@@ -917,7 +939,7 @@ export function decodeFport60(dataView, result, err) {
       decodeCustomDaliCommand(dataView, result);
       return;
     case 0x05:
-      decodeStatusRequest(dataView, result);
+      decodeStatusRequest(dataView, result, err);
       return;
     case 0x07:
       decodeReadDriverMemory(dataView, result, err);
@@ -1463,7 +1485,7 @@ function decodeFport49(dataView, result, err) {
     case 0x08:
       result.packet_type = { value: 'profile_config_request' };
       var id = dataView.getUint8();
-      result.profile_id = { value: id === 0xFF ? 'all_used_profiles' : id, raw: id };
+      result.profile_id = { value: id === 0xFF ? 'all_profiles' : id, raw: id };
       return;
     case 0x0A:
       result.packet_type = { value: 'default_dim_config_request' };
@@ -1484,7 +1506,7 @@ function decodeFport49(dataView, result, err) {
     case 0x21:
       result.packet_type = { value: 'profile_config_request' };
       var pid = dataView.getUint8();
-      result.profile_id = { value: pid === 0xFF ? 'all_used_profiles' : pid, raw: pid };
+      result.profile_id = { value: pid === 0xFF ? 'all_profiles' : pid, raw: pid };
       return;
     case 0x22:
       result.packet_type = { value: 'fade_config_request' };

@@ -274,6 +274,25 @@ describe('Commands', () => {
     });
   });
 
+  test('dim_map_report_request resp from DS', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 60,
+      data: '05 04 12 94 fe 00',
+      expected: {
+        data: {
+          packet_type: { value: 'status_usage_request' },
+          status_requested: { value: false },
+          usage_requested: { value: false },
+          dim_map_report_requested: { value: true },
+          drivers: [{
+            address: { value: 'dali_single_9', raw: 18 }, dali_min_level: { value: 148 }, dali_max_level: { value: 254 }, dimming_curve: { value: 'logarithmic', raw: 0 },
+          }],
+        },
+      },
+    });
+  });
+
   test('driver_memory_write response', () => {
     testPacket({
       decoderFn: decodeRaw,

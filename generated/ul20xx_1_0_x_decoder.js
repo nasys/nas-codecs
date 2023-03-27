@@ -793,7 +793,8 @@ function decodeCustomDaliCommand(dataView, result) {
   result.dali_command = { value: bytesToHexStr(data) };
 }
 
-function decodeStatusRequest(dataView, result) {
+
+function decodeStatusRequest(dataView, result, err) {
   result.packet_type = { value: 'status_usage_request' };
 
   var bits = dataView.getUint8Bits();
@@ -1375,7 +1376,7 @@ function decodeFport49(dataView, result, err) {
     case 0x08:
       result.packet_type = { value: 'profile_config_request' };
       var id = dataView.getUint8();
-      result.profile_id = { value: id === 0xFF ? 'all_used_profiles' : id, raw: id };
+      result.profile_id = { value: id === 0xFF ? 'all_profiles' : id, raw: id };
       return;
     case 0x0A:
       result.packet_type = { value: 'default_dim_config_request' };
