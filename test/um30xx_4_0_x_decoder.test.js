@@ -2,7 +2,7 @@ import { decodeRaw } from '../src/um30xx_decoder';
 import { testPacket } from './utils/test_utils';
 
 describe('UM3xxx tests', () => {
-  test('usage_spec', () => {
+  test('usage_spec_mbus', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 25,
@@ -15,7 +15,7 @@ describe('UM3xxx tests', () => {
     });
   });
 
-  test('status_spec', () => {
+  test('status_spec_mbus_4_0_27', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 24,
@@ -23,6 +23,19 @@ describe('UM3xxx tests', () => {
       expected: {
         data: {
           _app_connected_within_a_day: true, _battery_voltage__V: 3.59, _internal_temperature_max__C: 30, _internal_temperature_min__C: 2, _mbus_data_records_truncated: false, _packet_type: 'status_packet', _pulse_1_medium_type: 'L_water', _pulse_1_muliplier: 10, _pulse_2_medium_type: 'triggers', _pulse_2_muliplier: 1, _radio_downlink_snr__dB: 4, _radio_uplink_power__dBm: 14, active_alerts: ['pulse_2_trigger_alert'], battery_remaining__years: 8.9, internal_temperature__C: 22, mbus_data_records_unparsed: '0374301C00', mbus_last_status: 'connected', mbus_serial: '70621224', mbus_status: '0x90', meter_actuality_duration__minutes: 105, meter_actuality_duration_formatted: '1.75 hours', pulse_1_accumulated__L_water: 10203040500, pulse_1_input_state: 'open', pulse_1_serial: '15273801', pulse_2_accumulated__triggers: 1559, pulse_2_input_state: 'closed', radio_downlink_rssi__dBm: -51,
+        },
+      },
+    });
+  });
+
+  test('status_spec_mbus_4_0_30', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 24,
+      data: '82826BD1164A337C432326B29AD03C013827150117060000609024126270333802070374301C00',
+      expected: {
+        data: {
+          _app_connected_within_a_day: true, _battery_voltage__V: 3.59, _internal_temperature_max__C: 30, _internal_temperature_min__C: 2, _mbus_data_records_truncated: false, _packet_type: 'status_packet', _pulse_1_medium_type: 'L_water', _pulse_1_muliplier: 10, _pulse_2_medium_type: 'triggers', _pulse_2_muliplier: 1, _radio_downlink_snr__dB: 4, _radio_uplink_power__dBm: 14, active_alerts: ['pulse_2_trigger_alert'], battery_remaining__years: 8.9, internal_temperature__C: 22, mbus_data_records_unparsed: '0374301C00', mbus_last_status: 'connected', mbus_serial: '70621224', mbus_manufacturer: "NAS", mbus_version: 2, mbus_medium: "water", mbus_status: '0x90', meter_actuality_duration__minutes: 105, meter_actuality_duration_formatted: '1.75 hours', pulse_1_accumulated__L_water: 10203040500, pulse_1_input_state: 'open', pulse_1_serial: '15273801', pulse_2_accumulated__triggers: 1559, pulse_2_input_state: 'closed', radio_downlink_rssi__dBm: -51,
         },
       },
     });

@@ -383,10 +383,16 @@ function usageAndStatusParser(buffer, result, err) {
     result.mbus_last_status = mbusStatus(bits7.getBits(4), err);
     result._mbus_data_records_truncated = bits7.getBits(1);
     var stateAndSerialSent = bits7.getBits(1);
+    var serialExtensionSent = bits7.getBits(1);
 
     if (stateAndSerialSent) {
       result.mbus_status = '0x' + intToHexStr(dataView.getUint8(), 2);
       result.mbus_serial = serialFormat(dataView.getUint32());
+    }
+    if (serialExtensionSent) {
+      result.mbus_manufacturer = mbusManufacturer(dataView.getUint16());
+      result.mbus_version = dataView.getUint8();
+      result.mbus_medium = mbusMedium(dataView.getUint8());
     }
 
     //        result.mbus_data_records = [];
