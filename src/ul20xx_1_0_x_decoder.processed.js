@@ -876,10 +876,156 @@ function dimmingSourceParser(dataView, err) {
   return source;
 }
 
-function statusParser(dataView, result, err) {
-  // does not support legacy mode status packet!
+
+function decodeSensorSource(dataView, result, err) {
+  var header = dataView.getUint8();
+  if (header === 0x01) {
+    result.sensor_source.ldr_input = { value: dataView.getUint8() };
+    return 2;
+  }
+  if (header == 0x02) {
+    var lx = calcLightLx(dataView.getUint16());
+    result.sensor_source.light_sensor = { value: lx, unit: 'lx' };
+    return 3;
+  }
+  if (header == 0x03) {
+    var lx = calcLightLx(dataView.getUint16());
+    result.sensor_source.d4i_light_sensor = { value: lx, unit: 'lx' };
+    return 3;
+  }
+  if (header == 0x04) {
+    var bits = dataView.getUint8Bits();
+    result.sensor_source.dig_input_1_on = bitFalseTrue(bits.getBits(1));
+    return 2;
+  }
+  err.errors.push("invalid_sensor_source");
+  return 1;
+}
+
+function statusParser1_1(dataView, result, err) {
   result.packet_type = { value: 'status_packet' };
 
+  var header = dataView.getUint8();
+  var header_below_1_1_4 = header === 0x00;
+  if (!header_below_1_1_4 && header !== 0x01) {
+    err.errors.push('invalid_header');
+    return;
+  }
+
+  var epoch = dataView.getUint32();
+  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
+
+  var statusField = {};
+  var bits = dataView.getUint8Bits();
+
+  var daliErrExt = bits.getBits(1);
+  var daliErrConn = bits.getBits(1);
+  var ldrOn = bits.getBits(1);
+  bits.getBits(1);
+  var digOn = bits.getBits(1);
+  var err1 = bits.getBits(1);
+  var err2 = bits.getBits(1);
+  var internalRelay = bits.getBits(1);
+
+  statusField.dali_connection_error = bitFalseTrue(daliErrConn);
+  if (daliErrConn) err.warnings.push('dali_connection_error');
+
+  statusField.metering_com_error = bitFalseTrue(err1);
+  if (err1) err.warnings.push('metering_com_error');
+  statusField.rtc_com_error = bitFalseTrue(err2);
+  if (err2) err.warnings.push('rtc_com_error');
+
+  statusField.internal_relay_closed = bitFalseTrue(internalRelay);
+  if (header_below_1_1_4) {
+    statusField.ldr_input_on = bitFalseTrue(ldrOn);
+    statusField.dig_input_on = bitFalseTrue(digOn);
+  }
+
+  if (!header_below_1_1_4) {
+    var bits1 = dataView.getUint8Bits();
+    bits1.getBits(1);
+    bits1.getBits(1);
+    statusField.open_drain_output_on = bitFalseTrue(bits1.getBits(1));
+    bits1.getBits(1);
+    bits1.getBits(1);
+    bits1.getBits(1);
+    statusField.lumalink_connected = bitFalseTrue(bits1.getBits(1));
+    statusField.lumalink_connected_once = bitFalseTrue(bits1.getBits(1));
+  }
+
+  result.status = statusField;
+
+  result.downlink_rssi = { value: -1 * dataView.getUint8(), unit: 'dBm' };
+
+  result.downlink_snr = { value: dataView.getInt8(), unit: 'dB' };
+
+  result.mcu_temperature = { value: dataView.getInt8(), unit: '°C' };
+
+  var alertsSent = true;
+  if (header_below_1_1_4) {
+    var bits2 = dataView.getUint8Bits();
+    bits2.getBits(1); // legacy thr
+    var ldrSent = bits2.getBits(1);
+    var odOn = bits2.getBits(1);
+    bits2.getBits(1);
+    result.status.open_drain_output_on = bitFalseTrue(odOn);
+    alertsSent = bits2.getBits(1);
+
+    if (ldrSent) {
+      result.ldr_input_value = { value: dataView.getUint8() };
+    }
+
+  }
+
+  if (alertsSent) {
+    var bits4 = dataView.getUint8Bits();
+    bits4.getBits(4);
+    var alertVolt = bits4.getBits(1);
+    var alertLamp = bits4.getBits(1);
+    var alertPower = bits4.getBits(1);
+    var alertPF = bits4.getBits(1);
+
+    var alerts = {};
+    alerts.voltage_alert_in_24h = bitFalseTrue(alertVolt);
+    alerts.lamp_error_alert_in_24h = bitFalseTrue(alertLamp);
+    alerts.power_alert_in_24h = bitFalseTrue(alertPower);
+    alerts.power_factor_alert_in_24h = bitFalseTrue(alertPF);
+    result.active_alerts = alerts;
+
+    if (alertVolt) {
+      err.warnings.push('voltage_alert_in_24h');
+    }
+    if (alertLamp) {
+      err.warnings.push('lamp_error_alert_in_24h');
+    }
+    if (alertPower) {
+      err.warnings.push('power_alert_in_24h');
+    }
+    if (alertPF) {
+      err.warnings.push('power_factor_alert_in_24h');
+    }
+  }
+
+  if (!header_below_1_1_4) {
+    var senorSrcLeft = dataView.getUint8();
+    result.sensor_source = {};
+    while (senorSrcLeft > 0) {
+      senorSrcLeft = senorSrcLeft - decodeSensorSource(dataView, result, err);
+    }
+    if (senorSrcLeft < 0) {
+      err.errors.push('error_decoding_sensor_source');
+    }
+  }
+
+  result.dimming_source = [];
+  while (dataView.availableLen()) {
+    result.dimming_source.push(dimmingSourceParser(dataView, err));
+  }
+}
+
+function statusParser1_0(dataView, result, err) {
+  // does not support 1.0.x legacy mode status packet!
+  result.packet_type = { value: 'status_packet' };
 
   var epoch = dataView.getUint32();
   result.device_unix_epoch = decodeUnixEpoch(epoch, err);
@@ -908,6 +1054,7 @@ function statusParser(dataView, result, err) {
   statusField.internal_relay_closed = bitFalseTrue(internalRelay);
   statusField.ldr_input_on = bitFalseTrue(ldrOn);
   statusField.dig_input_on = bitFalseTrue(digOn);
+
   result.status = statusField;
 
   result.downlink_rssi = { value: -1 * dataView.getUint8(), unit: 'dBm' };
@@ -1328,7 +1475,7 @@ function decodeByFport(fport, bytes, result, err) {
   if (dataView.availableLen() === 0) {
     err.errors.push('empty_payload');
   } else if (fport === 24) {
-    statusParser(dataView, result, err);
+    statusParser1_0(dataView, result, err);
   } else if (fport === 25) {
     usageParser(dataView, result, err);
   } else if (fport === 49) {

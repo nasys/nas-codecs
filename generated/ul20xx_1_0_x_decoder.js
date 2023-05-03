@@ -959,10 +959,9 @@ function statusProfileParser(dataView, err) {
   return profile;
 }
 
-function statusParser(dataView, result, err) {
-  // does not support legacy mode status packet!
+function statusParser1_0(dataView, result, err) {
+  // does not support 1.0.x legacy mode status packet!
   result.packet_type = { value: 'status_packet' };
-
 
   var epoch = dataView.getUint32();
   result.device_unix_epoch = decodeUnixEpoch(epoch, err);
@@ -991,6 +990,7 @@ function statusParser(dataView, result, err) {
   statusField.internal_relay_closed = bitFalseTrue(internalRelay);
   statusField.ldr_input_on = bitFalseTrue(ldrOn);
   statusField.dig_input_on = bitFalseTrue(digOn);
+
   result.status = statusField;
 
   result.downlink_rssi = { value: -1 * dataView.getUint8(), unit: 'dBm' };
@@ -1411,7 +1411,7 @@ function decodeByFport(fport, bytes, result, err) {
   if (dataView.availableLen() === 0) {
     err.errors.push('empty_payload');
   } else if (fport === 24) {
-    statusParser(dataView, result, err);
+    statusParser1_0(dataView, result, err);
   } else if (fport === 25) {
     usageParser(dataView, result, err);
   } else if (fport === 49) {

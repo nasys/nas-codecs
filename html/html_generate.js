@@ -84,7 +84,7 @@ if (device_name == 'CM30xx') {
     <option value="99">99 - System Messages</option>`;
   } else if (device_firmware == '1.1.x') {
     var script_filename = 'generated/ul20xx_1_1_x_decoder.js';
-    var default_payload = '009dac9063a03209160202fe501900';
+    var default_payload = '01F37F205E8244320916200701D20294550401FE50190012501900';
     var fport_options = `
     <option value="23">23 - Status</option>
     <option value="26">26 - Usage</option>

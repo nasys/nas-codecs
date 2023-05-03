@@ -40,7 +40,7 @@
   </select><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2023-03-27T11:19:44.778Z</div>
+<div class="footer">Generated at 2023-05-03T12:37:13.932Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -1007,11 +1007,51 @@ function dimmingSourceParser(dataView, err) {
   return source;
 }
 
-function statusParser(dataView, result, err) {
-  // does not support legacy mode status packet!
+function formatLightLx(lx) {
+  var log10_val = Math.log10(lx);
+  var log10_pos = log10_val >= 0 ? log10_val : 0;
+  var log10_lim = log10_pos > 3 ? 3 : log10_pos;
+  var decimals = 3 - Math.trunc(log10_lim);
+  return lx.toFixed(decimals);
+}
+
+function calcLightLx(light_raw) {
+  var light_val = light_raw & 0x7FFF;
+  var lx = Math.pow(10, light_val / 4000.0) / 1000.0;
+  return formatLightLx(lx);
+}
+
+function decodeSensorSource(dataView, result, err) {
+  var header = dataView.getUint8();
+  if (header === 0x01) {
+    result.sensor_source.ldr_input = { value: dataView.getUint8() };
+    return 2;
+  }
+  if (header == 0x02) {
+    var lx = calcLightLx(dataView.getUint16());
+    result.sensor_source.light_sensor = { value: lx, unit: 'lx' };
+    return 3;
+  }
+  if (header == 0x03) {
+    var lx = calcLightLx(dataView.getUint16());
+    result.sensor_source.d4i_light_sensor = { value: lx, unit: 'lx' };
+    return 3;
+  }
+  if (header == 0x04) {
+    var bits = dataView.getUint8Bits();
+    result.sensor_source.dig_input_1_on = bitFalseTrue(bits.getBits(1));
+    return 2;
+  }
+  err.errors.push("invalid_sensor_source");
+  return 1;
+}
+
+function statusParser1_1(dataView, result, err) {
   result.packet_type = { value: 'status_packet' };
 
-  if (dataView.getUint8() !== 0) {
+  var header = dataView.getUint8();
+  var header_below_1_1_4 = header === 0x00;
+  if (!header_below_1_1_4 && header !== 0x01) {
     err.errors.push('invalid_header');
     return;
   }
@@ -1031,7 +1071,6 @@ function statusParser(dataView, result, err) {
   var err2 = bits.getBits(1);
   var internalRelay = bits.getBits(1);
 
-
   statusField.dali_connection_error = bitFalseTrue(daliErrConn);
   if (daliErrConn) err.warnings.push('dali_connection_error');
 
@@ -1041,8 +1080,23 @@ function statusParser(dataView, result, err) {
   if (err2) err.warnings.push('rtc_com_error');
 
   statusField.internal_relay_closed = bitFalseTrue(internalRelay);
-  statusField.ldr_input_on = bitFalseTrue(ldrOn);
-  statusField.dig_input_on = bitFalseTrue(digOn);
+  if (header_below_1_1_4) {
+    statusField.ldr_input_on = bitFalseTrue(ldrOn);
+    statusField.dig_input_on = bitFalseTrue(digOn);
+  }
+
+  if (!header_below_1_1_4) {
+    var bits1 = dataView.getUint8Bits();
+    bits1.getBits(1);
+    bits1.getBits(1);
+    statusField.open_drain_output_on = bitFalseTrue(bits1.getBits(1));
+    bits1.getBits(1);
+    bits1.getBits(1);
+    bits1.getBits(1);
+    statusField.lumalink_connected = bitFalseTrue(bits1.getBits(1));
+    statusField.lumalink_connected_once = bitFalseTrue(bits1.getBits(1));
+  }
+
   result.status = statusField;
 
   result.downlink_rssi = { value: -1 * dataView.getUint8(), unit: 'dBm' };
@@ -1050,18 +1104,21 @@ function statusParser(dataView, result, err) {
   result.downlink_snr = { value: dataView.getInt8(), unit: 'dB' };
 
   result.mcu_temperature = { value: dataView.getInt8(), unit: '°C' };
-  var bits2 = dataView.getUint8Bits();
-  bits2.getBits(1); // legacy thr
-  var ldrSent = bits2.getBits(1);
-  var odOn = bits2.getBits(1);
-  bits2.getBits(1);
 
-  result.status.open_drain_output_on = bitFalseTrue(odOn);
+  var alertsSent = true;
+  if (header_below_1_1_4) {
+    var bits2 = dataView.getUint8Bits();
+    bits2.getBits(1); // legacy thr
+    var ldrSent = bits2.getBits(1);
+    var odOn = bits2.getBits(1);
+    bits2.getBits(1);
+    result.status.open_drain_output_on = bitFalseTrue(odOn);
+    alertsSent = bits2.getBits(1);
 
-  var alertsSent = bits2.getBits(1);
+    if (ldrSent) {
+      result.ldr_input_value = { value: dataView.getUint8() };
+    }
 
-  if (ldrSent) {
-    result.ldr_input_value = { value: dataView.getUint8() };
   }
 
   if (alertsSent) {
@@ -1090,6 +1147,17 @@ function statusParser(dataView, result, err) {
     }
     if (alertPF) {
       err.warnings.push('power_factor_alert_in_24h');
+    }
+  }
+
+  if (!header_below_1_1_4) {
+    var senorSrcLeft = dataView.getUint8();
+    result.sensor_source = {};
+    while (senorSrcLeft > 0) {
+      senorSrcLeft = senorSrcLeft - decodeSensorSource(dataView, result, err);
+    }
+    if (senorSrcLeft < 0) {
+      err.errors.push('error_decoding_sensor_source');
     }
   }
 
@@ -1496,7 +1564,7 @@ function decodeByFport(fport, bytes, result, err) {
   if (dataView.availableLen() === 0) {
     err.errors.push('empty_payload');
   } else if (fport === 23) {
-    statusParser(dataView, result, err);
+    statusParser1_1(dataView, result, err);
   } else if (fport === 26) {
     usageParser(dataView, result, err);
   } else if (fport === 49) {
@@ -1726,7 +1794,7 @@ function base64ToBytes(base64) {
 
 function runOnPageLoad() {
     document.getElementById('formatting').value = 'valuesunits';    
-    document.getElementById('payload_raw').value = "009dac9063a03209160202fe501900";
+    document.getElementById('payload_raw').value = "01F37F205E8244320916200701D20294550401FE50190012501900";
     dataInputHandler();
 }
 

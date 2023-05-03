@@ -1,5 +1,18 @@
-import { decodeRaw } from '../src/ul20xx_1_1_x_decoder.processed';
+import { decodeRaw, formatLightLx } from '../src/ul20xx_1_1_x_decoder.processed';
 import { testPacket } from './utils/test_utils';
+
+
+describe('calcLightLx', () => {
+  test('formatLightLx', () => {
+    expect(formatLightLx(0.003)).toEqual("0.003");
+    expect(formatLightLx(0.221)).toEqual("0.221");
+    expect(formatLightLx(1.003)).toEqual("1.003");
+    expect(formatLightLx(20.003)).toEqual("20.00");
+    expect(formatLightLx(200.003)).toEqual("200.0");
+    expect(formatLightLx(2000.003)).toEqual("2000");
+    expect(formatLightLx(120000.003)).toEqual("120000");
+  });
+});
 
 describe('Config packts', () => {
   test('fallback_dim', () => {
