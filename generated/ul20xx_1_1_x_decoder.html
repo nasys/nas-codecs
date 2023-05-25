@@ -40,7 +40,7 @@
   </select><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2023-05-17T15:36:55.161Z</div>
+<div class="footer">Generated at 2023-05-25T08:23:40.663Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -1330,6 +1330,9 @@ function bootParser(dataView, result, err) {
   result.dali_addressed_driver_count = { value: driver.getBits(7) };
   var unadressed = driver.getBits(1);
   result.dali_unadressed_driver_found = bitFalseTrue(unadressed);
+  if (unadressed) {
+    err.warnings.push("unadressed_dali_driver_on_bus");
+  }
 
   if (dataView.availableLen()) {
     var resetReas = dataView.getUint8();

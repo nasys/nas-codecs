@@ -1283,6 +1283,9 @@ function bootParser(dataView, result, err) {
   result.dali_addressed_driver_count = { value: driver.getBits(7) };
   var unadressed = driver.getBits(1);
   result.dali_unadressed_driver_found = bitFalseTrue(unadressed);
+  if (unadressed) {
+    err.warnings.push("unadressed_dali_driver_on_bus");
+  }
 
   if (dataView.availableLen()) {
     var resetReas = dataView.getUint8();
