@@ -83,7 +83,7 @@ describe('Config packts', () => {
     });
   });
 
-  test('ldr_input_config_packet from DS', () => {
+  test('old ldr_input_config_packet from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 50,
@@ -109,7 +109,36 @@ describe('Config packts', () => {
     });
   });
 
-  test('dig_input_config_packet from DS', () => {
+  test('new light_input_config_packet from DS', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 50,
+      data: '29 02 0E 3C FE 0000C441 3C CDCCF642 FF',
+      expected: {
+        "data": {
+          "packet_type": { "value": "light_input_config_packet" },
+          "alert_on_every_step": { "value": false },
+          "clamp_profile": { "value": true },
+          "clamp_dig": { "value": true },
+          "interpolate_steps": { "value": true },
+          "measurement_duration": { "value": 60, "unit": "s" },
+          "address": { "value": "dali_broadcast", "raw": 254 },
+          "dim_steps": [
+            {
+              "light_level": { "value": "24.50", "unit": "lx or none" },
+              "dimming_level": { "value": 60, "raw": 60, "unit": "%" },
+            },
+            {
+              "light_level": { "value": "123.4", "unit": "lx or none" },
+              "dimming_level": { "value": "inactive", "raw": 255, "unit": "" },
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  test('old dig_input_config_packet from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 50,
@@ -144,6 +173,28 @@ describe('Config packts', () => {
     });
   });
 
+  test('new dig_input_config_packet from DS', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 50,
+      data: '28 00 03 FE 64 FF 0000 7800',
+      expected: {
+        "data": {
+          "packet_type": { "value": "dig_input_config_packet" },
+          "dig_mode_button": { "value": true },
+          "polarity_high_or_rising": { "value": true },
+          "alert_on_activation": { "value": false },
+          "alert_on_inactivation": { "value": false },
+          "address": { "value": "dali_broadcast", "raw": 254 },
+          "active_dimming_level": { "value": 100, "raw": 100, "unit": "%" },
+          "inactive_dimming_level": { "value": "inactive", "raw": 255, "unit": "" },
+          "on_delay": { "value": 0, "unit": "s" },
+          "off_delay": { "value": 120, "unit": "s" },
+        }
+      },
+    });
+  });
+
   test('calendar_config_packet from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
@@ -154,6 +205,9 @@ describe('Config packts', () => {
           packet_type: {
             value: 'calendar_config_packet',
           },
+          calendar_prefers_meta_pos: { value: false },
+          calendar_clamps_profiles: { value: false },
+          calendar_clamps_dig: { value: false },
           latitude: {
             value: 48.77,
             unit: '°',

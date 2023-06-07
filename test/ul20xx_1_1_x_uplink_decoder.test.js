@@ -350,8 +350,8 @@ describe('Alerts, notifications', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 61,
-      data: '80200600',
-      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_event_counter: { value: 6 } }, warnings: ['dig_input_alert'] },
+      data: '804106000000',
+      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_on: { value: true }, dig_input_event_counter: { value: 6 } }, warnings: ['dig_input_alert'] },
 
     });
   });

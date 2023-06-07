@@ -257,7 +257,7 @@ function profileParserPartial(dataView, profile, err) {
   profile.profile_version = { value: profileReason(ver, err), raw: ver };
 
   var addr = dataView.getUint8();
-  profile.address = addressParse(addr, null, err);
+  profile.address = addressParse(addr, "all_devices", err);
 
   var activeDays = dataView.getUint8();
   var bits = new BitExtract(activeDays);
@@ -336,7 +336,7 @@ function decodeDigConfig(dataView, result, err) {
   result.trigger_alert_enabled = bitFalseTrue(trigger);
 
   var addr = dataView.getUint8();
-  result.address = addressParse(addr, null, err);
+  result.address = addressParse(addr, "all_devices", err);
 
   var level = dataView.getUint8();
   result.dimming_level = decodeDimmingLevel(level, 'disabled');
@@ -404,7 +404,9 @@ function decodeTimeConfig(dataView, result, err) {
   result.packet_type = { value: 'time_config_packet' };
 
   var epoch = dataView.getUint32();
-  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
+  {
+    result.device_unix_epoch = decodeUnixEpoch(epoch, err);
+  }
 }
 
 function decodeLegacyDefaultsConfig(dataView, result) {
@@ -744,7 +746,7 @@ function decodeDaliStatusReq(dataView, result, err) {
 function decodeDimming(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.address = addressParse(addr, null, err);
+  result.address = addressParse(addr, "all_devices", err);
 
   var level = dataView.getUint8();
   result.dimming_level = decodeDimmingLevel(level, 'resume');
@@ -884,7 +886,7 @@ function decodeWriteDriverMemory(dataView, result, err) {
 function decodeTimedDimming(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.address = addressParse(addr, null, err);
+  result.address = addressParse(addr, "all_devices", err);
 
   var lvl = dataView.getUint8();
   result.dimming_level = decodeDimmingLevel(lvl, 'resume');
@@ -1273,14 +1275,21 @@ function decodeFport61(dataView, result, err) {
   switch (header) {
     case 0x80:
       result.packet_type = { value: 'dig_input_alert' };
-      if (len !== 2) {
-        err.errors.push('invalid_packet_length');
-        return;
-      }
       err.warnings.push('dig_input_alert');
 
-      var cnt = dataView.getUint16();
-      result.dig_input_event_counter = { value: cnt };
+      if (len === 2) {
+        var cnt = dataView.getUint16();
+        result.dig_input_event_counter = { value: cnt };
+      }
+      else if (len === 4) {
+        var bit2 = new BitExtract(rawByte2);
+        result.dig_input_on = bitFalseTrue(bit2.getBits(1));
+        var cnt = dataView.getUint32();
+        result.dig_input_event_counter = { value: cnt };
+      }
+      else {
+        err.errors.push('invalid_packet_length');
+      }
       return;
     case 0x81:
       result.packet_type = { value: 'ldr_input_alert' };

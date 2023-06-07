@@ -71,7 +71,7 @@ export function profileParserPartial(dataView, profile, err) {
   profile.profile_version = { value: profileReason(ver, err), raw: ver };
 
   var addr = dataView.getUint8();
-  profile.address = addressParse(addr, null, err);
+  profile.address = addressParse(addr, "all_devices", err);
 
   var activeDays = dataView.getUint8();
   var bits = new BitExtract(activeDays);
@@ -129,6 +129,39 @@ export function decodeLdrConfig(dataView, result) {
   result.trigger_alert_enabled = bitFalseTrue(behaviorBits.getBits(1));
 }
 
+export function decodeLightDimStep(dataView) {
+  var res = {};
+  var light = dataView.getFloat();
+  var level = dataView.getUint8();
+  res.light_level = { value: formatLightLx(light), unit: "lx or none" };
+  res.dimming_level = decodeDimmingLevel(level, 'inactive');
+  return res;
+}
+
+export function decodeLightInputConfig(dataView, result, err) {
+  result.packet_type = { value: 'light_input_config_packet' };
+
+  var step_count = dataView.getUint8();
+  if (step_count === 0xFF) {
+    return;
+  }
+  var bits = dataView.getUint8Bits();
+  result.alert_on_every_step = bitFalseTrue(bits.getBits(1));
+  result.clamp_profile = bitFalseTrue(bits.getBits(1));
+  result.clamp_dig = bitFalseTrue(bits.getBits(1));
+  result.interpolate_steps = bitFalseTrue(bits.getBits(1));
+
+  result.measurement_duration = { value: dataView.getUint8(), unit: "s" };
+
+  var addr = dataView.getUint8();
+  result.address = addressParse(addr, "all_devices", err);
+
+  result.dim_steps = [];
+  while (dataView.availableLen()) {
+    result.dim_steps.push(decodeLightDimStep(dataView));
+  }
+}
+
 export function decodeDimmingLevel(level, ffName) {
   if (level === 0xFF) {
     return { value: ffName, raw: level, unit: '' };
@@ -150,10 +183,38 @@ export function decodeDigConfig(dataView, result, err) {
   result.trigger_alert_enabled = bitFalseTrue(trigger);
 
   var addr = dataView.getUint8();
-  result.address = addressParse(addr, null, err);
+  result.address = addressParse(addr, "all_devices", err);
 
   var level = dataView.getUint8();
   result.dimming_level = decodeDimmingLevel(level, 'disabled');
+}
+
+export function decodeDigInputConfigNew(dataView, result, err) {
+  result.packet_type = { value: 'dig_input_config_packet' };
+
+  var index = dataView.getUint8();
+  if (index === 0xFF) {
+    return;
+  }
+
+  var bits = dataView.getUint8Bits();
+  result.dig_mode_button = bitFalseTrue(bits.getBits(1));
+  result.polarity_high_or_rising = bitFalseTrue(bits.getBits(1));
+  result.alert_on_activation = bitFalseTrue(bits.getBits(1));
+  result.alert_on_inactivation = bitFalseTrue(bits.getBits(1));
+
+  var addr = dataView.getUint8();
+  result.address = addressParse(addr, "all_devices", err);
+
+  var active = dataView.getUint8();
+  var inactive = dataView.getUint8();
+  result.active_dimming_level = decodeDimmingLevel(active, 'inactive');
+  result.inactive_dimming_level = decodeDimmingLevel(inactive, 'inactive');
+
+  var on_delay = dataView.getUint16();
+  var off_delay = dataView.getUint16();
+  result.on_delay = { value: on_delay, unit: 's' };
+  result.off_delay = { value: off_delay, unit: 's' };
 }
 
 export function decodeStepTime(inByte) {
@@ -206,7 +267,10 @@ export function decodeCalendarConfigV11(dataView, result) {
   var sunriseSteps = steps.getBits(4);
   var sunsetSteps = steps.getBits(4);
 
-  dataView.getUint8();
+  var bits = dataView.getUint8Bits();
+  result.calendar_prefers_meta_pos = bitFalseTrue(bits.getBits(1));
+  result.calendar_clamps_profiles = bitFalseTrue(bits.getBits(1));
+  result.calendar_clamps_dig = bitFalseTrue(bits.getBits(1));
 
   var lat = dataView.getInt16() / 100;
   var lon = dataView.getInt16() / 100;
@@ -253,7 +317,9 @@ export function decodeTimeConfig(dataView, result, err) {
   result.packet_type = { value: 'time_config_packet' };
 
   var epoch = dataView.getUint32();
-  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
+  {
+    result.device_unix_epoch = decodeUnixEpoch(epoch, err);
+  }
 }
 
 export function decodeLegacyDefaultsConfig(dataView, result) {
@@ -636,7 +702,7 @@ function decodeDaliStatusReq(dataView, result, err) {
 export function decodeDimming(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.address = addressParse(addr, null, err);
+  result.address = addressParse(addr, "all_devices", err);
 
   var level = dataView.getUint8();
   result.dimming_level = decodeDimmingLevel(level, 'resume');
@@ -776,7 +842,7 @@ export function decodeWriteDriverMemory(dataView, result, err) {
 export function decodeTimedDimming(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
-  result.address = addressParse(addr, null, err);
+  result.address = addressParse(addr, "all_devices", err);
 
   var lvl = dataView.getUint8();
   result.dimming_level = decodeDimmingLevel(lvl, 'resume');
@@ -1337,14 +1403,21 @@ function decodeFport61(dataView, result, err) {
   switch (header) {
     case 0x80:
       result.packet_type = { value: 'dig_input_alert' };
-      if (len !== 2) {
-        err.errors.push('invalid_packet_length');
-        return;
-      }
       err.warnings.push('dig_input_alert');
 
-      var cnt = dataView.getUint16();
-      result.dig_input_event_counter = { value: cnt };
+      if (len === 2) {
+        var cnt = dataView.getUint16();
+        result.dig_input_event_counter = { value: cnt };
+      }
+      else if (len === 4) {
+        var bit2 = new BitExtract(rawByte2);
+        result.dig_input_on = bitFalseTrue(bit2.getBits(1));
+        var cnt = dataView.getUint32();
+        result.dig_input_event_counter = { value: cnt };
+      }
+      else {
+        err.errors.push('invalid_packet_length');
+      }
       return;
     case 0x81:
       result.packet_type = { value: 'ldr_input_alert' };

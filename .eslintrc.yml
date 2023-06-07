@@ -2,11 +2,16 @@ env:
   browser: true
   es2021: true
   jest: true
-extends: airbnb-base
+extends:
+  - eslint:recommended
+  - plugin:es5/no-es2015
+  - airbnb-base
 overrides: []
 parserOptions:
   ecmaVersion: latest
   sourceType: module
+plugins:
+  - es5
 rules:
   no-var: 0
   prefer-template: 0
@@ -17,3 +22,5 @@ rules:
   prefer-destructuring: 1
   no-restricted-syntax: 1
   camelcase: 1
+eslint:
+  autoFixOnSave: 0

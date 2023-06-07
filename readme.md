@@ -36,14 +36,18 @@ TTN has maximum code limit of 40960 characters. No one thought that anyone needs
 - Raw output can be easily re-formatted or used programmatically. Default `convertToFormatted()` converts raw to compact format where _value_ and _unit_ are concatenated and serves as an example.
 - Serves as annex for respective Payload Description documents.
 
+## Implementation Reference
+To understand how to decode a certain packet, one can study generated/xxxxxx_x_x_x_decoder.js file. Start from decodeRaw() at the end of the file and move upwards.
+The actual source is in src/xxxxxx_decoder.js but it has several processing steps applied to it.
+
 ## Structure
 Structure is based on TTN.
 
 __data__ - the decoded output.
 
-__errors__ - payload parsing errors, field ommited if None 
+__errors__ - payload parsing errors, field ommited if empty.
 
-__warnings__ - alerts from the device, field ommited if None
+__warnings__ - alerts from the device, field ommited if empty.
 ```
 {
   "data": {},
