@@ -325,7 +325,7 @@ export function decodeCalendarConfigV11(dataView, result) {
 export function decodeStatusConfig(dataView, result) {
   result.packet_type = { value: 'status_config_packet' };
   var interval = dataView.getUint32();
-  result.staus_interval = { value: interval, unit: 's' };
+  result.status_interval = { value: interval, unit: 's' };
 }
 
 export function decodeDimmingStep(dataView) {

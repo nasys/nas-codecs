@@ -90,7 +90,7 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '07100E0000',
-      expected: { data: { packet_type: { value: 'status_config_packet' }, staus_interval: { value: 3600, unit: 's' } } },
+      expected: { data: { packet_type: { value: 'status_config_packet' }, status_interval: { value: 3600, unit: 's' } } },
     });
   });
 

@@ -40,7 +40,7 @@
   </select><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2023-06-07T15:31:47.132Z</div>
+<div class="footer">Generated at 2023-06-13T07:53:51.088Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -425,7 +425,7 @@ function decodeCalendarConfigV10(dataView, result) {
 function decodeStatusConfig(dataView, result) {
   result.packet_type = { value: 'status_config_packet' };
   var interval = dataView.getUint32();
-  result.staus_interval = { value: interval, unit: 's' };
+  result.status_interval = { value: interval, unit: 's' };
 }
 
 function decodeDimmingStep(dataView) {
