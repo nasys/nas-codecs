@@ -522,6 +522,28 @@ export function decodeLocationConfigV11(dataView, result) {
   result.address = { value: dataView.getTextUtf8(addressLen) };
 }
 
+export function decodeLumalinkMode(mode, err) {
+  switch (mode) {
+    case 0:
+      return 'never_advertise';
+    case 1:
+      return 'first_commission';
+    case 2:
+      return 'every_boot';
+    case 3:
+      return 'always';
+    default:
+      err.errors.push('invalid_mode');
+      return 'invalid_mode';
+  }
+}
+
+export function decodeLumalinkConfig(dataView, result, err) {
+  result.packet_type = { value: 'lumalink_config_packet' };
+  var mode = dataView.getUint8();
+  result.access_mode = { value: decodeLumalinkMode(mode, err), raw: mode };
+}
+
 export function decodeLedConfig(dataView, result) {
   result.packet_type = { value: 'onboard_led_config_packet' };
   var l = dataView.getUint8Bits().getBits(1);
@@ -711,6 +733,9 @@ export function decodeFport50(dataView, result, err) {
       return;
     case 0x26:
       decodeLocationConfigV11(dataView, result);
+      return;
+    case 0x27:
+      decodeLumalinkConfig(dataView, result, err);
       return;
     case 0x28:
       decodeDigInputConfigNew(dataView, result, err);
@@ -1717,6 +1742,9 @@ function decodeFport49(dataView, result, err) {
       return;
     case 0x26:
       result.packet_type = { value: 'location_config_request' };
+      return;
+    case 0x27:
+      result.packet_type = { value: 'lumalink_config_request' };
       return;
     // #endif
     default:

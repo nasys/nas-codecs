@@ -443,6 +443,19 @@ describe('Config packts', () => {
     });
   });
 
+  test('lumalink_config_packet', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 50,
+      data: '2701',
+      expected: {
+        data: {
+          packet_type: { value: 'lumalink_config_packet' }, access_mode: { value: 'first_commission', raw: 1 },
+        },
+      },
+    });
+  });
+
   test('multicast_config_packet from DS', () => {
     testPacket({
       decoderFn: decodeRaw,

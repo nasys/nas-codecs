@@ -73,6 +73,15 @@ describe('Config requests', function () {
       expected: { data: { packet_type: { value: 'location_config_request' } } },
     });
   });
+
+  describe('lumalink_config_request from DS', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 49,
+      data: '27',
+      expected: { data: { packet_type: { value: 'lumalink_config_request' } } },
+    });
+  });
 });
 
 describe('Commands', function () {
