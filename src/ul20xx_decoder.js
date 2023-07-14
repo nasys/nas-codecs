@@ -522,6 +522,7 @@ export function decodeLocationConfigV11(dataView, result) {
   result.address = { value: dataView.getTextUtf8(addressLen) };
 }
 
+// #ifndef VER1_0
 export function decodeLumalinkMode(mode, err) {
   switch (mode) {
     case 0:
@@ -543,6 +544,7 @@ export function decodeLumalinkConfig(dataView, result, err) {
   var mode = dataView.getUint8();
   result.access_mode = { value: decodeLumalinkMode(mode, err), raw: mode };
 }
+// #endif
 
 export function decodeLedConfig(dataView, result) {
   result.packet_type = { value: 'onboard_led_config_packet' };

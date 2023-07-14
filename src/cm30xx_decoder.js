@@ -377,16 +377,16 @@ function generalConfigurationParser(dataView, result, err) {
   if (configuredParameters.meter_serial_sent) {
     result.meter_serial = serialFormat(dataView.getUint32());
   }
-  result.meter_unit = '';
+  var unitPost = '';
   if (configuredParameters.meter_multiplier_sent) {
     var bits3 = dataView.getUint8Bits();
     result.meter_multiplier = meterMultiplierConvert(bits3.getBits(3));
     result.meter_medium = meterMediumFormat(bits3.getBits(2), err);
     result.meter_unit = meterUnitFormat(bits3.getBits(2), err);
+    unitPost = result.meter_unit !== '' ? '__' + result.meter_unit : '';
     result.privacy_mode_active = bits3.getBits(1);
   }
 
-  var unitPost = result.meter_unit !== '' ? '__' + result.meter_unit : '';
   if (configuredParameters.meter_volume_sent) {
     result['meter_accumulated_volume' + unitPost] = dataView.getUint64() / 1000.0;
   }

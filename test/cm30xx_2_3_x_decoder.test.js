@@ -90,7 +90,7 @@ describe('CM30xx tests', () => {
       data: '20D717170244983938DEBB2A130000000019001400641900000107000380',
       expected: {
         data: {
-          _packet_type: 'general_configuration_packet', alert_backflow_threshold: 0.02, alert_broken_pipe_threshold: 6.5, alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 7, alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 3, meter_accumulated_volume: 321567.71, meter_nominal_flow: 2.5, meter_serial: '38399844', meter_unit: '', radio_lorawan_profile: 'lorawan_1_h_dynamic', radio_wmbus_profile: 'wmbus_driveby',
+          _packet_type: 'general_configuration_packet', alert_backflow_threshold: 0.02, alert_broken_pipe_threshold: 6.5, alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 7, alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 3, meter_accumulated_volume: 321567.71, meter_nominal_flow: 2.5, meter_serial: '38399844', radio_lorawan_profile: 'lorawan_1_h_dynamic', radio_wmbus_profile: 'wmbus_driveby',
         },
       },
     });
