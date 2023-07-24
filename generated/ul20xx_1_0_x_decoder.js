@@ -519,6 +519,7 @@ function decodeLocationConfigV10(dataView, result) {
   }
 }
 
+
 function decodeLedConfig(dataView, result) {
   result.packet_type = { value: 'onboard_led_config_packet' };
   var l = dataView.getUint8Bits().getBits(1);

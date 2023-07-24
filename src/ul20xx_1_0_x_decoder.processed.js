@@ -469,6 +469,7 @@ export function decodeLocationConfigV11(dataView, result) {
   result.address = { value: dataView.getTextUtf8(addressLen) };
 }
 
+
 export function decodeLedConfig(dataView, result) {
   result.packet_type = { value: 'onboard_led_config_packet' };
   var l = dataView.getUint8Bits().getBits(1);

@@ -71,6 +71,7 @@ if (device_name == 'CM30xx') {
         <option value="99">99 - System Messages</option>`;
 } else if (device_name == 'UL20xx') {
   if (device_firmware == '1.0.x') {
+    var supported_devices = 'Supported devices: UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x firmwares.';
     var script_filename = 'generated/ul20xx_1_0_x_decoder.js';
     var default_payload = 'DFD41D5E004B041502AE05050AFF32030306FF00';
     var fport_options = `
@@ -83,6 +84,7 @@ if (device_name == 'CM30xx') {
     <option value="61">61 - Event Notification</option>
     <option value="99">99 - System Messages</option>`;
   } else if (device_firmware == '1.1.x') {
+    var supported_devices = 'Supported devices: UL2002, UL2014, UL2020, UL2021, UL2023, UL2030, UL2031, UL2033, UL2053 with 1.1.x firmwares.';
     var script_filename = 'generated/ul20xx_1_1_x_decoder.js';
     var default_payload = '01F37F205E8244320916200701D20294550401FE50190012501900';
     var fport_options = `
@@ -98,7 +100,6 @@ if (device_name == 'CM30xx') {
     throw Error('ERROR, unrecognized firmware version: ' + device_firmware);
   }
   formatter_script_filename = 'src/util/ul20xx_format.js';
-  var supported_devices = 'Supported devices: UL2002, UL2014, UL2020, UL2021, UL2030 with ' + device_firmware + ' firmwares.';
 
   var formatter_options = `
         <option value="orig">No Formatter (Object)</option>
