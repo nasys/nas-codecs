@@ -335,8 +335,8 @@ function decodeLightDimStep(dataView) {
   return res;
 }
 
-function decodeLightInputConfig(dataView, result, err) {
-  result.packet_type = { value: 'light_input_config_packet' };
+function decodeLightSensorConfig(dataView, result, err) {
+  result.packet_type = { value: 'light_sensor_config_packet' };
 
   var step_count = dataView.getUint8();
   if (step_count === 0xFF) {
@@ -775,7 +775,7 @@ function decodeFport50(dataView, result, err) {
       decodeDigInputConfigNew(dataView, result, err);
       return;
     case 0x29:
-      decodeLightInputConfig(dataView, result, err);
+      decodeLightSensorConfig(dataView, result, err);
       return;
     case 0x53:
       decodeMulticastFcntConfig(dataView, result);
@@ -1606,6 +1606,12 @@ function decodeFport49(dataView, result, err) {
       return;
     case 0x27:
       result.packet_type = { value: 'lumalink_config_request' };
+      return;
+    case 0x28:
+      result.packet_type = { value: 'dig_input_config_request' };
+      return;
+    case 0x29:
+      result.packet_type = { value: 'light_input_config_request' };
       return;
     default:
       err.errors.push('invalid_header');

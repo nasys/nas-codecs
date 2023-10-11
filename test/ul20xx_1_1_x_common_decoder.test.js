@@ -109,14 +109,14 @@ describe('Config packts', () => {
     });
   });
 
-  test('new light_input_config_packet from DS', () => {
+  test('new light_sensor_config_packet from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 50,
       data: '29 02 0E 3C FE 0000C441 3C CDCCF642 FF',
       expected: {
         "data": {
-          "packet_type": { "value": "light_input_config_packet" },
+          "packet_type": { "value": "light_sensor_config_packet" },
           "alert_on_every_step": { "value": false },
           "clamp_profile": { "value": true },
           "clamp_dig": { "value": true },

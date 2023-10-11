@@ -2,7 +2,7 @@
   - UL20xx 1.1.x status_config_packet's staus_interval fixed to status_interval
   - UL20xx 1.1.x Unaddressed DALI driver warning added to boot_packet
   - UL20xx 1.1.x new status_packet implemented
-  - UL20xx 1.1.x new light_input_config_packet and new dig_input_config_packet implemeted (backwards compatible)
+  - UL20xx 1.1.x new light_sensor_config_packet and new dig_input_config_packet implemeted (backwards compatible)
   - UM30xx serial extension implemented
   - UL20xx lumalink_config_packet added
 

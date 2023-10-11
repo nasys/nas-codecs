@@ -139,7 +139,7 @@ export function decodeLightDimStep(dataView) {
 }
 
 export function decodeLightInputConfig(dataView, result, err) {
-  result.packet_type = { value: 'light_input_config_packet' };
+  result.packet_type = { value: 'light_sensor_config_packet' };
 
   var step_count = dataView.getUint8();
   if (step_count === 0xFF) {
