@@ -138,7 +138,7 @@ export function decodeLightDimStep(dataView) {
   return res;
 }
 
-export function decodeLightInputConfig(dataView, result, err) {
+export function decodeLightSensorConfig(dataView, result, err) {
   result.packet_type = { value: 'light_sensor_config_packet' };
 
   var step_count = dataView.getUint8();
@@ -999,9 +999,9 @@ function statusParser1_1(dataView, result, err) {
 
   statusField.metering_com_error = bitFalseTrue(err1);
   if (err1) err.warnings.push('metering_com_error');
+
   statusField.rtc_com_error = bitFalseTrue(err2);
   if (err2) err.warnings.push('rtc_com_error');
-
   statusField.internal_relay_closed = bitFalseTrue(internalRelay);
   if (header_below_1_1_4) {
     statusField.ldr_input_on = bitFalseTrue(ldrOn);

@@ -15,7 +15,7 @@ describe('Status and usage', () => {
           "status": {
             "dali_connection_error": { "value": true },
             "metering_com_error": { "value": false },
-            "rtc_com_error": { "value": false },
+            "ext_rtc_warning": { "value": false },
             "internal_relay_closed": { "value": true },
             "open_drain_output_on": { "value": true },
             "lumalink_connected": { "value": true },
@@ -53,7 +53,7 @@ describe('Status and usage', () => {
             metering_com_error: {
               value: false,
             },
-            rtc_com_error: {
+            ext_rtc_warning: {
               value: false,
             },
             internal_relay_closed: {
@@ -179,7 +179,7 @@ describe('Status and usage', () => {
           status: {
             dali_connection_error: { value: false },
             metering_com_error: { value: false },
-            rtc_com_error: { value: false },
+            ext_rtc_warning: { value: false },
             internal_relay_closed: { value: false },
             ldr_input_on: { value: false },
             dig_input_on: { value: false },

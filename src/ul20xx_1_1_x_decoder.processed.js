@@ -1084,9 +1084,9 @@ function statusParser1_1(dataView, result, err) {
 
   statusField.metering_com_error = bitFalseTrue(err1);
   if (err1) err.warnings.push('metering_com_error');
-  statusField.rtc_com_error = bitFalseTrue(err2);
-  if (err2) err.warnings.push('rtc_com_error');
 
+  statusField.ext_rtc_warning = bitFalseTrue(err2);
+  if (err2) err.warnings.push('ext_rtc_warning');
   statusField.internal_relay_closed = bitFalseTrue(internalRelay);
   if (header_below_1_1_4) {
     statusField.ldr_input_on = bitFalseTrue(ldrOn);
