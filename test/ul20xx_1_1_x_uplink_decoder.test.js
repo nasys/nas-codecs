@@ -32,6 +32,37 @@ describe('Status and usage', () => {
     });
   });
 
+  test('status from DS + unknown sensor source', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 23,
+      data: '01 F37F205E 8244 32 09 16 20 09 01 D2 02 9455 04 01 2100 FE 50 19 00 12 50 19 00',
+      expected: {
+        "data": {
+          "packet_type": { "value": "status_packet" },
+          "device_unix_epoch": { "value": "2020-01-16T15:23:31.000Z", "raw": 1579188211 },
+          "status": {
+            "dali_connection_error": { "value": true },
+            "metering_com_error": { "value": false },
+            "ext_rtc_warning": { "value": false },
+            "internal_relay_closed": { "value": true },
+            "open_drain_output_on": { "value": true },
+            "lumalink_connected": { "value": true },
+            "lumalink_connected_once": { "value": false }
+          },
+          "downlink_rssi": { "value": -50, "unit": "dBm" },
+          "downlink_snr": { "value": 9, "unit": "dB" },
+          "mcu_temperature": { "value": 22, "unit": "°C" },
+          "active_alerts": { "voltage_alert_in_24h": { "value": false }, "lamp_error_alert_in_24h": { "value": true }, "power_alert_in_24h": { "value": false }, "power_factor_alert_in_24h": { "value": false } },
+          "sensor_source": { "ldr_input": { "value": 210 }, "light_sensor": { "value": "299.9", "unit": "lx" }, "dig_input_1_on": { "value": true } },
+          "dimming_source": [{ "address": { "value": "dali_broadcast", "raw": 254 }, "reason": "calendar_dusk_step", "dimming_level": { "value": 25, "raw": 25, "unit": "%" }, "status": { "driver_error": { "value": false }, "lamp_failure": { "value": false }, "lamp_on": { "value": false }, "limit_error": { "value": false }, "fade_running": { "value": false }, "reset_state": { "value": false }, "missing_short_address": { "value": false }, "power_failure": { "value": false } } }, { "address": { "value": "dali_single_9", "raw": 18 }, "reason": "calendar_dusk_step", "dimming_level": { "value": 25, "raw": 25, "unit": "%" }, "status": { "driver_error": { "value": false }, "lamp_failure": { "value": false }, "lamp_on": { "value": false }, "limit_error": { "value": false }, "fade_running": { "value": false }, "reset_state": { "value": false }, "missing_short_address": { "value": false }, "power_failure": { "value": false } } }]
+        }, "warnings": ["dali_connection_error", "lamp_error_alert_in_24h"],
+        "errors": ["unsupported_sensor_source"],
+      },
+    });
+  });
+
+
   test('status preliminary from DS', () => {
     testPacket({
       decoderFn: decodeRaw,

@@ -1075,29 +1075,35 @@ function calcLightLx(light_raw) {
   return formatLightLx(lx);
 }
 
-function decodeSensorSource(dataView, result, err) {
-  var header = dataView.getUint8();
+function decodeSensorSource(dataView, header, result, err) {
   if (header === 0x01) {
     result.sensor_source.ldr_input = { value: dataView.getUint8() };
-    return 2;
+    return 1;
   }
   if (header == 0x02) {
     var lx = calcLightLx(dataView.getUint16());
     result.sensor_source.light_sensor = { value: lx, unit: 'lx' };
-    return 3;
+    return 2;
   }
   if (header == 0x03) {
     var lx = calcLightLx(dataView.getUint16());
     result.sensor_source.d4i_light_sensor = { value: lx, unit: 'lx' };
-    return 3;
+    return 2;
   }
   if (header == 0x04) {
     var bits = dataView.getUint8Bits();
     result.sensor_source.dig_input_1_on = bitFalseTrue(bits.getBits(1));
-    return 2;
+    return 1;
   }
-  err.errors.push("invalid_sensor_source");
-  return 1;
+  if (header == 0x08) {
+    var deg = dataView.getUint8();
+    if (deg == 0xFF) {
+      deg = null;
+    }
+    result.sensor_source.tilt_sensor = { value: deg, unit: '°' };
+    return 1;
+  }
+  return 0;
 }
 
 function statusParser1_1(dataView, result, err) {
@@ -1208,7 +1214,20 @@ function statusParser1_1(dataView, result, err) {
     var senorSrcLeft = dataView.getUint8();
     result.sensor_source = {};
     while (senorSrcLeft > 0) {
-      senorSrcLeft = senorSrcLeft - decodeSensorSource(dataView, result, err);
+      var header = dataView.getUint8();
+      senorSrcLeft = senorSrcLeft - 1;
+      var consumed_len = decodeSensorSource(dataView, header, result);
+      if (consumed_len == 0)
+      {
+        err.errors.push("unsupported_sensor_source");
+        // consume all leftover bytes assigned for sensor_source so that future sensor sources would not break the code
+        dataView.getRaw(senorSrcLeft);
+        senorSrcLeft = 0;
+      }
+      else 
+      {
+        senorSrcLeft = senorSrcLeft - consumed_len;
+      }
     }
     if (senorSrcLeft < 0) {
       err.errors.push('error_decoding_sensor_source');
