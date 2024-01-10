@@ -562,13 +562,16 @@ function generalConfigurationParser(dataView, result, err) {
   if (configuredParameters.meter_serial_sent) {
     result.meter_serial = serialFormat(dataView.getUint32());
   }
+
   var unitPost = '';
+  var unitPerHour = "";
   if (configuredParameters.meter_multiplier_sent) {
     var bits3 = dataView.getUint8Bits();
     result.meter_multiplier = meterMultiplierConvert(bits3.getBits(3));
     result.meter_medium = meterMediumFormat(bits3.getBits(2), err);
     result.meter_unit = meterUnitFormat(bits3.getBits(2), err);
     unitPost = result.meter_unit !== '' ? '__' + result.meter_unit : '';
+    unitPerHour = unitPost ? unitPost + "_per_h" : "";
     result.privacy_mode_active = bits3.getBits(1);
   }
 
@@ -579,15 +582,15 @@ function generalConfigurationParser(dataView, result, err) {
     result['meter_accumulated_volume_offset' + unitPost] = dataView.getInt32() / 1000.0;
   }
   if (configuredParameters.meter_nominal_flow_sent) {
-    result['meter_nominal_flow' + unitPost] = dataView.getUint16() / 10.0;
+    result['meter_nominal_flow' + unitPerHour] = dataView.getUint16() / 10.0;
   }
   if (configuredParameters.alert_backflow_sent) {
     var valBkThr = dataView.getUint16();
-    result['alert_backflow_threshold' + unitPost] = valBkThr === 0 ? 'disabled' : valBkThr / 1000.0;
+    result['alert_backflow_threshold'] = valBkThr === 0 ? 'disabled' : valBkThr / 1000.0;
   }
   if (configuredParameters.alert_broken_pipe_sent) {
     var valBrThr = dataView.getUint32();
-    result['alert_broken_pipe_threshold' + unitPost] = valBrThr === 0 ? 'disabled' : valBrThr / 1000.0;
+    result['alert_broken_pipe_threshold' + unitPerHour] = valBrThr === 0 ? 'disabled' : valBrThr / 1000.0;
   }
   if (configuredParameters.alert_continuous_flow_sent) {
     result.alert_continuous_flow_enabled = Boolean(dataView.getUint8());
@@ -798,7 +801,7 @@ function extractUnitFromKey(key) {
   var spl = key.split('__');
   var unit = spl.length > 1 ? spl[1] : '';
   if (unit === 'C') { unit = unit.replace('C', '°C'); }
-  unit = unit.replace('_', '/');
+  unit = unit.replace('_per_', '/');
   unit = unit.replace('3', '³');
   unit = unit.replace('deg', '°');
   return unit;

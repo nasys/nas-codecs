@@ -64,7 +64,7 @@ describe('CM30xx tests', () => {
       data: '20DF1717024498393804DEBB2A130000000019001400641900000107000380',
       expected: {
         data: {
-          _packet_type: 'general_configuration_packet', alert_backflow_threshold__m3: 0.02, alert_broken_pipe_threshold__m3: 6.5, alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 7, alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 3, meter_accumulated_volume__m3: 321567.71, meter_medium: 'water', meter_multiplier: 0.01, meter_nominal_flow__m3: 2.5, meter_serial: '38399844', meter_unit: 'm3', privacy_mode_active: false, radio_lorawan_profile: 'lorawan_1_h_dynamic', radio_wmbus_profile: 'wmbus_driveby',
+          _packet_type: 'general_configuration_packet', alert_backflow_threshold: 0.02, alert_broken_pipe_threshold__m3_per_h: 6.5, alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 7, alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 3, meter_accumulated_volume__m3: 321567.71, meter_medium: 'water', meter_multiplier: 0.01, meter_nominal_flow__m3_per_h: 2.5, meter_serial: '38399844', meter_unit: 'm3', privacy_mode_active: false, radio_lorawan_profile: 'lorawan_1_h_dynamic', radio_wmbus_profile: 'wmbus_driveby',
         },
       },
     });
@@ -77,7 +77,7 @@ describe('CM30xx tests', () => {
       data: '20DF17170244983938D5DEBB2A130000000019001400641900000107000380',
       expected: {
         data: {
-          _packet_type: 'general_configuration_packet', alert_backflow_threshold__ft3: 0.02, alert_broken_pipe_threshold__ft3: 6.5, alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 7, alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 3, meter_accumulated_volume__ft3: 321567.71, meter_medium: 'gas', meter_multiplier: 0.1, meter_nominal_flow__ft3: 2.5, meter_serial: '38399844', meter_unit: 'ft3', privacy_mode_active: true, radio_lorawan_profile: 'lorawan_1_h_dynamic', radio_wmbus_profile: 'wmbus_driveby',
+          _packet_type: 'general_configuration_packet', alert_backflow_threshold: 0.02, alert_broken_pipe_threshold__ft3_per_h: 6.5, alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 7, alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 3, meter_accumulated_volume__ft3: 321567.71, meter_medium: 'gas', meter_multiplier: 0.1, meter_nominal_flow__ft3_per_h: 2.5, meter_serial: '38399844', meter_unit: 'ft3', privacy_mode_active: true, radio_lorawan_profile: 'lorawan_1_h_dynamic', radio_wmbus_profile: 'wmbus_driveby',
         },
       },
     });
@@ -103,7 +103,7 @@ describe('CM30xx tests', () => {
       data: '20 DF17 50 06 4498393804 DEBB2A134A000000 19001400641900000107000380',
       expected: {
         data: {
-          _packet_type: 'general_configuration_packet', alert_backflow_threshold__m3: 0.02, alert_broken_pipe_threshold__m3: 6.5, alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 7, alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 3, meter_accumulated_volume__m3: 318149147.614, meter_medium: 'water', meter_multiplier: 0.01, meter_nominal_flow__m3: 2.5, meter_serial: '38399844', meter_unit: 'm3', privacy_mode_active: false, radio_lorawan_profile: 'invalid_lorawan_profile', radio_wmbus_profile: 'invalid_wmbus_profile',
+          _packet_type: 'general_configuration_packet', alert_backflow_threshold: 0.02, alert_broken_pipe_threshold__m3_per_h: 6.5, alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 7, alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 3, meter_accumulated_volume__m3: 318149147.614, meter_medium: 'water', meter_multiplier: 0.01, meter_nominal_flow__m3_per_h: 2.5, meter_serial: '38399844', meter_unit: 'm3', privacy_mode_active: false, radio_lorawan_profile: 'invalid_lorawan_profile', radio_wmbus_profile: 'invalid_wmbus_profile',
         },
         errors: ['invalid_lorawan_profile', 'invalid_wmbus_profile'],
       },
@@ -184,7 +184,7 @@ describe('CM30xx tests', () => {
       data: '20ff170702ffffffff037eba000000000000ac2600001900 00 0000000000 01 0000 8080',
       expected: {
         data: {
-          _packet_type: 'general_configuration_packet', alert_backflow_threshold__m3: 'disabled', alert_broken_pipe_threshold__m3: 'disabled', alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 'disabled', alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 'disabled', meter_accumulated_volume__m3: 47.742, meter_accumulated_volume_offset__m3: 9.9, meter_medium: 'water', meter_multiplier: 0.001, meter_nominal_flow__m3: 2.5, meter_serial: 'not_available', meter_unit: 'm3', privacy_mode_active: false, radio_lorawan_profile: 'lorawan_1_h_static', radio_wmbus_profile: 'wmbus_driveby',
+          _packet_type: 'general_configuration_packet', alert_backflow_threshold: 'disabled', alert_broken_pipe_threshold__m3_per_h: 'disabled', alert_continuous_flow_enabled: true, alert_no_usage_interval__days: 'disabled', alert_temperature_threshold_high__C: 'disabled', alert_temperature_threshold_low__C: 'disabled', meter_accumulated_volume__m3: 47.742, meter_accumulated_volume_offset__m3: 9.9, meter_medium: 'water', meter_multiplier: 0.001, meter_nominal_flow__m3_per_h: 2.5, meter_serial: 'not_available', meter_unit: 'm3', privacy_mode_active: false, radio_lorawan_profile: 'lorawan_1_h_static', radio_wmbus_profile: 'wmbus_driveby',
         },
       },
     });

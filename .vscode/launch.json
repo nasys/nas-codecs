@@ -7,11 +7,19 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Jest single run all tests",
+            "name": "Jest: current file",
+            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
+            "args": ["${fileBasenameNoExtension}", "--verbose", "-i", "--no-cache"],
+            "console": "integratedTerminal",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Jest run all tests",
             "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
             "args": ["--verbose", "-i", "--no-cache"],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
-          }   
+        }         
     ]
 }

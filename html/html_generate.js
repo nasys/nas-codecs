@@ -31,14 +31,12 @@ function applyFormatting(res, formatting) {
 }`;
 
 if (device_name == 'CM30xx') {
-  if (device_firmware == '1.3.x') {
-    var script_filename = 'generated/cm30xx_1_3_x_decoder.js';
-  } else if (device_firmware == '2.3.x') {
+  if (device_firmware == '2.3.x') {
     var script_filename = 'generated/cm30xx_2_3_x_decoder.js';
   } else {
     throw Error('ERROR, unrecognized firmware version: ' + device_firmware);
   }
-
+  var device_firmware_str = '1.3.x / 2.3.x';
   var default_payload = '04C10084433F254E00752B036BD1164A337C44983938';
   var supported_devices = 'Supported devices: CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares.';
   var fport_options = `
@@ -56,7 +54,7 @@ if (device_name == 'CM30xx') {
   } else {
     throw Error('ERROR, unrecognized firmware version: ' + device_firmware);
   }
-
+  var device_firmware_str = device_firmware;
   var default_payload = '82826BD1164A337C432326B29AD03C0138271501170600002090241262700374301C00';
   var supported_devices = 'Supported devices: UM3070, UM3081, UM3090, UM3100, UM3110 with ' + device_firmware + ' firmware.';
   var fport_options = `
@@ -70,6 +68,7 @@ if (device_name == 'CM30xx') {
         <option value="62">62 - Diagnostic</option>
         <option value="99">99 - System Messages</option>`;
 } else if (device_name == 'UL20xx') {
+  var device_firmware_str = device_firmware;
   if (device_firmware == '1.0.x') {
     var supported_devices = 'Supported devices: UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x firmwares.';
     var script_filename = 'generated/ul20xx_1_0_x_decoder.js';
@@ -117,7 +116,25 @@ if (device_name == 'CM30xx') {
         }
         return formatted_res;
     }`;
-} else {
+} else if (device_name == 'IM30xx') {
+  if (device_firmware == '0.9.x' || device_firmware == '0.10.x') {
+    var script_filename = 'generated/im30xx_0_9_x_decoder.js';
+  } else {
+    throw Error('ERROR, unrecognized firmware version: ' + device_firmware);
+  }
+
+  var device_firmware_str = "0.9.x / 0.10.x";
+  var default_payload = 'FF36E20F5FFF9D010C1003003B0C1D6500';
+  var supported_devices = 'Supported devices: IM3060 with 0.9.x and IM3100 with 0.10.x firmwares.';
+  var fport_options = `
+        <option value="24">24 - Status</option>
+        <option value="25">25 - Usage</option>
+        <option value="50">50 - Configuartions</option>
+        <option value="51">51 - DFU COMMAND</option>
+        <option value="60">60 - Commands</option>
+        <option value="99">99 - System Messages</option>`;
+}
+else {
   throw Error('Unknown device name defined');
 }
 
@@ -138,7 +155,7 @@ var html = `
 </style>
 </head>
 <body>
-<h2>NAS ` + device_name + ' Payload Decoder for ' + device_firmware + `</h2>
+<h2>NAS ` + device_name + ' Payload Decoder for ' + device_firmware_str + `</h2>
 <div style="padding-left: 10px;">
   <label>` + supported_devices + `</label><br><br>
   <label for="fport">fPort: </label>

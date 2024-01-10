@@ -12,7 +12,7 @@
 </style>
 </head>
 <body>
-<h2>NAS CM30xx Payload Decoder for 2.3.x</h2>
+<h2>NAS CM30xx Payload Decoder for 1.3.x / 2.3.x</h2>
 <div style="padding-left: 10px;">
   <label>Supported devices: CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares.</label><br><br>
   <label for="fport">fPort: </label>
@@ -41,7 +41,7 @@
   </select><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2023-07-14T13:01:41.498Z</div>
+<div class="footer">Generated at 2024-01-10T17:05:29.606Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -610,13 +610,16 @@ function generalConfigurationParser(dataView, result, err) {
   if (configuredParameters.meter_serial_sent) {
     result.meter_serial = serialFormat(dataView.getUint32());
   }
+
   var unitPost = '';
+  var unitPerHour = "";
   if (configuredParameters.meter_multiplier_sent) {
     var bits3 = dataView.getUint8Bits();
     result.meter_multiplier = meterMultiplierConvert(bits3.getBits(3));
     result.meter_medium = meterMediumFormat(bits3.getBits(2), err);
     result.meter_unit = meterUnitFormat(bits3.getBits(2), err);
     unitPost = result.meter_unit !== '' ? '__' + result.meter_unit : '';
+    unitPerHour = unitPost ? unitPost + "_per_h" : "";
     result.privacy_mode_active = bits3.getBits(1);
   }
 
@@ -627,15 +630,15 @@ function generalConfigurationParser(dataView, result, err) {
     result['meter_accumulated_volume_offset' + unitPost] = dataView.getInt32() / 1000.0;
   }
   if (configuredParameters.meter_nominal_flow_sent) {
-    result['meter_nominal_flow' + unitPost] = dataView.getUint16() / 10.0;
+    result['meter_nominal_flow' + unitPerHour] = dataView.getUint16() / 10.0;
   }
   if (configuredParameters.alert_backflow_sent) {
     var valBkThr = dataView.getUint16();
-    result['alert_backflow_threshold' + unitPost] = valBkThr === 0 ? 'disabled' : valBkThr / 1000.0;
+    result['alert_backflow_threshold'] = valBkThr === 0 ? 'disabled' : valBkThr / 1000.0;
   }
   if (configuredParameters.alert_broken_pipe_sent) {
     var valBrThr = dataView.getUint32();
-    result['alert_broken_pipe_threshold' + unitPost] = valBrThr === 0 ? 'disabled' : valBrThr / 1000.0;
+    result['alert_broken_pipe_threshold' + unitPerHour] = valBrThr === 0 ? 'disabled' : valBrThr / 1000.0;
   }
   if (configuredParameters.alert_continuous_flow_sent) {
     result.alert_continuous_flow_enabled = Boolean(dataView.getUint8());
@@ -846,7 +849,7 @@ function extractUnitFromKey(key) {
   var spl = key.split('__');
   var unit = spl.length > 1 ? spl[1] : '';
   if (unit === 'C') { unit = unit.replace('C', '°C'); }
-  unit = unit.replace('_', '/');
+  unit = unit.replace('_per_', '/');
   unit = unit.replace('3', '³');
   unit = unit.replace('deg', '°');
   return unit;
@@ -958,7 +961,7 @@ function extractUnitFromKey(key) {
   var spl = key.split('__');
   var unit = spl.length > 1 ? spl[1] : '';
   if (unit === 'C') { unit = unit.replace('C', '°C'); }
-  unit = unit.replace('_', '/');
+  unit = unit.replace('_per_', '/');
   unit = unit.replace('3', '³');
   unit = unit.replace('deg', '°');
   return unit;

@@ -5,7 +5,7 @@ function extractUnitFromKey(key) {
   var spl = key.split('__');
   var unit = spl.length > 1 ? spl[1] : '';
   if (unit === 'C') { unit = unit.replace('C', '°C'); }
-  unit = unit.replace('_', '/');
+  unit = unit.replace('_per_', '/');
   unit = unit.replace('3', '³');
   unit = unit.replace('deg', '°');
   return unit;

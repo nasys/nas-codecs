@@ -129,39 +129,6 @@ export function decodeLdrConfig(dataView, result) {
   result.trigger_alert_enabled = bitFalseTrue(behaviorBits.getBits(1));
 }
 
-export function decodeLightDimStep(dataView) {
-  var res = {};
-  var light = dataView.getFloat();
-  var level = dataView.getUint8();
-  res.light_level = { value: formatLightLx(light), unit: "lx or none" };
-  res.dimming_level = decodeDimmingLevel(level, 'inactive');
-  return res;
-}
-
-export function decodeLightSensorConfig(dataView, result, err) {
-  result.packet_type = { value: 'light_sensor_config_packet' };
-
-  var step_count = dataView.getUint8();
-  if (step_count === 0xFF) {
-    return;
-  }
-  var bits = dataView.getUint8Bits();
-  result.alert_on_every_step = bitFalseTrue(bits.getBits(1));
-  result.clamp_profile = bitFalseTrue(bits.getBits(1));
-  result.clamp_dig = bitFalseTrue(bits.getBits(1));
-  result.interpolate_steps = bitFalseTrue(bits.getBits(1));
-
-  result.measurement_duration = { value: dataView.getUint8(), unit: "s" };
-
-  var addr = dataView.getUint8();
-  result.address = addressParse(addr, "all_devices", err);
-
-  result.dim_steps = [];
-  while (dataView.availableLen()) {
-    result.dim_steps.push(decodeLightDimStep(dataView));
-  }
-}
-
 export function decodeDimmingLevel(level, ffName) {
   if (level === 0xFF) {
     return { value: ffName, raw: level, unit: '' };
@@ -944,150 +911,35 @@ function dimmingSourceParser(dataView, err) {
 }
 
 
-function decodeSensorSource(dataView, result, err) {
-  var header = dataView.getUint8();
+function decodeSensorSource(dataView, header, result, err) {
   if (header === 0x01) {
     result.sensor_source.ldr_input = { value: dataView.getUint8() };
-    return 2;
+    return 1;
   }
   if (header == 0x02) {
     var lx = calcLightLx(dataView.getUint16());
     result.sensor_source.light_sensor = { value: lx, unit: 'lx' };
-    return 3;
+    return 2;
   }
   if (header == 0x03) {
     var lx = calcLightLx(dataView.getUint16());
     result.sensor_source.d4i_light_sensor = { value: lx, unit: 'lx' };
-    return 3;
+    return 2;
   }
   if (header == 0x04) {
     var bits = dataView.getUint8Bits();
     result.sensor_source.dig_input_1_on = bitFalseTrue(bits.getBits(1));
-    return 2;
+    return 1;
   }
-  err.errors.push("invalid_sensor_source");
-  return 1;
-}
-
-function statusParser1_1(dataView, result, err) {
-  result.packet_type = { value: 'status_packet' };
-
-  var header = dataView.getUint8();
-  var header_below_1_1_4 = header === 0x00;
-  if (!header_below_1_1_4 && header !== 0x01) {
-    err.errors.push('invalid_header');
-    return;
-  }
-
-  var epoch = dataView.getUint32();
-  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
-
-  var statusField = {};
-  var bits = dataView.getUint8Bits();
-
-  var daliErrExt = bits.getBits(1);
-  var daliErrConn = bits.getBits(1);
-  var ldrOn = bits.getBits(1);
-  bits.getBits(1);
-  var digOn = bits.getBits(1);
-  var err1 = bits.getBits(1);
-  var err2 = bits.getBits(1);
-  var internalRelay = bits.getBits(1);
-
-  statusField.dali_connection_error = bitFalseTrue(daliErrConn);
-  if (daliErrConn) err.warnings.push('dali_connection_error');
-
-  statusField.metering_com_error = bitFalseTrue(err1);
-  if (err1) err.warnings.push('metering_com_error');
-
-  statusField.rtc_com_error = bitFalseTrue(err2);
-  if (err2) err.warnings.push('rtc_com_error');
-  statusField.internal_relay_closed = bitFalseTrue(internalRelay);
-  if (header_below_1_1_4) {
-    statusField.ldr_input_on = bitFalseTrue(ldrOn);
-    statusField.dig_input_on = bitFalseTrue(digOn);
-  }
-
-  if (!header_below_1_1_4) {
-    var bits1 = dataView.getUint8Bits();
-    bits1.getBits(1);
-    bits1.getBits(1);
-    statusField.open_drain_output_on = bitFalseTrue(bits1.getBits(1));
-    bits1.getBits(1);
-    bits1.getBits(1);
-    bits1.getBits(1);
-    statusField.lumalink_connected = bitFalseTrue(bits1.getBits(1));
-    statusField.lumalink_connected_once = bitFalseTrue(bits1.getBits(1));
-  }
-
-  result.status = statusField;
-
-  result.downlink_rssi = { value: -1 * dataView.getUint8(), unit: 'dBm' };
-
-  result.downlink_snr = { value: dataView.getInt8(), unit: 'dB' };
-
-  result.mcu_temperature = { value: dataView.getInt8(), unit: '°C' };
-
-  var alertsSent = true;
-  if (header_below_1_1_4) {
-    var bits2 = dataView.getUint8Bits();
-    bits2.getBits(1); // legacy thr
-    var ldrSent = bits2.getBits(1);
-    var odOn = bits2.getBits(1);
-    bits2.getBits(1);
-    result.status.open_drain_output_on = bitFalseTrue(odOn);
-    alertsSent = bits2.getBits(1);
-
-    if (ldrSent) {
-      result.ldr_input_value = { value: dataView.getUint8() };
+  if (header == 0x08) {
+    var deg = dataView.getUint8();
+    if (deg == 0xFF) {
+      deg = null;
     }
-
+    result.sensor_source.tilt_sensor = { value: deg, unit: '°' };
+    return 1;
   }
-
-  if (alertsSent) {
-    var bits4 = dataView.getUint8Bits();
-    bits4.getBits(4);
-    var alertVolt = bits4.getBits(1);
-    var alertLamp = bits4.getBits(1);
-    var alertPower = bits4.getBits(1);
-    var alertPF = bits4.getBits(1);
-
-    var alerts = {};
-    alerts.voltage_alert_in_24h = bitFalseTrue(alertVolt);
-    alerts.lamp_error_alert_in_24h = bitFalseTrue(alertLamp);
-    alerts.power_alert_in_24h = bitFalseTrue(alertPower);
-    alerts.power_factor_alert_in_24h = bitFalseTrue(alertPF);
-    result.active_alerts = alerts;
-
-    if (alertVolt) {
-      err.warnings.push('voltage_alert_in_24h');
-    }
-    if (alertLamp) {
-      err.warnings.push('lamp_error_alert_in_24h');
-    }
-    if (alertPower) {
-      err.warnings.push('power_alert_in_24h');
-    }
-    if (alertPF) {
-      err.warnings.push('power_factor_alert_in_24h');
-    }
-  }
-
-  if (!header_below_1_1_4) {
-    var senorSrcLeft = dataView.getUint8();
-    result.sensor_source = {};
-    while (senorSrcLeft > 0) {
-      senorSrcLeft = senorSrcLeft - decodeSensorSource(dataView, result, err);
-    }
-    if (senorSrcLeft < 0) {
-      err.errors.push('error_decoding_sensor_source');
-    }
-  }
-
-  result.dimming_source = [];
-  while (dataView.availableLen()) {
-    result.dimming_source.push(dimmingSourceParser(dataView, err));
-  }
+  return 0;
 }
 
 function statusParser1_0(dataView, result, err) {

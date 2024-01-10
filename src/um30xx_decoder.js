@@ -1,7 +1,6 @@
 import { BinaryExtract } from './util/extract';
-import {
-  pad, bytesToHexStr, objToList, intToHexStr,
-} from './util/misc';
+import { objToList, intToHexStr } from './util/misc';
+import { decode_mbus } from './util/tmbus_wrapper';
 
 // FORMATTER AND CONVERTER FUNCTIONS
 function mbusStatus(status, err) {
@@ -395,12 +394,21 @@ function usageAndStatusParser(buffer, result, err) {
       result.mbus_medium = mbusMedium(dataView.getUint8());
     }
 
-    //        result.mbus_data_records = [];
-    result.mbus_data_records_unparsed = '';
+    var hex_buf = [];
     while (dataView.offset < dataView.buffer.length) {
-      result.mbus_data_records_unparsed += intToHexStr(dataView.getUint8(), 2);
+      var hex = intToHexStr(dataView.getUint8(), 2);
+      hex_buf.push(hex);
+    }
+    var mbus_hex = hex_buf.join('');
+    result.mbus_data_records_raw = mbus_hex;
+
+    var decoded_tmbus = decode_mbus(mbus_hex);
+    for (var key in decoded_tmbus) {
+      var name = 'mbus_d_' + key;
+      result[name] = decoded_tmbus[key];
     }
   }
+
   if (ssiSent) {
     var bits8 = dataView.getUint8Bits();
     result.ssi_sensor = ssiSensor(bits8.getBits(6), err);

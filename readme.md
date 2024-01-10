@@ -4,6 +4,8 @@
 - __ul20xx__: _UL2002, UL2014, UL2020, UL2021, UL2030_ with 1.0.x and 1.1.x firmwares. Note: does not support _legacy_status_packet_.
 - __um30xx__: _UM3070, UM3081, UM3090, UM3100, UM3110_ with 4.0.x firmware.
 
+- __im30xx__: _IM3060, IM3100
+
 ## Live decoding example
 [CM30xx 1.3.x / 2.3.x live decoder](https://nasys.github.io/nas-codecs/generated/cm30xx_2_3_x_decoder.html)
 
@@ -12,6 +14,8 @@
 [UL20xx 1.1.x live decoder](https://nasys.github.io/nas-codecs/generated/ul20xx_1_1_x_decoder.html)
 
 [UM30xx live decoder](https://nasys.github.io/nas-codecs/generated/um30xx_4_0_x_decoder.html)
+
+[IM30xx 0.9.x / 0.10.x live decoder](https://nasys.github.io/nas-codecs/generated/im30xx_0_9_x_decoder.html)
 
 Or download respective .html file in [generated](https://github.com/nasys/nas-codecs/tree/main/generated) folder.
 
@@ -124,11 +128,12 @@ Node must be installed. To install dependencies:
 `npm run build_ul20xx_1_0_x && npm run build_ul20xx_1_0_x_html`
 `npm run build_ul20xx_1_1_x && npm run build_ul20xx_1_1_x_html`
 `npm run build_um30xx_4_0_x && npm run build_um30xx_4_0_x_html`
+`npm run build_im30xx_0_9_x && npm run build_im30xx_0_9_x_html`
 
 ## Running tests:
 `npm test`
 If src folder has been modified, run at least first half of the build command (generating html not needed).
-`npm run build_cm30xx_2_3_x && npm run build_um30xx_4_0_x && npm run build_ul20xx_1_0_x && npm run build_ul20xx_1_1_x && npm test`
+`npm run build_cm30xx_2_3_x && npm run build_um30xx_4_0_x && npm run build_ul20xx_1_0_x && npm run build_ul20xx_1_1_x && npm run build_im30xx_0_9_x && npm test`
 
 
 ## Coverage overlay in VS Code
@@ -136,3 +141,5 @@ install VS Code 'Jest' extension
 Cmd+P Command pallete: Jest: Start All Runners 
 Cmd+P Command pallete: Jest: Toggle Coverage
 
+# Third party software
+UM30xx decoder uses tiny (TMBUS)[https://dev-lab.github.io/tmbus/] library which is licensed under (Apache License)[https://dev-lab.github.io/tmbus/LICENSE].

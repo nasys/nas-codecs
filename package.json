@@ -30,7 +30,9 @@
     "build_ul20xx_1_0_x": "preprocess src/ul20xx_decoder.js . -VER1_0=true > src/ul20xx_1_0_x_decoder.processed.js && rollup config/ul20xx_1_0_x_decoder_entry.js --file generated/ul20xx_1_0_x_decoder.js --validate && node html/post_process.js generated/ul20xx_1_0_x_decoder.js && minify generated/ul20xx_1_0_x_decoder.js > generated/ul20xx_1_0_x_decoder.min.js",
     "build_ul20xx_1_0_x_html": "node html/html_generate.js 'UL20xx' '1.0.x'",
     "build_ul20xx_1_1_x": "preprocess src/ul20xx_decoder.js . -VER1_1=true > src/ul20xx_1_1_x_decoder.processed.js && rollup config/ul20xx_1_1_x_decoder_entry.js --file generated/ul20xx_1_1_x_decoder.js --validate && node html/post_process.js generated/ul20xx_1_1_x_decoder.js && minify generated/ul20xx_1_1_x_decoder.js > generated/ul20xx_1_1_x_decoder.min.js",
-    "build_ul20xx_1_1_x_html": "node html/html_generate.js 'UL20xx' '1.1.x'"
+    "build_ul20xx_1_1_x_html": "node html/html_generate.js 'UL20xx' '1.1.x'",
+    "build_im30xx_0_9_x": "rollup config/im30xx_0_9_x_decoder_entry.js --file generated/im30xx_0_9_x_decoder.js --validate && node html/post_process.js generated/im30xx_0_9_x_decoder.js && minify generated/im30xx_0_9_x_decoder.js > generated/im30xx_0_9_x_decoder.min.js",
+    "build_im30xx_0_9_x_html": "node html/html_generate.js 'IM30xx' '0.9.x'"
   },
   "author": "NAS",
   "license": "MIT",

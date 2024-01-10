@@ -1,3 +1,12 @@
+# Version 0.6 10.01.2024
+  - IM30xx_0_9_x decoder added
+  - UM30xx M-Bus frame decoding
+
+# Version 0.5 28.11.2023
+  - UM30xx mbus_data_records_unparsed renamed to mbus_data_records_raw
+  - CM30xx meter_nominal_flow__{unit} renamed to meter_nominal_flow__{unit}_per_h
+  - CM30xx alert_broken_pipe_threshold__{unit} renamed to alert_broken_pipe_threshold__{unit}_per_h
+
 # Version 0.4 03.11.2023
   - UL20xx 1.1.x status_packet's rtc_com_error renamed to ext_rtc_warning
 

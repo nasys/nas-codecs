@@ -1,0 +1,1478 @@
+
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<html>
+<head>
+<style>
+    body {background-color: white; padding:0px; margin:0px; font-family: Helvetica; font-weight: lighter;}
+    h2   {background-color: #004f9e; color: white; font-weight:normal; padding: 10px; margin-block-start:0em;}
+    pre  {font-family: monospace; font-size: 9.5pt;}
+    span.dim {color: #bbbbbb;}
+    .footer{position: fixed; text-align: left; bottom: 0px; width: 100%; color: #bbbbbb; background-color: white; padding-left: 10px; font-size: 9pt;}
+</style>
+</head>
+<body>
+<h2>NAS IM30xx Payload Decoder for 0.9.x / 0.10.x</h2>
+<div style="padding-left: 10px;">
+  <label>Supported devices: IM3060 with 0.9.x and IM3100 with 0.10.x firmwares.</label><br><br>
+  <label for="fport">fPort: </label>
+  <select id="fport">
+  
+        <option value="24">24 - Status</option>
+        <option value="25">25 - Usage</option>
+        <option value="50">50 - Configuartions</option>
+        <option value="51">51 - DFU COMMAND</option>
+        <option value="60">60 - Commands</option>
+        <option value="99">99 - System Messages</option>
+  </select><br><br>
+  <label for="checkbox">Encoding Base64 / Hex: </label>
+  <input type="checkbox" id="payload_is_base64"><br><br>
+  <label for="payload_raw">Payload: </label>
+  <input type="text" id="payload_raw" size="100"><br><br>
+  <label for="formatting">Formatting: </label>
+  <select id="formatting">
+  
+    <option value="orig">No Formatter</option>
+    <option value="valuesunits">Value+Unit (for displaying)</option>
+    <option value="values">Value (for fetching values)</option>
+    <option value="object">Object</option>
+  </select><br>
+<p id="demo"></p>
+</div>
+<div class="footer">Generated at 2024-01-10T17:37:11.226Z</div>
+<script>
+
+/// CODEC JAVASCRIPT STARTS FROM HERE
+
+function stringFromUTF8Array(data) {
+  // from https://weblog.rogueamoeba.com/2017/02/27/javascript-correctly-converting-a-byte-array-to-a-utf-8-string/
+  var extraByteMap = [1, 1, 1, 1, 2, 2, 3, 0];
+  var count = data.length;
+  var str = '';
+  for (var index = 0; index < count;) {
+    // eslint-disable-next-line no-plusplus
+    var ch = data[index++];
+    // eslint-disable-next-line no-bitwise
+    if (ch & 0x80) {
+      // eslint-disable-next-line no-bitwise
+      var extra = extraByteMap[(ch >> 3) & 0x07];
+      // eslint-disable-next-line no-bitwise
+      if (!(ch & 0x40) || !extra || ((index + extra) > count)) {
+        return null;
+      }
+      // eslint-disable-next-line no-bitwise
+      ch &= (0x3F >> extra);
+      for (; extra > 0; extra -= 1) {
+        // eslint-disable-next-line no-plusplus
+        var chx = data[index++];
+        // eslint-disable-next-line no-bitwise
+        if ((chx & 0xC0) !== 0x80) {
+          return null;
+        }
+        // eslint-disable-next-line no-bitwise
+        ch = (ch << 6) | (chx & 0x3F);
+      }
+    }
+    str += String.fromCharCode(ch);
+  }
+  return str;
+}
+
+function BitExtract(dataByte) {
+  // BINARY EXTRACTING UTILITIES - Many workarounds here are only because
+  // Dataview and other newer features are not available in ES5 (required by chirpstack).
+  // basically a class (which is not directly supported in ES5)
+  this.data = dataByte;
+  this.offset = 0;
+}
+
+BitExtract.prototype._assertOnRemainingLength = function (lengthBits) {
+  if (lengthBits === 0) { throw Error('invalid zero length bit field'); }
+  if (this.offset + lengthBits > 8) { throw Error('invalid number of bits extracted'); }
+};
+
+BitExtract.prototype.getBits = function (lengthBits) {
+  this._assertOnRemainingLength(lengthBits);
+  var mask = Math.pow(2, lengthBits) - 1;
+  // eslint-disable-next-line no-bitwise
+  var res = (this.data >> this.offset) & mask;
+  this.offset += lengthBits;
+  return lengthBits === 1 ? Boolean(res) : res;
+};
+
+function BinaryExtract(buffer) {
+  // everything is little-endian for now
+  this.buffer = buffer;
+  this.offset = 0;
+}
+
+BinaryExtract.prototype.availableLen = function () {
+  return this.buffer.length - this.offset;
+};
+
+BinaryExtract.prototype._assertOnRemainingLength = function (length) {
+  if (length > this.availableLen()) { throw Error('invalid buffer length: too short'); }
+};
+
+BinaryExtract.prototype.getUint8 = function () {
+  this._assertOnRemainingLength(1);
+  // eslint-disable-next-line no-plusplus
+  return this.buffer[this.offset++];
+};
+
+BinaryExtract.prototype.getInt8 = function () {
+  var res = this.getUint8();
+  return res > 0x7F ? res - 0x100 : res;
+};
+
+BinaryExtract.prototype.getUint16 = function () {
+  this._assertOnRemainingLength(2);
+  // eslint-disable-next-line no-plusplus
+  var res = this.buffer[this.offset++] + this.buffer[this.offset++] * 256;
+  return res;
+};
+
+BinaryExtract.prototype.getInt16 = function () {
+  var res = this.getUint16();
+  return res > 0x7FFF ? res - 0x10000 : res;
+};
+
+BinaryExtract.prototype.getUint24 = function () {
+  this._assertOnRemainingLength(3);
+  // eslint-disable-next-line no-plusplus
+  var res = this.buffer[this.offset++] + this.buffer[this.offset++] * 256
+    // eslint-disable-next-line no-plusplus
+    + this.buffer[this.offset++] * 65536;
+  return res;
+};
+
+BinaryExtract.prototype.getUint32 = function () {
+  this._assertOnRemainingLength(4);
+  // eslint-disable-next-line no-plusplus
+  var res = this.buffer[this.offset++] + this.buffer[this.offset++] * 256
+    // eslint-disable-next-line no-plusplus
+    + this.buffer[this.offset++] * 65536 + this.buffer[this.offset++] * 16777216;
+  return res;
+};
+
+BinaryExtract.prototype.getInt32 = function () {
+  var res = this.getUint32();
+  return res > 0x7FFFFFFF ? res - 0x100000000 : res;
+};
+
+BinaryExtract.prototype.getUint64 = function () {
+  var first = this.getUint32();
+  var second = this.getUint32();
+  // since double can safely represent needed range,
+  // its used MAX_SAFE_INTEGER → 9_007_199_254_740_991
+  var res = first + second * 0x100000000;
+  return res;
+};
+
+BinaryExtract.prototype.getTextUtf8 = function (len) {
+  this._assertOnRemainingLength(len);
+  var res = stringFromUTF8Array(this.buffer.slice(this.offset, this.offset + len));
+  this.offset += len;
+  return res;
+};
+
+BinaryExtract.prototype.getUint8Bits = function () {
+  return new BitExtract(this.getUint8());
+};
+
+BinaryExtract.prototype.getRaw = function (len) {
+  this._assertOnRemainingLength(len);
+  var res = this.buffer.slice(this.offset, this.offset + len);
+  this.offset += len;
+  return res;
+};
+
+BinaryExtract.prototype.getFloat = function () {
+  var bytes = this.getUint32();
+  // from https://stackoverflow.com/a/16001019/12636611
+  // eslint-disable-next-line no-bitwise
+  var sign = (bytes & 0x80000000) ? -1 : 1;
+  // eslint-disable-next-line no-bitwise
+  var exponent = ((bytes >> 23) & 0xFF) - 127;
+  // eslint-disable-next-line no-bitwise
+  var significand = (bytes & ~(-1 << 23));
+
+  if (exponent === 128) { return sign * ((significand) ? Number.NaN : Number.POSITIVE_INFINITY); }
+
+  if (exponent === -127) {
+    if (significand === 0) return sign * 0.0;
+    exponent = -126;
+    // eslint-disable-next-line no-bitwise
+    significand /= (1 << 22);
+  } else {
+    // eslint-disable-next-line no-bitwise
+    significand = (significand | (1 << 23)) / (1 << 23);
+  }
+  return sign * significand * Math.pow(2, exponent);
+};
+
+function pad(number, length) {
+  var str = '' + number;
+  while (str.length < length) {
+    str = '0' + str;
+  }
+  return str;
+}
+
+function intToHexStr(int, len) {
+  return pad(int.toString(16).toUpperCase(), len);
+}
+
+function meteringTimeFormat(meteringTime, err){
+  if (meteringTime === 0xFF) {
+    return 'live';
+  } if (meteringTime > 143){
+    err.errors.push('invalid_metering_time');
+    return 'invalid_metering_time';
+  } var minutesTotal = meteringTime * 10;
+  var minutes = minutesTotal % 60;
+  var hours = Math.floor(minutesTotal / 60);
+  return pad(hours, 2) + ':' + pad(minutes, 2) + ':00Z';
+}
+
+function formatEpoch(time, err){ //1519740126 -> 27-02-2018T14:02:06Z
+  var timeStr = '' + time;
+  if (timeStr.length !== 10){
+    err.errors.push('invalid_date');
+    return 'invalid_date';
+  } return new Date(time * 1000).toISOString();
+}
+
+function formatDate(yymmdd, err){ // 200716 -> 2020-07-16
+  var yymmddStr = '' + yymmdd;
+  if (yymmddStr.length !== 6) {
+    err.errors.push('invalid_date');
+    return 'invalid_date';
+  }
+  return '20' + yymmddStr.slice(0,2) + '-' + yymmddStr.slice(2,4) + '-' + yymmddStr.slice(4,6);
+}
+
+function formatYymm(yymm, err){  // YY-MM---T
+  var yymmStr = '' + yymm;
+  if (yymmStr.length !== 4){
+    err.errors.push('invalid_date');
+    return 'invalid_date';
+  } return yymmStr.slice(0,2) + '-' + yymmStr.slice(2,4)+'---T';
+}
+
+function formatDdhh(ddhh, err){
+  var ddhhStr = '' + ddhh;
+  if (ddhhStr.length !== 4){
+    err.errors.push('invalid_time');
+    return 'invalid_time';
+  } return '--' + ddhhStr.slice(0,2) +'T'+ ddhhStr.slice(2,4) + ':00Z';
+}
+
+function formatTime(hhmmss, err){ // 192300 -> 19:23:00Z
+  var hhmmssStr = '' + hhmmss;
+  if (hhmmssStr.length !== 5 && hhmmssStr.length !== 6) {
+    err.errors.push('invalid_time');
+    return 'invalid_time';
+  } if (hhmmssStr.length === 6){
+    return hhmmssStr.slice(0,2) + ':' + hhmmssStr.slice(2,4) + ':' + hhmmssStr.slice(4,6) + 'Z';
+} else if (hhmmssStr.length === 5){
+    return '0' + hhmmssStr.slice(0,1) + ':' + hhmmssStr.slice(1,3) + ':' + hhmmssStr.slice(3,5) + 'Z';
+  }
+}
+
+function meter_display(data, err){
+  var data_cut = data.toString().slice(0,2) + 'x';
+  var display_data = {
+    '21x': 'heat_meter',
+    '31x': 'heat_cooling_meter',
+    '41x': 'heat_neter',
+    '51x': 'cooling_meter',
+    '61x': 'heat_cooling_meter',
+    '71x': 'heat_volume_meter',
+    '81x': 'cold_volume_meter',
+    '91x': 'energy_meter'
+  }[data_cut];
+  if (!display_data) {
+    err.errors.push('invalid_meter_display_value');
+  }
+  return display_data;
+}
+
+function meter_tariff(data, err){
+  var data_str = data.toString();
+  var tariff_data = {
+    0: 'no_active_tariff',
+    11: 'power_tariff',
+    12: 'flow_tariff',
+    13: 't1_t2_tariff',
+    14: 'inlet_tariff',
+    15: 'outlet_tariff',
+    19: 'time_controlled_tariff',
+    20: 'heat_cooling_volume_tariff',
+    21: 'pq_tariff'
+  }[data_str];
+  if (!tariff_data){
+    err.errors.push('invalid_meter_tariff_value');
+  }
+  return tariff_data;
+}
+
+function pulse_input(data, err, pulse_letter){
+  var data_str = data.toString();
+  var pulse_data = {
+    1:	'100 m3/h',
+    2:	'50 m3/h',
+    3:	'25 m3/h',
+    4:	'10 m3/h',
+    5:	'5 m3/h',
+    6:	'2.5 m3/h',
+    7:	'1 m3/h',
+    24:	'10 m3/h',
+    25:	'5 m3/h',
+    26:	'2.5 m3/h',
+    27:	'1 m3/h',
+    40:	'1000 m3/h',
+    50:	'2500 kW',
+    51:	'150 kW',
+    52:	'120 kW',
+    53:	'75 kW',
+    54:	'30 kW',
+    55:	'25 kW',
+    56:	'20 kW',
+    57:	'15 kW',
+    58:	'7,5 kW',
+    59:	'750 kW',
+    60:	'1250 kW',
+    61:	'75 kW',
+    62:	'15 kW',
+    70:	'25000 kW',
+    71:	'100 m3/h',
+    72:	'50 m3/h',
+    73:	'25 m3/h',
+    74:	'10 m3/h',
+    75:	'5 m3/h',
+    76:	'2.5 m3/h',
+    77:	'1 m3/h',
+    84:	'10 m3/h',
+    85:	'5 m3/h',
+    86:	'2.5 m3/h',
+    87:	'1 m3/h',
+    90:	'1000 m3/h'
+    }[data_str];
+    if (!pulse_data){
+      err.errors.push('invalid_pulse_input_'.pulse_letter);
+    }
+    return pulse_data;
+}
+
+function meter_leakage_limit(data, err){
+  var data_str = data.toString();
+  var leakage_limits = {
+    0: 'off',
+    1: '1%_qp_+_20%_q',
+    2: '1%_qp_+_10%_q',
+    3: '05%_qp_+_20%_q',
+    4: '05%_qp_+_10%_q'
+  }[data_str];
+  if (!leakage_limits){
+    err.errors.push('invalid_meter_leakage_limits_v1_v2');
+  }
+  return leakage_limits;
+}
+
+function leakage_limit_cold(data, err){
+  var data_str = data.toString();
+  var leakage_limit = {
+    0: 'off',
+    1: '30min_no_pulse',
+    2: '1h_no_pulse',
+    3: '2h_no_pulse'
+  }[data_str];
+  if (!leakage_limit){
+    err.errors.push('invalid_meter_leakage_limit_cold_ina_inb');
+  }
+  return leakage_limit;
+}
+
+function kampstrup_config1(conf, err){
+  if(conf.length < 8){
+    err.errors.push('Invalid_kampstrup_config_1_length');
+  }else {
+    return conf.slice(0,1) + ' ' + conf.slice(1,2) + ' ' + conf.slice(2,5) + ' ' + conf.slice(5,8)
+  }
+}
+
+function bootParser(dataView, result, err){
+  result.packet_type = 'boot_packet';
+  result.device_serial = intToHexStr(dataView.getUint32(), 8);
+  var maj = dataView.getUint8();
+  var min = dataView.getUint8();
+  var patch = dataView.getUint8();
+  result.device_firmware_version = maj + '.' + min + '.' + patch;
+  result.kampstrup_meter_id = dataView.getUint32() + 0x100000000 * dataView.getUint8();
+
+  result.kampstrup_config_1 = kampstrup_config1(pad(dataView.getUint32(), 8), err);
+  var raw_kamstrup_type = dataView.getUint16();
+  var raw_kampstrup_tariff = dataView.getUint8();
+  var raw_kamstrup_pulse_input_a = dataView.getUint8();
+  var raw_kamstrup_pulse_input_b = dataView.getUint8();
+  var raw_kamstrup_leakage_limits_v1_v2 = dataView.getUint8();
+  var raw_kamstrup_leakage_limit_cold_ina_inb = dataView.getUint8();
+  result.kampstrup_config_2 = raw_kamstrup_type + ' ' + pad(raw_kampstrup_tariff, 2) + ' ' + pad(raw_kamstrup_pulse_input_a, 2) + ' ' + raw_kamstrup_pulse_input_b + ' ' + pad(raw_kamstrup_leakage_limits_v1_v2, 2) + ' ' + pad(raw_kamstrup_leakage_limit_cold_ina_inb, 2);
+  result.kamstrup_type = meter_display(raw_kamstrup_type, err);
+  result.kamstrup_tariff = meter_tariff(raw_kampstrup_tariff, err);
+  result.kamstrup_pulse_input_a = pulse_input(raw_kamstrup_pulse_input_a, err);
+  result.kamstrup_pulse_input_b = pulse_input(raw_kamstrup_pulse_input_b, err);
+  result.kamstrup_leakage_limits_v1_v2 = meter_leakage_limit(raw_kamstrup_leakage_limits_v1_v2);
+  result.kamstrup_leakage_limit_cold_ina_inb = leakage_limit_cold(raw_kamstrup_leakage_limit_cold_ina_inb);
+
+  intToHexStr(dataView.getUint32(), 8);
+
+  var class_bits = dataView.getUint8Bits(); 
+  result.device_lorawan_class = class_bits.getBits(1) ? 'class_C' : 'class_A';
+
+  result.device_time_utc = formatEpoch(dataView.getUint32());
+}
+
+function fixed_measurement_interval(interval, err){
+  switch(interval){
+    case 0x00:
+      return fixed_measuring_interval = 'not_used';
+    case 0x01:
+      return fixed_measuring_interval = "10_min";
+    case 0x02:
+       return fixed_measuring_interval = "20_min";
+    case 0x03:
+      return fixed_measuring_interval = "30_min";
+    case 0x04:
+      return fixed_measuring_interval = "1_h";
+    case 0x05:
+      return fixed_measuring_interval = "24_h";
+    default:
+      err.errors.push('invalid_interval');
+      return "invalid_interval";
+    }
+}
+
+function value_conv(value){
+  return Math.round((value + Number.EPSILON)*100)/100
+}
+function extractRegister(dataView, err){
+  var id = dataView.getUint8();
+  switch (id) {
+    case 1:
+      var val = dataView.getUint32();
+      return {name: 'date', val: formatDate(val, err), unit: ''};
+    case 2:
+      var val = dataView.getFloat();
+      return {name: 'heat_energy_e1', val: value_conv(val), unit: 'kWh'};
+    case 3:
+      var val = dataView.getFloat();
+      return {name: 'heat_energy_e2', val: value_conv(val), unit: 'kWh'};
+    case 4:
+      var val = dataView.getFloat();
+      return {name: 'cooling_energy_e3', val: value_conv(val), unit: 'kWh'};
+    case 5:
+      var val = dataView.getFloat();
+      return {name: 'intlet_energy_e4', val: value_conv(val), unit: 'kWh'};
+    case 6:
+      var val = dataView.getFloat();
+      return {name: 'outlet_energy_e5', val: value_conv(val), unit: 'kWh'};
+    case 7:
+      var val = dataView.getFloat();
+      return {name: 'tap_water_energy_e6', val: value_conv(val), unit: 'kWh'};
+    case 8:
+    var val = dataView.getFloat();
+    return {name: 'tap_water_energy_e7', val: value_conv(val), unit: 'kWh'};
+    case 9:
+      var val = dataView.getUint32();
+      return {name: 'energy_e8', val: value_conv(val), unit: ''};
+    case 10:
+      var val = dataView.getUint32();
+      return {name: 'energy_e9', val: value_conv(val), unit: ''};
+    case 11:
+      var val = dataView.getUint32();
+      return {name: 'tariff_ta2', val: value_conv(val), unit: ''};
+    case 12:
+      var val = dataView.getUint32();
+      return {name: 'tariff_ta3', val: value_conv(val), unit: ''};
+    case 13:
+      var val = dataView.getFloat();
+      return {name: 'volume_v1', val: value_conv(val), unit: 'm3'};
+    case 14:
+      var val = dataView.getFloat();
+      return {name: 'volume_v2', val: value_conv(val), unit: 'm3'};
+    case 15:
+      var val = dataView.getUint32();
+      return {name: 'pulse_input_a1', val: value_conv(val), unit: ''};
+    case 16:
+      var val = dataView.getUint32();
+      return {name: 'pulse_input_b2', val: value_conv(val), unit: ''};
+    case 17:
+      var val = dataView.getFloat();
+      return {name: 'mass_m1', val: value_conv(val), unit: 't'};
+    case 18:
+      var val = dataView.getFloat();
+      return {name: 'mass_m2', val: value_conv(val), unit: 't'};
+    case 19:
+      var val = dataView.getUint32();
+      return {name: 'operating_hours', val: value_conv(val), unit: ''};
+    case 20:
+      var val = dataView.getUint32();
+      return {name: 'info_event_counter', val: value_conv(val), unit: ''};
+    case 21:
+      var val = dataView.getUint32();
+      return {name: 'time', val: formatTime(val, err), unit: ''};
+    case 22:
+        var val = dataView.getUint32();
+        return {name: 'info_code', val: value_conv(val), unit: ''};
+    case 23:
+      var val = dataView.getFloat();
+      return {name: 't1_actual', val: value_conv(val), unit: 'C'};
+    case 24:
+      var val = dataView.getFloat();
+      return {name: 't2_actual', val: value_conv(val), unit: 'C'};
+    case 25:
+      var val = dataView.getFloat();
+      return {name: 't3_actual', val: value_conv(val), unit: 'C'};
+    case 26:
+      var val = dataView.getFloat();
+      return {name: 't3_actual', val: value_conv(val), unit: 'C'};
+    case 27:
+      var val = dataView.getFloat();
+      return {name: 't1_t2_diff_temp', val: value_conv(val), unit: 'C'};
+    case 28:
+      var val = dataView.getFloat();
+      return {name: 'p1_actual', val: value_conv(val), unit: 'bar'};
+    case 29:
+      var val = dataView.getFloat();
+      return {name: 'p2_actual', val: value_conv(val), unit: 'bar'};
+    case 30:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_actual', val: value_conv(val), unit: 'L_per_h'};
+    case 31:
+      var val = dataView.getFloat();
+      return {name: 'flow_v2_actual', val: value_conv(val), unit: 'L_per_h'};
+    case 32:
+      var val = dataView.getFloat();
+      return {name: 'power_e1_actual', val: value_conv(val), unit: 'kW'};
+    case 33:
+      var val = dataView.getUint32();
+      return {name: 'flow_v1_max_year_date', val: formatDate(val, err), unit: ''};
+    case 34:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_max_year', val: value_conv(val), unit: 'L_per_h'};
+    case 35:
+      var val = dataView.getUint32();
+      return {name: 'flow_v1_min_year_date', val: formatDate(val, err), unit: ''};
+    case 36:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_min_year', val: value_conv(val), unit: 'L_per_h'};
+    case 37:
+      var val = dataView.getUint32();
+      return {name: 'power_max_year_date', val: formatDate(val, err), unit: ''};
+    case 38:
+      var val = dataView.getFloat();
+      return {name: 'power_max_year', val: value_conv(val), unit: 'kW'};
+    case 39:
+      var val = dataView.getUint32();
+      return {name: 'power_min_year_date', val: formatDate(val, err), unit: ''};
+    case 40:
+      var val = dataView.getFloat();
+      return {name: 'power_min_year', val: value_conv(val), unit: 'kW'};
+    case 41:
+      var val = dataView.getUint32();
+      return {name: 'flow_v1_max_month_date', val: formatDate(val, err), unit: ''};
+    case 42:
+      var val = dataView.getFloat64();
+      return {name: 'flow_v1_max_month', val: value_conv(val), unit: 'L_per_h'};
+    case 43:
+      var val = dataView.getUint32();
+      return {name: 'flow_v1_min_month_date', val: formatDate(val, err), unit: ''};
+    case 44:
+      var val = dataView.getFloat64();
+      return {name: 'flow_v1_min_month', val: value_conv(val), unit: 'L_per_h'};
+    case 45:
+      var val = dataView.getUint32();
+      return {name: 'power_max_month_date', val: formatDate(val, err), unit: ''};
+    case 46:
+      var val = dataView.getFloat();
+      return {name: 'power_max_month', val: value_conv(val), unit: 'kW'};
+    case 47:
+      var val = dataView.getUint32();
+      return {name: 'power_min_month_date', val: formatDate(val, err), unit: ''};
+    case 48:
+      var val = dataView.getFloat();
+      return {name: 'power_min_month', val: value_conv(val), unit: 'kW'};
+    case 49:
+      var val = dataView.getFloat();
+      return {name: 't1_average_year', val: value_conv(val), unit: 'C'};
+    case 50:
+      var val = dataView.getFloat();
+      return {name: 't2_average_year', val: value_conv(val), unit: 'C'};
+    case 51:
+      var val = dataView.getFloat();
+      return {name: 't1_average_month', val: value_conv(val), unit: 'C'};
+    case 52:
+      var val = dataView.getFloat();
+      return {name: 't2_average_month', val: value_conv(val), unit: 'C'};
+    case 53:
+      var val = dataView.getUint32();
+      return {name: 'tariff_limit_tl2', val: value_conv(val), unit: ''};
+    case 54:
+      var val = dataView.getUint32();
+      return {name: 'tariff_limit_tl3', val: value_conv(val), unit: ''};
+    case 55:
+      var val = dataView.getUint32();
+      return {name: 'target-date', val: formatDate(val, err), unit: ''};
+    case 56:
+      var val = dataView.getUint32();
+      return {name: 'program_no', val: value_conv(val), unit: ''};
+    case 57:
+      var val = dataView.getUint32();
+      return {name: 'config_no_1', val: value_conv(val), unit: ''};
+    case 58:
+      var val = dataView.getUint32();
+      return {name: 'config_no_2', val: value_conv(val), unit: ''};
+    case 59:
+      var val = dataView.getUint32();
+      return {name: 'serial_no', val: value_conv(val), unit: ''};
+    case 60:
+      var val = dataView.getUint32();
+      return {name: 'customer_no_2', val: value_conv(val), unit: ''};
+    case 61:
+      var val = dataView.getUint32();
+      return {name: 'customer_no_1', val: value_conv(val), unit: ''};
+    case 62:
+      var val = dataView.getUint32();
+      return {name: 'meter_no_input_a1', val: value_conv(val), unit: ''};
+    case 63:
+      var val = dataView.getUint32();
+      return {name: 'meter_no_input_b1', val: value_conv(val), unit: ''};
+    case 64:
+        var val = dataView.getUint32();
+        return {name: 'meter_type_incl_sw_editing', val: value_conv(val), unit: ''};
+    case 65:
+      var val = dataView.getUint32();
+      return {name: 'sw_check_sum', val: value_conv(val), unit: ''};
+    case 66:
+      var val = dataView.getUint32();
+      return {name: 'energy_high_res_test', val: value_conv(val), unit: ''};
+    case 67:
+      var val = dataView.getUint32();
+      return {name: 'top_module_id', val: value_conv(val), unit: ''};
+    case 68:
+      var val = dataView.getUint32();
+      return {name: 'base_moduele_1_id', val: value_conv(val), unit: ''};
+    case 69:
+      var val = dataView.getUint32();
+      return {name: 'error_hour_counter', val: value_conv(val), unit: ''};
+    case 70:
+      var val = dataView.getUint32();
+      return {name: 'pulse_value_a1_a2', val: value_conv(val), unit: ''};
+    case 71:
+      var val = dataView.getUint32();
+      return {name: 'pulse_value_b1_b2', val: value_conv(val), unit: ''};
+    case 72:
+      var val = dataView.getFloat();
+      return {name: 'e1_e2', val: value_conv(val), unit: 'kWh'};
+    case 73:
+      var val = dataView.getUint32();
+      return {name: 'q_sum_1', val: value_conv(val), unit: ''};
+    case 74:
+      var val = dataView.getUint32();
+      return {name: 'q_sum_2', val: value_conv(val), unit: ''};
+    case 75:
+      var val = dataView.getUint32();
+      return {name: 'pre_counter_1', val: value_conv(val), unit: ''};
+    case 76:
+      var val = dataView.getUint32();
+      return {name: 'pre_counter_2', val: value_conv(val), unit: ''};
+    case 77:
+        var val = dataView.getFloat();
+        return {name: 'e_cold', val: value_conv(val), unit: 'kWh'};
+    case 78:
+      var val = dataView.getUint32();
+      return {name: 'm3tf', val: value_conv(val), unit: ''};
+    case 79:
+      var val = dataView.getUint32();
+      return {name: 'm3tr', val: value_conv(val), unit: ''};
+    case 80:
+        var val = dataView.getUint32();
+        return {name: 'calendar', val: value_conv(val), unit: ''};
+    case 81:
+      var val = dataView.getFloat();
+      return {name: 'p_power_act', val: value_conv(val), unit: 'kW'};
+    case 82:
+      var val = dataView.getFloat();
+      return {name: 'p_power_year', val: value_conv(val), unit: ''};
+    case 83:
+      var val = dataView.getFloat();
+      return {name: 'date_and_time', val: value_conv(val), unit: ''};
+    case 84:
+      var val = dataView.getFloat();
+      return {name: 'energy_e10', val: value_conv(val), unit: 'kWh'};
+    case 85:
+      var val = dataView.getFloat();
+      return {name: 'energy_e11', val: value_conv(val), unit: 'kWh'};
+    case 86:
+      var val = dataView.getUint32();
+      return {name: 'differential_energy_de', val: value_conv(val), unit: ''};
+    case 87:
+      var val = dataView.getUint32();
+      return {name: 'control_energy_ce', val: value_conv(val), unit: ''};
+    case 88:
+      var val = dataView.getUint32();
+      return {name: 'differential_volume_dv', val: value_conv(val), unit: ''};
+    case 89:
+      var val = dataView.getUint32();
+      return {name: 'control_volume_dv', val: value_conv(val), unit: ''};
+    case 90:
+      var val = dataView.getFloat();
+      return {name: 'heat_energy_a1', val: value_conv(val), unit: 'kWh'};
+    case 91:
+      var val = dataView.getFloat();
+      return {name: 'heat_energy_a2', val: value_conv(val), unit: 'kWh'};
+    case 92:
+      var val = dataView.getUint32();
+      return {name: 'tariff_ta4', val: value_conv(val), unit: ''};
+    case 93:
+      var val = dataView.getUint32();
+      return {name: 'tariff_limit_tl4', val: value_conv(val), unit: ''};
+    case 94:
+      var val = dataView.getUint32();
+      return {name: 'pulse_value_v1', val: value_conv(val), unit: ''};
+    case 95:
+      var val = dataView.getUint32();
+      return {name: 'pulse_value_v2', val: value_conv(val), unit: ''};
+    case 96:
+      var val = dataView.getUint32();
+      return {name: 'qp_v1', val: value_conv(val), unit: ''};
+    case 97:
+      var val = dataView.getUint32();
+      return {name: 'qp_v2', val: value_conv(val), unit: ''};
+    case 98:
+      var val = dataView.getUint32();
+      return {name: 'pulse_input_a2', val: value_conv(val), unit: ''};
+    case 99:
+      var val = dataView.getUint32();
+      return {name: 'pulse_input_b2', val: value_conv(val), unit: ''};
+    case 100:
+      var val = dataView.getUint32();
+      return {name: 'meter_no_input_a2', val: value_conv(val), unit: ''};
+    case 101:
+      var val = dataView.getUint32();
+      return {name: 'meter_no_input_b2', val: value_conv(val), unit: ''};
+    case 102:
+      var val = dataView.getUint32();
+      return {name: 'info_bits', val: value_conv(val), unit: ''};
+    case 103:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_max_year', val: value_conv(val), unit: 'L_per_h'};
+    case 104:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_min_year', val: value_conv(val), unit: 'L_per_h'};
+    case 105:
+      var val = dataView.getFloat();
+      return {name: 'power_max_year', val: value_conv(val), unit: 'kW'};
+    case 106:
+        var val = dataView.getFloat();
+        return {name: 'power_min_year', val: value_conv(val), unit: 'kW'};
+    case 107:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_max_month', val: value_conv(val), unit: 'L_per_h'};
+    case 108:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_min_month', val: value_conv(val), unit: 'L_per_h'};
+    case 109:
+      var val = dataView.getFloat();
+      return {name: 'power_max_month', val: value_conv(val), unit: 'kW'};
+    case 110:
+      var val = dataView.getFloat();
+      return {name: 'power_min_month', val: value_conv(val), unit: 'kW'};
+    case 111:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_max_day', val: value_conv(val), unit: 'L_per_h'};
+    case 112:
+      var val = dataView.getFloat();
+      return {name: 'flow_v1_min_day', val: value_conv(val), unit: 'L_per_h'};
+    case 113:
+      var val = dataView.getUint32();
+      return {name: 'cop', val: value_conv(val), unit: ''};
+    case 114:
+      var val = dataView.getUint32();
+      return {name: 'cop_average_period', val: value_conv(val), unit: ''};
+    case 115:
+      var val = dataView.getUint32();
+      return {name: 'cop_year', val: value_conv(val), unit: ''};
+    case 116:
+      var val = dataView.getUint32();
+      return {name: 'cop_month', val: value_conv(val), unit: ''};
+    case 117:
+      var val = dataView.getFloat();
+      return {name: 't1_time_average_day', val: value_conv(val), unit: 'C'};
+    case 118:
+      var val = dataView.getFloat();
+      return {name: 't2_time_average_day', val: value_conv(val), unit: 'C'};
+    case 119:
+      var val = dataView.getFloat();
+      return {name: 't3_time_average_day', val: value_conv(val), unit: 'C'};
+    case 120:
+        var val = dataView.getFloat();
+        return {name: 't1_time_average_hour', val: value_conv(val), unit: 'C'};
+    case 121:
+      var val = dataView.getFloat();
+      return {name: 't2_time_average_hour', val: value_conv(val), unit: 'C'};
+    case 122:
+      var val = dataView.getFloat();
+      return {name: 't3_time_average_hour', val: value_conv(val), unit: 'C'};
+    case 123:
+      var val = dataView.getFloat();
+      return {name: 'p1_average_day', val: value_conv(val), unit: 'kW'};
+    case 124:
+      var val = dataView.getFloat();
+      return {name: 'p2_average_day', val: value_conv(val), unit: 'kW'};
+    case 125:
+      var val = dataView.getFloat();
+      return {name: 'p1_average_hour', val: value_conv(val), unit: 'kW'};
+    case 126:
+      var val = dataView.getFloat();
+      return {name: 'p2_average_hour', val: value_conv(val), unit: 'kW'};
+    case 127:
+      var val = dataView.getFloat();
+      return {name: 't1_actual', val: value_conv(val), unit: 'C'};
+    case 128:
+      var val = dataView.getFloat();
+      return {name: 't2_actual', val: value_conv(val), unit: 'C'};
+    case 129:
+      var val = dataView.getUint32();
+      return {name: 't1_t2_diff_temp', val: value_conv(val), unit: ''};
+    case 130:
+      var val = dataView.getUint32();
+      return {name: 'power_input_b1', val: value_conv(val), unit: ''};
+    case 131:
+      var val = dataView.getUint32();
+      return {name: 'controlled_output_c1_c2', val: value_conv(val), unit: ''};
+    case 132:
+      var val = dataView.getUint32();
+      return {name: 'controlled_output_d1_d2', val: value_conv(val), unit: ''};
+    case 133:
+      var val = dataView.getUint32();
+      return {name: 'theta_hc', val: value_conv(val), unit: ''};
+    case 134:
+      var val = dataView.getUint32();
+      return {name: 'temperature_offset', val: value_conv(val), unit: ''};
+    case 135:
+      var val = dataView.getFloat();
+      return {name: 't2_preset', val: value_conv(val), unit: 'C'};
+    case 136:
+      var val = dataView.getFloat();
+      return {name: 't5_limit', val: value_conv(val), unit: 'C'};
+    case 137:
+      var val = dataView.getUint32();
+      return {name: 'qp_average time', val: value_conv(val), unit: ''};
+    case 138:
+      var val = dataView.getUint32();
+      return {name: 'target_date_1_year', val: value_conv(val), unit: ''};
+    case 139:
+      var val = dataView.getUint32();
+      return {name: 'target_date_2_year', val: value_conv(val), unit: ''};
+    case 140:
+      var val = dataView.getUint32();
+      return {name: 'target_date_1_month', val: value_conv(val), unit: ''};
+    case 141:
+      var val = dataView.getUint32();
+      return {name: 'target_date_2_month', val: value_conv(val), unit: ''};
+    case 142:
+      var val = dataView.getUint32();
+      return {name: 'config_no_3', val: value_conv(val), unit: ''};
+    case 143:
+      var val = dataView.getUint32();
+      return {name: 'config_no_4', val: value_conv(val), unit: ''};
+    case 144:
+      var val = dataView.getUint32();
+      return {name: 'type_no', val: value_conv(val), unit: ''};
+    case 145:
+      var val = dataView.getUint32();
+      return {name: 'din_meter_id', val: value_conv(val), unit: ''};
+    case 146:
+      var val = dataView.getUint32();
+      return {name: 'sw_revision', val: value_conv(val), unit: ''};
+    case 147:
+      var val = dataView.getUint32();
+      return {name: 'base_module_2_id', val: value_conv(val), unit: ''};
+    case 148:
+      var val = dataView.getUint32();
+      return {name: 'external_module_id', val: value_conv(val), unit: ''};
+    case 149:
+      var val = dataView.getUint32();
+      return {name: 'bus_pri_adr_module_1', val: value_conv(val), unit: ''};
+    case 150:
+      var val = dataView.getUint32();
+      return {name: 'm_bus_sec_adr_module_1', val: value_conv(val), unit: ''};
+    case 151:
+      var val = dataView.getUint32();
+      return {name: 'bus_pri_adr_module ', val: value_conv(val), unit: ''};
+    case 152:
+      var val = dataView.getUint32();
+      return {name: 'm_bus_sec_adr_module_2', val: value_conv(val), unit: ''};
+    case 153:
+      var val = dataView.getUint32();
+      return {name: 'bus_pri_adr_ext_module', val: value_conv(val), unit: ''};
+    case 154:
+      var val = dataView.getUint32();
+      return {name: 'm_bus_sec_adr_ext_module', val: value_conv(val), unit: ''};
+    case 155:
+      var val = dataView.getUint32();
+      return {name: 'm_bus_pri_adr_internal', val: value_conv(val), unit: ''};
+    case 156:
+      var val = dataView.getUint32();
+      return {name: 'm_bus_sec_adr_internal', val: value_conv(val), unit: ''};
+    case 157:
+      var val = dataView.getUint32();
+      return {name: 'config_counter', val: value_conv(val), unit: ''};
+    case 158:
+      var val = dataView.getUint32();
+      return {name: 'time_stamp_1_(yy.mm)', val: formatYymm(val, err), unit: ''};
+    case 159:
+      var val = dataView.getUint32();
+      return {name: 'time_stamp_1_(dd.hh)', val: formatDdhh(val, err), unit: ''};
+    case 160:
+      var val = dataView.getUint32();
+      return {name: 'type_approval_rev_heat', val: value_conv(val), unit: ''};
+    case 161:
+      var val = dataView.getUint32();
+      return {name: 'type_approval_rev_cooling', val: value_conv(val), unit: ''};
+    case 162:
+      var val = dataView.getUint32();
+      return {name: 'type_approval_rev_national', val: value_conv(val), unit: ''};
+    case 163:
+      var val = dataView.getFloat();
+      return {name: 'e1_high_res_auto_int', val: value_conv(val), unit: 'kWh'};
+    case 164:
+      var val = dataView.getFloat();
+      return {name: 'e3_high_res_auto_int', val: value_conv(val), unit: 'kWh'};
+    case 165:
+      var val = dataView.getFloat();
+      return {name: 'v1_high_res_auto_int', val: value_conv(val), unit: 'm3'};
+    case 166:
+      var val = dataView.getFloat();
+      return {name: 't1_avg_auto_int', val: value_conv(val), unit: 'C'};
+    case 167:
+      var val = dataView.getFloat();
+      return {name: 't2_avg_auto_int', val: value_conv(val), unit: 'C'};
+    case 168:
+      var val = dataView.getUint32();
+      return {name: 'a1_auto_int', val: value_conv(val), unit: ''};
+    case 169:
+      var val = dataView.getUint32();
+      return {name: 'a2_auto_int', val: value_conv(val), unit: ''};
+    case 170:
+      var val = dataView.getFloat();
+      return {name: 'e1_hige_res', val: value_conv(val), unit: 'kWh'};
+    case 171:
+      var val = dataView.getFloat();
+      return {name: 'e3_high_res', val: value_conv(val), unit: 'kWh'};
+    case 172:
+        var val = dataView.getFloat();
+        return {name: 'v1_high_res', val: value_conv(val), unit: 'm3'};
+    case 173:
+      var val = dataView.getFloat();
+      return {name: 'v1_reverse', val: value_conv(val), unit: 'm3'};
+    case 174:
+      var val = dataView.getUint32();
+      return {name: 'volume_high_res_test', val: value_conv(val), unit: ''};
+    case 175:
+      var val = dataView.getUint32();
+      return {name: 'optical_eye_lock', val: value_conv(val), unit: ''};
+    default:
+      err.errors.push('invalid_register ' + id);
+      return null;
+  }
+}
+
+function extractRegisters(dataView, result, err){
+  while (dataView.availableLen()){
+    var res = extractRegister(dataView, err);
+    var key = res.name;
+    if (res.unit.length) {
+      key = res.name + '__' + res.unit;
+    }result[key] = res.val;
+  }
+}
+
+function extractRegisterList(dataView, result, err){
+  const out = [];
+  while (dataView.availableLen()){
+    var id = dataView.getUint8();
+    var fakeBuffer = [id, 0, 0, 0, 0];
+    var fakeError = {errors: [], warnings: []};
+    var fakeDataView = new BinaryExtract(fakeBuffer);
+    var res = extractRegister(fakeDataView, fakeError);
+    if (res != null){
+      out.push(res.name);
+    }
+    else {
+      err.errors.push('invalid_register_' + res.name);
+      break;
+    }
+  }result.registers = out;
+}
+
+function statusParser(dataView, result, err){
+  result.packet_type = 'status_packet';
+  var meteringTimeRaw = dataView.getUint8();
+  result.metering_time = meteringTimeFormat(meteringTimeRaw, err);
+  var utc = dataView.getUint32();
+  var date = new Date(utc * 1000);
+  result.utc_timestamp = date.toISOString().replace(/.\d+Z$/g, 'Z');
+  result.sensor_battery = dataView.getUint8();
+  result.sensor_rssi__dBm = dataView.getInt8();
+  extractRegisters(dataView, result, err);
+}
+
+function usageParser(dataView, result, err){
+  var header = dataView.getInt8();
+  if(header === 0x00){
+    result.packet_type = 'usage_packet';
+    var measuring_time = dataView.getUint8();
+    result.measuring_time = meteringTimeFormat(measuring_time, err);
+    extractRegisters(dataView, result ,err);
+    return;
+  } else if (header === 0x02){
+    result.packet_type = 'pulse_usage_packet';
+    var measuring_time = dataView.getUint8();
+    result.measuring_time = meteringTimeFormat(measuring_time, err);
+    result.kampstrup_pulse_1_count = dataView.getUint32();
+    result.kmapstrup_pulse_2_count = dataView.getUint32();
+    return;
+  }
+  else {
+    err.errors.push('invalid_packet_header');
+    return;
+  }
+}
+
+function configuration_packet(dataView, result, err){
+  var header = dataView.getUint8();
+  switch (header){
+    case 0x00:
+      result.packet_type = 'interval_config';
+      result.usage_interval__s = dataView.getUint32();
+      result.status_interval__s = dataView.getUint32();
+      var bits = dataView.getUint8Bits();
+      bits.getBits(1);
+      result.kamstrup_pulse_inputs_enable = bits.getBits(1);
+      result.lorawan_class = bits.getBits(1) === true ? 'class_C' : 'class_A';
+      result.fixed_measurement_enabled = bits.getBits(1);
+      var interval = bits.getBits(3);
+      result.fixed_measuring_interval = fixed_measurement_interval(interval, err);
+      break;
+    case 0x01:
+      result.packet_type = 'usage_register_config';
+      extractRegisterList(dataView, result, err);
+      break;
+    case 0x02:
+      result.packet_type = 'status_register_config';
+      extractRegisterList(dataView, result, err);
+      break;
+    case 0x03:
+      var utc = dataView.getUint32();
+      var date = new Date(utc * 1000);
+      result.packet_type = 'device_time_config';
+      result.device_clock = date.toISOString().replace(/.\d+Z$/g, 'Z');
+      break;
+    case 0x04:
+      result.packet_type = 'device_time_offset_config';
+      result.device_time_offset__s = dataView.getInt16();
+      break;
+    default:
+      err.errors.push('invalid_header');
+      break;
+  }
+}
+
+function update_mode_packet(dataView, result ,err){
+  var header = dataView.getUint8();
+  if (header !== 0xFF){
+    err.errors.push('invalid_command');
+  } else {
+    result.packet_type = 'activate_dfu_command';
+  }
+}
+
+function command_message(dataView, result, err){
+  var header = dataView.getUint8();
+  switch (header){
+    case 0x00:
+      result.packet_type = 'request_register_values';
+      extractRegisterList(dataView, result, err);
+      break;
+    case 0x02:
+      result.packet_type = 'request_digital_inputs';
+      break;
+    case 0x03:
+      result.packet_type = 'request_historic_data';
+      var val = dataView.getUint8();
+      if (val === 0xFF) {
+        err.errors.push("invalid_time");
+      }
+      result.measurement_time = meteringTimeFormat(val);
+      break;
+    default:
+      err.errors.push('invalid_command');
+      break;
+  }
+}
+
+function boot_debug_packet(dataView, result, err){
+  var header = dataView.getUint8();
+  switch (header) {
+    case 0x00:
+      bootParser(dataView, result, err);
+      break;
+    case 0x01:
+      result.packet_type = 'shutdown_packet';
+      break;
+    case 0x31:
+      result.packet_type = 'shutdown_packet';
+      break;
+    default:
+      err.errors.push('invalid_header');
+  }
+}
+
+function decodeByFport(fport, bytes, result, err) {
+  if (bytes.length === 0) {
+    err.errors.push('empty_payload');
+    return;
+  } var dataView = new BinaryExtract(bytes);
+  switch (fport) {
+    case 24:
+      statusParser(dataView, result, err);
+      break;
+    case 25:
+      usageParser(dataView, result, err);
+      break;
+    case 50:
+      configuration_packet(dataView, result, err);
+      break;
+    case 51:
+      update_mode_packet(dataView, result, err);
+      break;
+    case 60:
+      command_message(dataView, result, err);
+      break;
+    case 99:
+      boot_debug_packet(dataView, result, err);
+      break;
+    default:
+      err.errors.push('invalid_fport');
+      break;
+  }
+  if (dataView.availableLen() > 0) {
+    err.errors.push('packet_too_long');
+  }
+}
+
+function decodeRaw(fport, bytes){
+  var res = {};
+  var err = { errors: [], warnings: [] };
+  try {
+    decodeByFport(fport, bytes, res, err);
+  } catch (error) {
+    err.errors.push(error.message);
+  } var out = { data: res };
+  if (err.errors.length){
+    out.errors = err.errors;
+  } if (err.warnings.length){
+    out.warnings = err.warnings;
+  } return out;
+}
+
+// Functions for post-proccessing the cm30xx and um30xx decoder result
+
+function extractUnitFromKey(key) {
+  // key with unit looks like "meter_accumulated_volume__m3"
+  var spl = key.split('__');
+  var unit = spl.length > 1 ? spl[1] : '';
+  if (unit === 'C') { unit = unit.replace('C', '°C'); }
+  unit = unit.replace('_per_', '/');
+  unit = unit.replace('3', '³');
+  unit = unit.replace('deg', '°');
+  return unit;
+}
+
+function formatElementStrValueUnit(keyPrintable, value, formattedValue, unit) {
+  if (formattedValue) {
+    return formattedValue;
+  }
+  var res = value.toString();
+  if (unit.length > 0) {
+    var floatVal = +(res);
+    // eslint-disable-next-line no-restricted-globals
+    if (!isNaN(floatVal)) {
+      // only add unit if it is value
+      res = res + ' ' + unit;
+    }
+  }
+  return res.split('_').join(' '); // workaround for missing replaceAll in ES5
+}
+
+function convertToFormatted(decoded, elementFormatter, outIsList) {
+  var dataOrig = decoded.data;
+  var converted = outIsList ? [] : {};
+  for (var key in dataOrig) {
+    if (key.split('_formatted').length > 1) {
+      // key containing '_formatted' must have its pair, so skip _formatted
+      // e.g. with 'actuality_duration__formatted' also must exist e.g. 'actuality_duration__minutes'
+      continue;
+    }
+    var paramName = key.split('__')[0];
+    var value = dataOrig[key];
+
+    var formattedValue = null;
+    if (paramName + '_formatted' in dataOrig) {
+      formattedValue = dataOrig[paramName + '_formatted'];
+    }
+
+    var unit = extractUnitFromKey(key);
+
+    var keyPrintable = paramName;
+    var isHiddenParam = paramName[0] === '_';
+    if (isHiddenParam) {
+      // remove first underscore (that signifies less important parameters)
+      keyPrintable = keyPrintable.slice(1);
+    }
+
+    var element = elementFormatter(keyPrintable, value, formattedValue, unit);
+
+    if (outIsList) { converted.push(element); } else { converted[keyPrintable] = element; }
+  }
+  decoded.data = converted; // decoded may still contain warnings and errors.
+  return decoded;
+}
+
+// Change formatElementStrValueUnit to formatElementStrValue if only values are needed
+// If raw formatting is desired, just return directly from decodeRaw() function
+// You need only one entrypoint, others can be removed.
+
+// entry point for TTN new api
+function decodeDownlink(input) {
+  var dec = decodeRaw(input.fPort, input.bytes);
+  return convertToFormatted(dec, formatElementStrValueUnit, false);
+}
+
+// entry point for TTN new api
+function decodeUplink(input) {
+  var dec = decodeRaw(input.fPort, input.bytes);
+  return convertToFormatted(dec, formatElementStrValueUnit, false);
+}
+
+// entry point for TTN old version
+function Decoder(bytes, fport) {
+  var dec = decodeRaw(fport, bytes);
+  return convertToFormatted(dec, formatElementStrValueUnit, false);
+}
+
+// entry point for Chirpstack
+function Decode(fport, bytes) {
+  var dec = decodeRaw(fport, bytes);
+  return convertToFormatted(dec, formatElementStrValueUnit, false);
+}
+
+
+
+
+// END THE COPY SELECTION HERE
+
+
+
+function applyFormatting(res, formatting) {
+    var formatted_res = res;
+    if (formatting == 'object') {
+        formatted_res = convertToFormatted(res, formatElementJson, true);
+    }
+    if (formatting == 'valuesunits') {
+        formatted_res = convertToFormatted(res, formatElementStrValueUnit, false);
+    }
+    if (formatting == 'values') {
+        formatted_res = convertToFormatted(res, formatElementStrValue, false);
+    }
+    return formatted_res;
+}
+
+// Functions for post-proccessing the cm30xx and um30xx decoder result
+
+function extractUnitFromKey(key) {
+  // key with unit looks like "meter_accumulated_volume__m3"
+  var spl = key.split('__');
+  var unit = spl.length > 1 ? spl[1] : '';
+  if (unit === 'C') { unit = unit.replace('C', '°C'); }
+  unit = unit.replace('_per_', '/');
+  unit = unit.replace('3', '³');
+  unit = unit.replace('deg', '°');
+  return unit;
+}
+
+function formatElementJson(keyPrintable, value, formattedValue, unit) {
+  var element = { name: keyPrintable, value };
+  if (unit.length > 0) {
+    element.unit = unit;
+  }
+  if (formattedValue) {
+    element.formatted = formattedValue;
+  }
+  return element;
+}
+
+function formatElementStrValueUnit(keyPrintable, value, formattedValue, unit) {
+  if (formattedValue) {
+    return formattedValue;
+  }
+  var res = value.toString();
+  if (unit.length > 0) {
+    var floatVal = +(res);
+    // eslint-disable-next-line no-restricted-globals
+    if (!isNaN(floatVal)) {
+      // only add unit if it is value
+      res = res + ' ' + unit;
+    }
+  }
+  return res.split('_').join(' '); // workaround for missing replaceAll in ES5
+}
+
+// eslint-disable-next-line no-unused-vars
+function formatElementStrValue(keyPrintable, value, formattedValue, unit) {
+  return value.toString();
+}
+
+function convertToFormatted(decoded, elementFormatter, outIsList) {
+  var dataOrig = decoded.data;
+  var converted = outIsList ? [] : {};
+  for (var key in dataOrig) {
+    if (key.split('_formatted').length > 1) {
+      // key containing '_formatted' must have its pair, so skip _formatted
+      // e.g. with 'actuality_duration__formatted' also must exist e.g. 'actuality_duration__minutes'
+      continue;
+    }
+    var paramName = key.split('__')[0];
+    var value = dataOrig[key];
+
+    var formattedValue = null;
+    if (paramName + '_formatted' in dataOrig) {
+      formattedValue = dataOrig[paramName + '_formatted'];
+    }
+
+    var unit = extractUnitFromKey(key);
+
+    var keyPrintable = paramName;
+    var isHiddenParam = paramName[0] === '_';
+    if (isHiddenParam) {
+      // remove first underscore (that signifies less important parameters)
+      keyPrintable = keyPrintable.slice(1);
+    }
+
+    var element = elementFormatter(keyPrintable, value, formattedValue, unit);
+
+    if (outIsList) { converted.push(element); } else { converted[keyPrintable] = element; }
+  }
+  decoded.data = converted; // decoded may still contain warnings and errors.
+  return decoded;
+}
+
+
+function filterForHex(raw) {
+    return raw.replace(/[^a-fA-F0-9]/g,'');
+}
+
+function filterForBase64(raw) {
+    return raw.replace(/[^a-zA-z0-9+/=]/g,'');
+}
+
+function hexToBytes(hex) {
+    for (var bytes = [], c = 0; c < hex.length; c += 2)
+    bytes.push(parseInt(hex.substr(c, 2), 16));
+    return bytes;
+}
+
+function base64ToBytes(base64) {
+    try {
+        return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+    } catch(err) {
+        return [];
+    }
+}
+
+function runOnPageLoad() {
+    document.getElementById('formatting').value = 'valuesunits';    
+    document.getElementById('payload_raw').value = "FF36E20F5FFF9D010C1003003B0C1D6500";
+    dataInputHandler();
+}
+
+window.onload = runOnPageLoad;    
+ 
+function is_base64() {
+    return document.getElementById('payload_is_base64').checked;
+}
+
+const base64InputHandler = function(e) {
+    document.getElementById('payload_raw').placeholder= (is_base64() ? "Paste base64" : "Paste hex");
+    document.getElementById('payload_raw').value = "";
+}
+
+function jsonToHtmlFormatter(json_txt) {
+	var html_out = '<pre>'+json_txt.replace(/\n/g, '<br />') + '</pre>';
+    return html_out.replace(/(["{[\]},:])/g, '<span class="dim">$1</span>');
+}
+
+function setOutput(formatted_res) {
+  var str_json = JSON.stringify(formatted_res, null, 2);
+
+	str_html = jsonToHtmlFormatter(str_json);
+	console.log(str_html);
+    document.getElementById("demo").innerHTML = str_html;
+}
+
+const dataInputHandler = function(e) {
+    var raw = document.getElementById('payload_raw').value;
+    var fport = parseInt(document.getElementById('fport').value);
+
+    var buffer;
+    if (is_base64()) {
+      var filtered = filterForBase64(raw);
+      document.getElementById('payload_raw').value = filtered;
+  
+      var buffer = base64ToBytes(filtered);
+  
+    }
+    else {
+      var filtered = filterForHex(raw);
+      if (filtered.length % 2 !== 0) {
+        var formatted_res = { error: "invalid_hex_input" };
+        setOutput(formatted_res);
+        return;
+      }
+      document.getElementById('payload_raw').value = filtered;
+  
+      var buffer = hexToBytes(filtered);
+    }
+    var res = decodeRaw(fport, buffer);
+
+    var formatting = document.getElementById('formatting').value;
+
+    var formatted_res = applyFormatting(res, formatting);
+
+    setOutput(formatted_res);
+}
+
+document.getElementById('payload_raw').addEventListener('input', dataInputHandler);  
+document.getElementById('fport').addEventListener('input', dataInputHandler);  
+document.getElementById('payload_is_base64').addEventListener('input', dataInputHandler);
+document.getElementById('payload_is_base64').addEventListener('input', base64InputHandler);  
+document.getElementById('formatting').addEventListener('input', dataInputHandler);
+
+</script>
+
+</body>
+</html>

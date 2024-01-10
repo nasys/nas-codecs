@@ -325,7 +325,6 @@ function decodeLdrConfig(dataView, result) {
   behaviorBits.getBits(2);
   result.trigger_alert_enabled = bitFalseTrue(behaviorBits.getBits(1));
 }
-
 function decodeLightDimStep(dataView) {
   var res = {};
   var light = dataView.getFloat();
@@ -1139,6 +1138,7 @@ function statusParser1_1(dataView, result, err) {
 
   statusField.ext_rtc_warning = bitFalseTrue(err2);
   if (err2) err.warnings.push('ext_rtc_warning');
+
   statusField.internal_relay_closed = bitFalseTrue(internalRelay);
   if (header_below_1_1_4) {
     statusField.ldr_input_on = bitFalseTrue(ldrOn);
@@ -1217,15 +1217,13 @@ function statusParser1_1(dataView, result, err) {
       var header = dataView.getUint8();
       senorSrcLeft = senorSrcLeft - 1;
       var consumed_len = decodeSensorSource(dataView, header, result);
-      if (consumed_len == 0)
-      {
+      if (consumed_len == 0) {
         err.errors.push("unsupported_sensor_source");
         // consume all leftover bytes assigned for sensor_source so that future sensor sources would not break the code
         dataView.getRaw(senorSrcLeft);
         senorSrcLeft = 0;
       }
-      else 
-      {
+      else {
         senorSrcLeft = senorSrcLeft - consumed_len;
       }
     }
