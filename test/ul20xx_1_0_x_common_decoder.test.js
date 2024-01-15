@@ -4,9 +4,9 @@ import { testPacket } from './utils/test_utils';
 describe('decodeUnixTS tests', () => {
   var err = { errors: [], warnings: [] };
   test('grab entire byte from 0xAC', () => {
-    expect(decodeUnixEpoch(0, err).value).toEqual('invalid_timestamp');
-    expect(decodeUnixEpoch(946684800 + 130, err).value).toEqual('invalid_timestamp');
-    expect(decodeUnixEpoch(1420070400 + 5, err).value).toEqual('2015-01-01T00:00:05.000Z');
+    expect(decodeUnixEpoch(0, err)).toEqual('invalid_timestamp');
+    expect(decodeUnixEpoch(946684800 + 130, err)).toEqual('invalid_timestamp');
+    expect(decodeUnixEpoch(1420070400 + 5, err)).toEqual('2015-01-01T00:00:05.000Z');
   });
 });
 
@@ -18,21 +18,11 @@ describe('Config packts', () => {
       data: '01A03004',
       expected: {
         data: {
-          packet_type: {
-            value: 'ldr_input_config_packet',
-          },
-          ldr_off_threshold_high: {
-            value: 160,
-            raw: 160,
-          },
-          ldr_on_threshold_low: {
-            value: 48,
-            raw: 48,
-          },
-          trigger_alert_enabled: {
-            value: true,
-          },
-        },
+          "packet_type": "ldr_input_config_packet",
+          "ldr_off_threshold_high": 160,
+          "ldr_on_threshold_low": 48,
+          "trigger_alert_enabled": true
+        }
       },
     });
   });
@@ -44,30 +34,13 @@ describe('Config packts', () => {
       data: '032C0102FE32',
       expected: {
         data: {
-          packet_type: {
-            value: 'dig_input_config_packet',
-          },
-          light_on_duration: {
-            value: 300,
-            raw: 300,
-            unit: 's',
-          },
-          signal_edge_rising: {
-            value: true,
-          },
-          trigger_alert_enabled: {
-            value: false,
-          },
-          address: {
-            value: 'dali_broadcast',
-            raw: 254,
-          },
-          dimming_level: {
-            value: 50,
-            raw: 50,
-            unit: '%',
-          },
-        },
+          "packet_type": "dig_input_config_packet",
+          "light_on_duration__s": 300,
+          "signal_edge_rising": true,
+          "trigger_alert_enabled": false,
+          "address": "dali_broadcast",
+          "dimming_level__percent": 50
+        }
       },
     });
   });
@@ -79,8 +52,12 @@ describe('Config packts', () => {
       data: '06E21E9619B309',
       expected: {
         data: {
-          packet_type: { value: 'calendar_config_packet' }, sunrise_offset: { value: -30, unit: 'min', raw: -30 }, sunset_offset: { value: 30, unit: 'min', raw: 30 }, latitude: { value: 65.5, unit: '°' }, longitude: { value: 24.83, unit: '°' },
-        },
+          "packet_type": "calendar_config_packet",
+          "sunrise_offset__min": -30,
+          "sunset_offset__min": 30,
+          "latitude__deg": 65.5,
+          "longitude__deg": 24.83
+        }
       },
     });
   });
@@ -90,7 +67,12 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '07100E0000',
-      expected: { data: { packet_type: { value: 'status_config_packet' }, status_interval: { value: 3600, unit: 's' } } },
+      expected: {
+        data: {
+          "packet_type": "status_config_packet",
+          "status_interval__s": 3600
+        }
+      },
     });
   });
 
@@ -101,8 +83,39 @@ describe('Config packts', () => {
       data: '081603FE1E0000061E24503C1E6650',
       expected: {
         data: {
-          packet_type: { value: 'profile_config_packet' }, profile_id: { value: 22, raw: 22 }, profile_version: { value: 3, raw: 3 }, address: { value: 'dali_broadcast', raw: 254 }, days_active: { value: ['mon', 'tue', 'wed', 'thu'], raw: 30 }, dimming_steps: [{ step_time: { value: '00:00', raw: 0 }, dimming_level: { value: 0, raw: 0, unit: '%' } }, { step_time: { value: '01:00', raw: 60 }, dimming_level: { value: 30, raw: 30, unit: '%' } }, { step_time: { value: '06:00', raw: 360 }, dimming_level: { value: 80, raw: 80, unit: '%' } }, { step_time: { value: '10:00', raw: 600 }, dimming_level: { value: 30, raw: 30, unit: '%' } }, { step_time: { value: '17:00', raw: 1020 }, dimming_level: { value: 80, raw: 80, unit: '%' } }],
-        },
+          "packet_type": "profile_config_packet",
+          "profile_id": 22,
+          "profile_version": 3,
+          "address": "dali_broadcast",
+          "days_active": [
+            "mon",
+            "tue",
+            "wed",
+            "thu"
+          ],
+          "dimming_steps": [
+            {
+              "step_time": "00:00",
+              "dimming_level__percent": 0
+            },
+            {
+              "step_time": "01:00",
+              "dimming_level__percent": 30
+            },
+            {
+              "step_time": "06:00",
+              "dimming_level__percent": 80
+            },
+            {
+              "step_time": "10:00",
+              "dimming_level__percent": 30
+            },
+            {
+              "step_time": "17:00",
+              "dimming_level__percent": 80
+            }
+          ]
+        }
       },
     });
   });
@@ -112,7 +125,12 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '09681A9C59',
-      expected: { data: { packet_type: { value: 'time_config_packet' }, device_unix_epoch: { value: '2017-08-22T11:50:00.000Z', raw: 1503402600 } } },
+      expected: {
+        data: {
+          "packet_type": "time_config_packet",
+          "device_unix_epoch": "2017-08-22T11:50:00.000Z"
+        }
+      },
     });
   });
 
@@ -123,8 +141,12 @@ describe('Config packts', () => {
       data: '0A0000',
       expected: {
         data: {
-          packet_type: { value: 'legacy_defaults_config_packet' }, default_dim: { value: 0, unit: '%' }, ldr_alert_enabled: { value: false }, dig_alert_enabled: { value: false }, dali_alert_enabled: { value: false },
-        },
+          "packet_type": "legacy_defaults_config_packet",
+          "default_dim__percent": 0,
+          "ldr_alert_enabled": false,
+          "dig_alert_enabled": false,
+          "dali_alert_enabled": false
+        }
       },
     });
   });
@@ -134,7 +156,13 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '0B100E0000E6',
-      expected: { data: { packet_type: { value: 'usage_config_packet' }, usage_interval: { value: 3600, unit: 's' }, mains_voltage: { value: 230, unit: 'V' } } },
+      expected: {
+        data: {
+          "packet_type": "usage_config_packet",
+          "usage_interval__s": 3600,
+          "mains_voltage__V": 230
+        }
+      },
     });
   });
 
@@ -143,7 +171,19 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '0C0101021205010611080E0C11',
-      expected: { data: { packet_type: { value: 'holiday_config_packet' }, holidays: [{ value: '01/01', raw: 257 }, { value: '02/18', raw: 530 }, { value: '05/01', raw: 1281 }, { value: '06/17', raw: 1553 }, { value: '08/14', raw: 2062 }, { value: '12/17', raw: 3089 }] } },
+      expected: {
+        data: {
+          "packet_type": "holiday_config_packet",
+          "holidays": [
+            "01/01",
+            "02/18",
+            "05/01",
+            "06/17",
+            "08/14",
+            "12/17"
+          ]
+        }
+      },
     });
   });
 
@@ -152,7 +192,12 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '0D78',
-      expected: { data: { packet_type: { value: 'boot_delay_config_packet' }, boot_delay_range: { value: 120, unit: 's' } } },
+      expected: {
+        data: {
+          "packet_type": "boot_delay_config_packet",
+          "boot_delay_range__s": 120
+        }
+      },
     });
   });
 
@@ -161,7 +206,12 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '0D2C01',
-      expected: { data: { packet_type: { value: 'boot_delay_config_packet' }, boot_delay_range: { value: 300, unit: 's' } } },
+      expected: {
+        data: {
+          "packet_type": "boot_delay_config_packet",
+          "boot_delay_range__s": 300
+        }
+      },
     });
   });
 
@@ -170,7 +220,13 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '0E050005',
-      expected: { data: { packet_type: { value: 'defaults_config_packet' }, default_dim: { value: 0, unit: '%' }, fade_duration: { value: 2.83, unit: 's', raw: 5 } } },
+      expected: {
+        data: {
+          "packet_type": "defaults_config_packet",
+          "default_dim__percent": 0,
+          "fade_duration__s": 2.83
+        }
+      },
     });
   });
 
@@ -179,7 +235,13 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: '130140176C2384F8B20E',
-      expected: { data: { packet_type: { value: 'location_config_packet' }, latitude: { value: 59.42864, unit: '°' }, longitude: { value: 24.6610052, unit: '°' } } },
+      expected: {
+        data: {
+          "packet_type": "location_config_packet",
+          "latitude__deg": 59.42864,
+          "longitude__deg": 24.6610052
+        }
+      },
     });
   });
 
@@ -190,8 +252,11 @@ describe('Config packts', () => {
       data: '1303AC5E6D230017C10E12c396c3b662696b75205374722e20322d3136',
       expected: {
         data: {
-          packet_type: { value: 'location_config_packet' }, latitude: { value: 59.437022, unit: '°' }, longitude: { value: 24.753536, unit: '°' }, address: { value: 'Ööbiku Str. 2-16' },
-        },
+          "packet_type": "location_config_packet",
+          "latitude__deg": 59.437022,
+          "longitude__deg": 24.753536,
+          "address": "Ööbiku Str. 2-16"
+        }
       },
     });
   });
@@ -203,8 +268,13 @@ describe('Config packts', () => {
       data: '160114004B00D700F50050',
       expected: {
         data: {
-          packet_type: { value: 'metering_alert_config_packet' }, min_power: { value: 20, raw: 20, unit: 'W' }, max_power: { value: 75, raw: 75, unit: 'W' }, min_voltage: { value: 215, raw: 215, unit: 'V' }, max_voltage: { value: 245, raw: 245, unit: 'V' }, min_power_factor: { value: 0.8, raw: 80 },
-        },
+          "packet_type": "metering_alert_config_packet",
+          "min_power__W": 20,
+          "max_power__W": 75,
+          "min_voltage__V": 215,
+          "max_voltage__V": 245,
+          "min_power_factor": 0.8
+        }
       },
     });
   });
@@ -216,8 +286,13 @@ describe('Config packts', () => {
       data: '16011400FFFFFFFFF500FF',
       expected: {
         data: {
-          packet_type: { value: 'metering_alert_config_packet' }, min_power: { value: 20, raw: 20, unit: 'W' }, max_power: { value: 'alert_off', raw: 65535, unit: '' }, min_voltage: { value: 'alert_off', raw: 65535, unit: '' }, max_voltage: { value: 245, raw: 245, unit: 'V' }, min_power_factor: { value: 'alert_off', raw: 255 },
-        },
+          "packet_type": "metering_alert_config_packet",
+          "min_power__W": 20,
+          "max_power__W": "alert_off",
+          "min_voltage__V": "alert_off",
+          "max_voltage__V": 245,
+          "min_power_factor": "alert_off"
+        }
       },
     });
   });
@@ -229,8 +304,12 @@ describe('Config packts', () => {
       data: '52014433221182840c7056429b143d21974557f93a5382840c70c08494b931fe2fa6f8835c6a',
       expected: {
         data: {
-          packet_type: { value: 'multicast_config_packet' }, multicast_device: { value: 1 }, devaddr: { value: '11223344' }, nwkskey: { value: '82840C7056429B143D21974557F93A53' }, appskey: { value: '82840C70C08494B931FE2FA6F8835C6A' },
-        },
+          "packet_type": "multicast_config_packet",
+          "multicast_device": 1,
+          "devaddr": "11223344",
+          "nwkskey": "82840C7056429B143D21974557F93A53",
+          "appskey": "82840C70C08494B931FE2FA6F8835C6A"
+        }
       },
     });
   });
@@ -240,7 +319,12 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: 'FF01',
-      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'ldr_input_config' } } },
+      expected: {
+        data: {
+          "packet_type": "clear_config_packet",
+          "reset_target": "ldr_input_config"
+        }
+      },
     });
   });
 
@@ -249,7 +333,12 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: 'FF03',
-      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'dig_input_config' } } },
+      expected: {
+        data: {
+          "packet_type": "clear_config_packet",
+          "reset_target": "dig_input_config"
+        }
+      },
     });
   });
 
@@ -258,7 +347,13 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: 'FF040A',
-      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'profile_config' }, address: { value: 'dali_single_5', raw: 10 } } },
+      expected: {
+        data: {
+          "packet_type": "clear_config_packet",
+          "reset_target": "profile_config",
+          "address": "dali_single_5"
+        }
+      },
     });
   });
 
@@ -267,7 +362,12 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: 'FF06',
-      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'holiday_config' } } },
+      expected: {
+        data: {
+          "packet_type": "clear_config_packet",
+          "reset_target": "holiday_config"
+        }
+      },
     });
   });
 
@@ -276,7 +376,13 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: 'FF52FF',
-      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'multicast_config' }, multicast_device: { value: 'all_multicast_devices', raw: 255 } } },
+      expected: {
+        data: {
+          "packet_type": "clear_config_packet",
+          "reset_target": "multicast_config",
+          "multicast_device": "all_multicast_devices"
+        }
+      },
     });
   });
 
@@ -285,7 +391,13 @@ describe('Config packts', () => {
       decoderFn: decodeRaw,
       fport: 50,
       data: 'FFFF0D008350',
-      expected: { data: { packet_type: { value: 'clear_config_packet' }, reset_target: { value: 'factory_reset' }, device_serial: { value: '5083000D' } } },
+      expected: {
+        data: {
+          "packet_type": "clear_config_packet",
+          "reset_target": "factory_reset",
+          "device_serial": "5083000D"
+        }
+      },
     });
   });
 });

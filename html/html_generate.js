@@ -8,28 +8,6 @@ var device_name = process.argv[2];
 var device_firmware = process.argv[3];
 console.log('Generating for: ' + device_name + ' ' + device_firmware);
 
-var formatter_script_filename = 'src/util/cm_um_30xx_format.js';
-var formatter_options = `
-    <option value="orig">No Formatter</option>
-    <option value="valuesunits">Value+Unit (for displaying)</option>
-    <option value="values">Value (for fetching values)</option>
-    <option value="object">Object</option>`;
-
-var formatter_js = `
-function applyFormatting(res, formatting) {
-    var formatted_res = res;
-    if (formatting == 'object') {
-        formatted_res = convertToFormatted(res, formatElementJson, true);
-    }
-    if (formatting == 'valuesunits') {
-        formatted_res = convertToFormatted(res, formatElementStrValueUnit, false);
-    }
-    if (formatting == 'values') {
-        formatted_res = convertToFormatted(res, formatElementStrValue, false);
-    }
-    return formatted_res;
-}`;
-
 if (device_name == 'CM30xx') {
   if (device_firmware == '2.3.x') {
     var script_filename = 'generated/cm30xx_2_3_x_decoder.js';
@@ -98,24 +76,6 @@ if (device_name == 'CM30xx') {
   } else {
     throw Error('ERROR, unrecognized firmware version: ' + device_firmware);
   }
-  formatter_script_filename = 'src/util/ul20xx_format.js';
-
-  var formatter_options = `
-        <option value="orig">No Formatter (Object)</option>
-        <option value="valuesunits">Value+Unit (for displaying)</option>
-        <option value="values">Value (for fetching values)</option>`;
-
-  var formatter_js = `
-    function applyFormatting(res, formatting) {
-        var formatted_res = res;
-        if (formatting == 'valuesunits') {
-            formatted_res = convertObjToFormatted(res, formatElementStrValueUnit);
-        }
-        if (formatting == 'values') {
-            formatted_res = convertObjToFormatted(res, formatElementStrValue);
-        }
-        return formatted_res;
-    }`;
 } else if (device_name == 'IM30xx') {
   if (device_firmware == '0.9.x' || device_firmware == '0.10.x') {
     var script_filename = 'generated/im30xx_0_9_x_decoder.js';
@@ -140,7 +100,6 @@ else {
 
 var generated_at = new Date().toISOString();
 var codec_script = fs.readFileSync(script_filename).toString();
-var formatter_script = fs.readFileSync(formatter_script_filename).toString().replaceAll('export ', '');
 var html = `
 <!DOCTYPE html>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -166,10 +125,6 @@ var html = `
   <input type="checkbox" id="payload_is_base64"><br><br>
   <label for="payload_raw">Payload: </label>
   <input type="text" id="payload_raw" size="100"><br><br>
-  <label for="formatting">Formatting: </label>
-  <select id="formatting">
-  ` + formatter_options + `
-  </select><br>
 <p id="demo"></p>
 </div>
 <div class="footer">Generated at ` + generated_at + `</div>
@@ -180,11 +135,6 @@ var html = `
 ` + codec_script + `
 
 // END THE COPY SELECTION HERE
-
-
-` + formatter_js + `
-
-` + formatter_script + `
 
 function filterForHex(raw) {
     return raw.replace(/[^a-fA-F0-9]/g,'');
@@ -209,7 +159,6 @@ function base64ToBytes(base64) {
 }
 
 function runOnPageLoad() {
-    document.getElementById('formatting').value = 'valuesunits';    
     document.getElementById('payload_raw').value = "` + default_payload + `";
     dataInputHandler();
 }
@@ -230,8 +179,8 @@ function jsonToHtmlFormatter(json_txt) {
     return html_out.replace(/(["{[\\]},:])/g, '<span class="dim">$1</span>');
 }
 
-function setOutput(formatted_res) {
-  var str_json = JSON.stringify(formatted_res, null, 2);
+function setOutput(res) {
+  var str_json = JSON.stringify(res, null, 2);
 
 	str_html = jsonToHtmlFormatter(str_json);
 	console.log(str_html);
@@ -253,8 +202,8 @@ const dataInputHandler = function(e) {
     else {
       var filtered = filterForHex(raw);
       if (filtered.length % 2 !== 0) {
-        var formatted_res = { error: "invalid_hex_input" };
-        setOutput(formatted_res);
+        var res = { error: "invalid_hex_input" };
+        setOutput(res);
         return;
       }
       document.getElementById('payload_raw').value = filtered;
@@ -263,18 +212,13 @@ const dataInputHandler = function(e) {
     }
     var res = decodeRaw(fport, buffer);
 
-    var formatting = document.getElementById('formatting').value;
-
-    var formatted_res = applyFormatting(res, formatting);
-
-    setOutput(formatted_res);
+    setOutput(res);
 }
 
 document.getElementById('payload_raw').addEventListener('input', dataInputHandler);  
 document.getElementById('fport').addEventListener('input', dataInputHandler);  
 document.getElementById('payload_is_base64').addEventListener('input', dataInputHandler);
 document.getElementById('payload_is_base64').addEventListener('input', base64InputHandler);  
-document.getElementById('formatting').addEventListener('input', dataInputHandler);
 
 </script>
 

@@ -9,45 +9,62 @@ describe('Status and usage', () => {
       data: 'DFD41D5E004B041502AE05050AFF32030306FF00',
       expected: {
         data: {
-          packet_type: { value: 'status_packet' },
-          device_unix_epoch: { value: '2020-01-14T14:49:03.000Z', raw: 1579013343 },
-          status: {
-            dali_error_external: { value: false },
-            dali_connection_error: { value: false },
-            ldr_input_on: { value: false },
-            dig_input_on: { value: false },
-            hardware_error: { value: false },
-            internal_relay_closed: { value: false },
-            open_drain_output_on: { value: false },
+          "packet_type": "status_packet",
+          "device_unix_epoch": "2020-01-14T14:49:03.000Z",
+          "status": {
+            "dali_error_external": false,
+            "dali_connection_error": false,
+            "ldr_input_on": false,
+            "dig_input_on": false,
+            "hardware_error": false,
+            "internal_relay_closed": false,
+            "open_drain_output_on": false
           },
-          downlink_rssi: { value: -75, unit: 'dBm' },
-          downlink_snr: { value: 4, unit: 'dB' },
-          mcu_temperature: { value: 21, unit: '°C' },
-          analog_interfaces: {
-            voltage_alert_in_24h: { value: false },
-            lamp_error_alert_in_24h: { value: false },
-            power_alert_in_24h: { value: false },
-            power_factor_alert_in_24h: { value: false },
+          "downlink_rssi__dBm": -75,
+          "downlink_snr__dB": 4,
+          "mcu_temperature__C": 21,
+          "analog_interfaces": {
+            "voltage_alert_in_24h": false,
+            "lamp_error_alert_in_24h": false,
+            "power_alert_in_24h": false,
+            "power_factor_alert_in_24h": false
           },
-          ldr_input_value: { value: 174 },
-          profiles: [{
-            profile_id: { value: 5, raw: 5 },
-            profile_version: { value: 5, raw: 5 },
-            address: { value: 'dali_single_5', raw: 10 },
-            days_active: { value: ['holiday', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], raw: 255 },
-            dimming_level: {
-              value: 50, unit: '%', raw: 50,
+          "ldr_input_value": 174,
+          "profiles": [
+            {
+              "profile_id": 5,
+              "profile_version": 5,
+              "address": "dali_single_5",
+              "days_active": [
+                "holiday",
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ],
+              "dimming_level__percent": 50
             },
-          }, {
-            profile_id: { value: 3, raw: 3 },
-            profile_version: { value: 3, raw: 3 },
-            address: { value: 'dali_single_3', raw: 6 },
-            days_active: { value: ['holiday', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], raw: 255 },
-            dimming_level: {
-              value: 0, unit: '%', raw: 0,
-            },
-          }],
-        },
+            {
+              "profile_id": 3,
+              "profile_version": 3,
+              "address": "dali_single_3",
+              "days_active": [
+                "holiday",
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ],
+              "dimming_level__percent": 0
+            }
+          ]
+        }
       },
     });
   });
@@ -59,38 +76,49 @@ describe('Status and usage', () => {
       data: '8044465e054d07ff02db02fafeff00',
       expected: {
         data: {
-          packet_type: { value: 'status_packet' },
-          device_unix_epoch: { value: '2020-02-14T06:56:00.000Z', raw: 1581663360 },
-          status: {
-            dali_error_external: { value: true },
-            dali_connection_error: { value: false },
-            ldr_input_on: { value: true },
-            dig_input_on: { value: false },
-            hardware_error: { value: false },
-            internal_relay_closed: { value: false },
-            open_drain_output_on: { value: false },
+          "packet_type": "status_packet",
+          "device_unix_epoch": "2020-02-14T06:56:00.000Z",
+          "status": {
+            "dali_error_external": true,
+            "dali_connection_error": false,
+            "ldr_input_on": true,
+            "dig_input_on": false,
+            "hardware_error": false,
+            "internal_relay_closed": false,
+            "open_drain_output_on": false
           },
-          downlink_rssi: { value: -77, unit: 'dBm' },
-          downlink_snr: { value: 7, unit: 'dB' },
-          mcu_temperature: { value: -1, unit: '°C' },
-          analog_interfaces: {
-            voltage_alert_in_24h: { value: false },
-            lamp_error_alert_in_24h: { value: false },
-            power_alert_in_24h: { value: false },
-            power_factor_alert_in_24h: { value: false },
+          "downlink_rssi__dBm": -77,
+          "downlink_snr__dB": 7,
+          "mcu_temperature__C": -1,
+          "analog_interfaces": {
+            "voltage_alert_in_24h": false,
+            "lamp_error_alert_in_24h": false,
+            "power_alert_in_24h": false,
+            "power_factor_alert_in_24h": false
           },
-          ldr_input_value: { value: 219 },
-          profiles: [{
-            profile_id: { value: 2, raw: 2 },
-            profile_version: { value: 'ldr_input_active', raw: 250 },
-            address: { value: 'dali_broadcast', raw: 254 },
-            days_active: { value: ['holiday', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], raw: 255 },
-            dimming_level: {
-              value: 0, unit: '%', raw: 0,
-            },
-          }],
+          "ldr_input_value": 219,
+          "profiles": [
+            {
+              "profile_id": 2,
+              "profile_version": "ldr_input_active",
+              "address": "dali_broadcast",
+              "days_active": [
+                "holiday",
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ],
+              "dimming_level__percent": 0
+            }
+          ]
         },
-        warnings: ['dali_external_error'],
+        "warnings": [
+          "dali_external_error"
+        ]
       },
     });
   });
@@ -100,7 +128,23 @@ describe('Status and usage', () => {
       decoderFn: decodeRaw,
       fport: 25,
       data: '04030000000000000603151400000000',
-      expected: { data: { packet_type: { value: 'usage_packet' }, consumption: [{ address: { value: 'dali_single_2', raw: 4 }, active_energy: { value: 0, unit: 'Wh' }, active_power: { value: 0, unit: 'W' } }, { address: { value: 'dali_single_3', raw: 6 }, active_energy: { value: 5141, unit: 'Wh' }, active_power: { value: 0, unit: 'W' } }] } },
+      expected: {
+        data: {
+          "packet_type": "usage_packet",
+          "consumption": [
+            {
+              "address": "dali_single_2",
+              "active_energy__Wh": 0,
+              "active_power__W": 0
+            },
+            {
+              "address": "dali_single_3",
+              "active_energy__Wh": 5141,
+              "active_power__W": 0
+            }
+          ]
+        }
+      },
     });
   });
 
@@ -109,7 +153,18 @@ describe('Status and usage', () => {
       decoderFn: decodeRaw,
       fport: 25,
       data: 'ff03ed0000000000',
-      expected: { data: { packet_type: { value: 'usage_packet' }, consumption: [{ address: { value: 'internal_measurement', raw: 255 }, active_energy: { value: 237, unit: 'Wh' }, active_power: { value: 0, unit: 'W' } }] } },
+      expected: {
+        data: {
+          "packet_type": "usage_packet",
+          "consumption": [
+            {
+              "address": "internal_measurement",
+              "active_energy__Wh": 237,
+              "active_power__W": 0
+            }
+          ]
+        }
+      },
     });
   });
 
@@ -120,13 +175,25 @@ describe('Status and usage', () => {
       data: 'ff830100000004000000000012cf1e000000000000000000000070de060011000000',
       expected: {
         data: {
-          packet_type: { value: 'usage_packet' },
-          consumption: [{
-            address: { value: 'internal_measurement', raw: 255 }, active_energy: { value: 1, unit: 'Wh' }, active_power: { value: 4, unit: 'W' }, lamp_on_time: { value: 0, unit: 'h' },
-          }, {
-            address: { value: 'dali_single_9', raw: 18 }, active_energy: { value: 30, unit: 'Wh' }, active_power: { value: 0, unit: 'W' }, load_side_energy: { value: 0, unit: 'Wh' }, load_side_power: { value: 0, unit: 'W' }, driver_operating_time: { value: 450160, unit: 's' }, lamp_on_time: { value: 17, unit: 's' },
-          }],
-        },
+          "packet_type": "usage_packet",
+          "consumption": [
+            {
+              "address": "internal_measurement",
+              "active_energy__Wh": 1,
+              "active_power__W": 4,
+              "lamp_on_time__s": 0
+            },
+            {
+              "address": "dali_single_9",
+              "active_energy__Wh": 30,
+              "active_power__W": 0,
+              "load_side_energy__Wh": 0,
+              "load_side_power__W": 0,
+              "driver_operating_time__s": 450160,
+              "lamp_on_time__s": 17
+            }
+          ]
+        }
       },
     });
   });
@@ -138,14 +205,28 @@ describe('Status and usage', () => {
       data: 'ff830100000004000000000009cf1e000000000000000000000070de060011000000',
       expected: {
         data: {
-          packet_type: { value: 'usage_packet' },
-          consumption: [{
-            address: { value: 'internal_measurement', raw: 255 }, active_energy: { value: 1, unit: 'Wh' }, active_power: { value: 4, unit: 'W' }, lamp_on_time: { value: 0, unit: 'h' },
-          }, {
-            address: { value: 'invalid', raw: 9 }, active_energy: { value: 30, unit: 'Wh' }, active_power: { value: 0, unit: 'W' }, load_side_energy: { value: 0, unit: 'Wh' }, load_side_power: { value: 0, unit: 'W' }, driver_operating_time: { value: 450160, unit: 's' }, lamp_on_time: { value: 17, unit: 's' },
-          }],
+          "packet_type": "usage_packet",
+          "consumption": [
+            {
+              "address": "internal_measurement",
+              "active_energy__Wh": 1,
+              "active_power__W": 4,
+              "lamp_on_time__s": 0
+            },
+            {
+              "address": "invalid",
+              "active_energy__Wh": 30,
+              "active_power__W": 0,
+              "load_side_energy__Wh": 0,
+              "load_side_power__W": 0,
+              "driver_operating_time__s": 450160,
+              "lamp_on_time__s": 17
+            }
+          ]
         },
-        warnings: ['invalid_address'],
+        "warnings": [
+          "invalid_address"
+        ]
       },
     });
   });
@@ -157,7 +238,17 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '01fe64',
-      expected: { data: { packet_type: { value: 'manual_dimming' }, destination: [{ address: { value: 'dali_broadcast', raw: 254 }, dimming_level: { value: 100, unit: '%', raw: 100 } }] } },
+      expected: {
+        data: {
+          "packet_type": "manual_dimming",
+          "destination": [
+            {
+              "address": "dali_broadcast",
+              "dimming_level__percent": 100
+            }
+          ]
+        }
+      },
     });
   });
 
@@ -168,46 +259,53 @@ describe('Commands', () => {
       data: '00020406020C02',
       expected: {
         data: {
-          packet_type: { value: 'dali_status_request' },
-          dali_statuses: [{
-            address: { value: 'dali_single_1', raw: 2 },
-            status: {
-              driver_error: { value: false },
-              lamp_failure: { value: false },
-              lamp_on: { value: true },
-              limit_error: { value: false },
-              fade_running: { value: false },
-              reset_state: { value: false },
-              missing_short_address: { value: false },
-              power_failure: { value: false },
+          "packet_type": "dali_status_request",
+          "dali_statuses": [
+            {
+              "address": "dali_single_1",
+              "status": {
+                "driver_error": false,
+                "lamp_failure": false,
+                "lamp_on": true,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
             },
-          }, {
-            address: { value: 'dali_single_3', raw: 6 },
-            status: {
-              driver_error: { value: false },
-              lamp_failure: { value: true },
-              lamp_on: { value: false },
-              limit_error: { value: false },
-              fade_running: { value: false },
-              reset_state: { value: false },
-              missing_short_address: { value: false },
-              power_failure: { value: false },
+            {
+              "address": "dali_single_3",
+              "status": {
+                "driver_error": false,
+                "lamp_failure": true,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
             },
-          }, {
-            address: { value: 'dali_single_6', raw: 12 },
-            status: {
-              driver_error: { value: false },
-              lamp_failure: { value: true },
-              lamp_on: { value: false },
-              limit_error: { value: false },
-              fade_running: { value: false },
-              reset_state: { value: false },
-              missing_short_address: { value: false },
-              power_failure: { value: false },
-            },
-          }],
+            {
+              "address": "dali_single_6",
+              "status": {
+                "driver_error": false,
+                "lamp_failure": true,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            }
+          ]
         },
-        warnings: ['dali_single_3 lamp_failure', 'dali_single_6 lamp_failure'],
+        "warnings": [
+          "dali_single_3 lamp_failure",
+          "dali_single_6 lamp_failure"
+        ]
       },
     });
   });
@@ -217,7 +315,17 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '01FE64',
-      expected: { data: { packet_type: { value: 'manual_dimming' }, destination: [{ address: { value: 'dali_broadcast', raw: 254 }, dimming_level: { value: 100, unit: '%', raw: 100 } }] } },
+      expected: {
+        data: {
+          "packet_type": "manual_dimming",
+          "destination": [
+            {
+              "address": "dali_broadcast",
+              "dimming_level__percent": 100
+            }
+          ]
+        }
+      },
     });
   });
 
@@ -226,7 +334,12 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '0348A1FE48A2A848A3FE48A4FE48A507',
-      expected: { data: { packet_type: { value: 'custom_dali_request' }, query_data_raw: { value: '48A1FE48A2A848A3FE48A4FE48A507' } } },
+      expected: {
+        data: {
+          "packet_type": "custom_dali_request",
+          "query_data_raw": "48A1FE48A2A848A3FE48A4FE48A507"
+        }
+      },
     });
   });
 
@@ -235,7 +348,12 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '04027F0321032B',
-      expected: { data: { packet_type: { value: 'custom_dali_command' }, dali_command: { value: '027F0321032B' } } },
+      expected: {
+        data: {
+          "packet_type": "custom_dali_command",
+          "dali_command": "027F0321032B"
+        }
+      },
     });
   });
 
@@ -246,8 +364,12 @@ describe('Commands', () => {
       data: '060100024503FF0400',
       expected: {
         data: {
-          packet_type: { value: 'interface_request' }, dig: { value: 'off', raw: 0 }, ldr: { value: 69, raw: 69 }, internal_relay_closed: { value: false }, open_drain_output_on: { value: false },
-        },
+          "packet_type": "interface_request",
+          "dig": "off",
+          "ldr": 69,
+          "internal_relay_closed": false,
+          "open_drain_output_on": false
+        }
       },
     });
   });
@@ -259,8 +381,12 @@ describe('Commands', () => {
       data: '080400030607edface82e5',
       expected: {
         data: {
-          packet_type: { value: 'driver_memory_write' }, address: { value: 'dali_single_2', raw: 4 }, memory_bank: { value: 0 }, memory_address: { value: 3 }, memory_value: { value: '0607EDFACE82E5' },
-        },
+          "packet_type": "driver_memory_write",
+          "address": "dali_single_2",
+          "memory_bank": 0,
+          "memory_address": 3,
+          "memory_value": "0607EDFACE82E5"
+        }
       },
     });
   });
@@ -270,7 +396,14 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '08',
-      expected: { data: { packet_type: { value: 'driver_memory_write' } }, warnings: ['driver_memory_write_failed'] },
+      expected: {
+        data: {
+          "packet_type": "driver_memory_write"
+        },
+        "warnings": [
+          "driver_memory_write_failed"
+        ]
+      },
     });
   });
 });
@@ -281,8 +414,15 @@ describe('Alerts, notifications', () => {
       decoderFn: decodeRaw,
       fport: 61,
       data: '80200600',
-      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_event_counter: { value: 6 } }, warnings: ['dig_input_alert'] },
-
+      expected: {
+        data: {
+          "packet_type": "dig_input_alert",
+          "dig_input_event_counter": 6
+        },
+        "warnings": [
+          "dig_input_alert"
+        ]
+      },
     });
   });
 
@@ -291,7 +431,16 @@ describe('Alerts, notifications', () => {
       decoderFn: decodeRaw,
       fport: 61,
       data: '81200079',
-      expected: { data: { packet_type: { value: 'ldr_input_alert' }, ldr_input_on: { value: false }, ldr_input_value: { value: 121 } }, warnings: ['ldr_input_alert'] },
+      expected: {
+        data: {
+          "packet_type": "ldr_input_alert",
+          "ldr_input_on": false,
+          "ldr_input_value": 121
+        },
+        "warnings": [
+          "ldr_input_alert"
+        ]
+      },
 
     });
   });
@@ -303,22 +452,26 @@ describe('Alerts, notifications', () => {
       data: '83200202',
       expected: {
         data: {
-          packet_type: { value: 'dali_driver_alert' },
-          drivers: [{
-            address: { value: 'dali_single_1', raw: 2 },
-            status: {
-              driver_error: { value: false },
-              lamp_failure: { value: true },
-              lamp_on: { value: false },
-              limit_error: { value: false },
-              fade_running: { value: false },
-              reset_state: { value: false },
-              missing_short_address: { value: false },
-              power_failure: { value: false },
-            },
-          }],
+          "packet_type": "dali_driver_alert",
+          "drivers": [
+            {
+              "address": "dali_single_1",
+              "status": {
+                "driver_error": false,
+                "lamp_failure": true,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            }
+          ]
         },
-        warnings: ['dali_single_1 lamp_failure'],
+        "warnings": [
+          "dali_single_1 lamp_failure"
+        ]
       },
     });
   });
@@ -330,9 +483,19 @@ describe('Alerts, notifications', () => {
       data: '84025900e50056',
       expected: {
         data: {
-          packet_type: { value: 'metering_alert' }, lamp_error_alert: { value: false }, over_current_alert: { value: true }, under_voltage_alert: { value: false }, over_voltage_alert: { value: false }, low_power_factor_alert: { value: false }, power: { value: 89, unit: 'W' }, voltage: { value: 229, unit: 'V' }, power_factor: { value: 0.86 },
+          "packet_type": "metering_alert",
+          "lamp_error_alert": false,
+          "over_current_alert": true,
+          "under_voltage_alert": false,
+          "over_voltage_alert": false,
+          "low_power_factor_alert": false,
+          "power__W": 89,
+          "voltage__V": 229,
+          "power_factor": 0.86
         },
-        warnings: ['metering_over_current'],
+        "warnings": [
+          "metering_over_current"
+        ]
       },
     });
   });
@@ -346,23 +509,25 @@ describe('Boot, etc sys packets', () => {
       data: '000D008350010101F37F205E000CFE0104',
       expected: {
         data: {
-          packet_type: { value: 'boot_packet' },
-          device_serial: { value: '5083000D' },
-          firmware_version: { value: '1.1.1', raw: 65793 },
-          device_unix_epoch: { value: '2020-01-16T15:23:31.000Z', raw: 1579188211 },
-          device_config: { value: 'dali', raw: 0 },
-          optional_features: {
-            dig_input: { value: true },
-            ldr_input: { value: true },
-            metering: { value: false },
-            open_drain_output: { value: false },
+          "packet_type": "boot_packet",
+          "device_serial": "5083000D",
+          "firmware_version": "1.1.1",
+          "device_unix_epoch": "2020-01-16T15:23:31.000Z",
+          "device_config": "dali",
+          "optional_features": {
+            "dig_input": true,
+            "ldr_input": true,
+            "metering": false,
+            "open_drain_output": false
           },
-          dali_supply_state: { value: 'bus_high', raw: 126 },
-          dali_power_source_external: { value: 'external', raw: true },
-          dali_addressed_driver_count: { value: 1 },
-          dali_unadressed_driver_found: { value: false },
-          reset_reason: { value: ['soft_reset'], raw: 4 },
-        },
+          "dali_supply_state__V": "bus_high",
+          "dali_power_source_external": "external",
+          "dali_addressed_driver_count": 1,
+          "dali_unadressed_driver_found": false,
+          "reset_reason": [
+            "soft_reset"
+          ]
+        }
       },
     });
   });
@@ -374,24 +539,26 @@ describe('Boot, etc sys packets', () => {
       data: '00563412510100168e436d3803687e0000',
       expected: {
         data: {
-          packet_type: { value: 'boot_packet' },
-          device_serial: { value: '51123456' },
-          firmware_version: { value: '1.0.22', raw: 65558 },
-          device_unix_epoch: { value: 'invalid_timestamp', raw: 946684814 },
-          device_config: { value: 'analog_nc', raw: 3 },
-          optional_features: {
-            dig_input: { value: false },
-            ldr_input: { value: true },
-            metering: { value: true },
-            open_drain_output: { value: false },
+          "packet_type": "boot_packet",
+          "device_serial": "51123456",
+          "firmware_version": "1.0.22",
+          "device_unix_epoch": "invalid_timestamp",
+          "device_config": "analog_nc",
+          "optional_features": {
+            "dig_input": false,
+            "ldr_input": true,
+            "metering": true,
+            "open_drain_output": false
           },
-          dali_supply_state: { value: 'bus_high', raw: 126 },
-          dali_power_source_external: { value: 'internal', raw: false },
-          dali_addressed_driver_count: { value: 0 },
-          dali_unadressed_driver_found: { value: false },
-          reset_reason: { value: [], raw: 0 },
+          "dali_supply_state__V": "bus_high",
+          "dali_power_source_external": "internal",
+          "dali_addressed_driver_count": 0,
+          "dali_unadressed_driver_found": false,
+          "reset_reason": []
         },
-        warnings: ['invalid_timestamp'],
+        "warnings": [
+          "invalid_timestamp"
+        ]
       },
     });
   });
@@ -401,7 +568,16 @@ describe('Boot, etc sys packets', () => {
       decoderFn: decodeRaw,
       fport: 99,
       data: '13320a',
-      expected: { data: { packet_type: { value: 'invalid_downlink_packet' }, downlink_from_fport: { value: 50 }, error_reason: { value: 'unsupported_header', raw: 10 } }, warnings: ['downlink_unsupported_header'] },
+      expected: {
+        data: {
+          "packet_type": "invalid_downlink_packet",
+          "downlink_from_fport": 50,
+          "error_reason": "unsupported_header"
+        },
+        "warnings": [
+          "downlink_unsupported_header"
+        ]
+      },
     });
   });
 });

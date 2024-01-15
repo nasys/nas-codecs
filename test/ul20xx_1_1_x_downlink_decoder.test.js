@@ -7,7 +7,11 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '07',
-      expected: { data: { packet_type: { value: 'status_config_request' } } },
+      expected: {
+        data: {
+          "packet_type": "status_config_request"
+        }
+      },
     });
   });
 
@@ -16,7 +20,11 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '20',
-      expected: { data: { packet_type: { value: 'calendar_config_request' } } },
+      expected: {
+        data: {
+          "packet_type": "calendar_config_request"
+        }
+      },
     });
   });
 
@@ -25,7 +33,12 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '21FF',
-      expected: { data: { packet_type: { value: 'profile_config_request' }, profile_id: { value: 'all_profiles', raw: 255 } } },
+      expected: {
+        data: {
+          "packet_type": "profile_config_request",
+          "profile_id": "all_profiles"
+        }
+      },
     });
   });
 
@@ -34,7 +47,11 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '22',
-      expected: { data: { packet_type: { value: 'fade_config_request' } } },
+      expected: {
+        data: {
+          "packet_type": "fade_config_request"
+        }
+      },
     });
   });
 
@@ -43,7 +60,11 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '23',
-      expected: { data: { packet_type: { value: 'holiday_config_request' } } },
+      expected: {
+        data: {
+          "packet_type": "holiday_config_request"
+        }
+      },
     });
   });
 
@@ -52,7 +73,11 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '24',
-      expected: { data: { packet_type: { value: 'dali_monitor_config_request' } } },
+      expected: {
+        data: {
+          "packet_type": "dali_monitor_config_request"
+        }
+      },
     });
   });
 
@@ -61,7 +86,11 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '25',
-      expected: { data: { packet_type: { value: 'fallback_dim_config_request' } } },
+      expected: {
+        data: {
+          "packet_type": "fallback_dim_config_request"
+        }
+      },
     });
   });
 
@@ -70,7 +99,11 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '26',
-      expected: { data: { packet_type: { value: 'location_config_request' } } },
+      expected: {
+        data: {
+          "packet_type": "location_config_request"
+        }
+      },
     });
   });
 
@@ -79,7 +112,11 @@ describe('Config requests', function () {
       decoderFn: decodeRaw,
       fport: 49,
       data: '27',
-      expected: { data: { packet_type: { value: 'lumalink_config_request' } } },
+      expected: {
+        data: {
+          "packet_type": "lumalink_config_request"
+        }
+      },
     });
   });
 });
@@ -92,8 +129,11 @@ describe('Commands', function () {
       data: '0504',
       expected: {
         data: {
-          packet_type: { value: 'status_usage_request' }, usage_requested: { value: false }, status_requested: { value: false }, dim_map_report_requested: { value: true },
-        },
+          "packet_type": "status_usage_request",
+          "usage_requested": false,
+          "status_requested": false,
+          "dim_map_report_requested": true
+        }
       },
     });
   });

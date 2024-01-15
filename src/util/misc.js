@@ -18,10 +18,6 @@ export function bytesToHexStr(byteArr) {
   return res;
 }
 
-export function bitFalseTrue(bit) {
-  return { value: !!bit };
-}
-
 export function objToList(obj) {
   var res = [];
   // eslint-disable-next-line no-restricted-syntax

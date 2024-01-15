@@ -1,3 +1,7 @@
+# Version 0.7 15.01.2024 (Breaking change)
+  - Removal of formatter options in the html live decoder. Everything is now formatted as { "key__unit": value }.
+  - UL20xx 1.0.x and 1.1.x decoder style unified to { "key__unit": value } format. __NB! Breaking change__.
+
 # Version 0.6 10.01.2024
   - IM30xx_0_9_x decoder added
   - UM30xx M-Bus frame decoding

@@ -9,25 +9,69 @@ describe('Status and usage', () => {
       fport: 23,
       data: '01 F37F205E 8244 32 09 16 20 07 01 D2 02 9455 04 01  FE 50 19 00 12 50 19 00',
       expected: {
-        "data": {
-          "packet_type": { "value": "status_packet" },
-          "device_unix_epoch": { "value": "2020-01-16T15:23:31.000Z", "raw": 1579188211 },
+        data: {
+          "packet_type": "status_packet",
+          "device_unix_epoch": "2020-01-16T15:23:31.000Z",
           "status": {
-            "dali_connection_error": { "value": true },
-            "metering_com_error": { "value": false },
-            "ext_rtc_warning": { "value": false },
-            "internal_relay_closed": { "value": true },
-            "open_drain_output_on": { "value": true },
-            "lumalink_connected": { "value": true },
-            "lumalink_connected_once": { "value": false }
+            "dali_connection_error": true,
+            "metering_com_error": false,
+            "ext_rtc_warning": false,
+            "internal_relay_closed": true,
+            "open_drain_output_on": true,
+            "lumalink_connected": true,
+            "lumalink_connected_once": false
           },
-          "downlink_rssi": { "value": -50, "unit": "dBm" },
-          "downlink_snr": { "value": 9, "unit": "dB" },
-          "mcu_temperature": { "value": 22, "unit": "°C" },
-          "active_alerts": { "voltage_alert_in_24h": { "value": false }, "lamp_error_alert_in_24h": { "value": true }, "power_alert_in_24h": { "value": false }, "power_factor_alert_in_24h": { "value": false } },
-          "sensor_source": { "ldr_input": { "value": 210 }, "light_sensor": { "value": "299.9", "unit": "lx" }, "dig_input_1_on": { "value": true } },
-          "dimming_source": [{ "address": { "value": "dali_broadcast", "raw": 254 }, "reason": "calendar_dusk_step", "dimming_level": { "value": 25, "raw": 25, "unit": "%" }, "status": { "driver_error": { "value": false }, "lamp_failure": { "value": false }, "lamp_on": { "value": false }, "limit_error": { "value": false }, "fade_running": { "value": false }, "reset_state": { "value": false }, "missing_short_address": { "value": false }, "power_failure": { "value": false } } }, { "address": { "value": "dali_single_9", "raw": 18 }, "reason": "calendar_dusk_step", "dimming_level": { "value": 25, "raw": 25, "unit": "%" }, "status": { "driver_error": { "value": false }, "lamp_failure": { "value": false }, "lamp_on": { "value": false }, "limit_error": { "value": false }, "fade_running": { "value": false }, "reset_state": { "value": false }, "missing_short_address": { "value": false }, "power_failure": { "value": false } } }]
-        }, "warnings": ["dali_connection_error", "lamp_error_alert_in_24h"]
+          "downlink_rssi__dBm": -50,
+          "downlink_snr__dB": 9,
+          "mcu_temperature__C": 22,
+          "active_alerts": {
+            "voltage_alert_in_24h": false,
+            "lamp_error_alert_in_24h": true,
+            "power_alert_in_24h": false,
+            "power_factor_alert_in_24h": false
+          },
+          "sensor_source": {
+            "ldr_input": 210,
+            "light_sensor__lx": "299.9",
+            "dig_input_1_on": true
+          },
+          "dimming_source": [
+            {
+              "address": "dali_broadcast",
+              "reason": "calendar_dusk_step",
+              "dimming_level__percent": 25,
+              "status": {
+                "driver_error": false,
+                "lamp_failure": false,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            },
+            {
+              "address": "dali_single_9",
+              "reason": "calendar_dusk_step",
+              "dimming_level__percent": 25,
+              "status": {
+                "driver_error": false,
+                "lamp_failure": false,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            }
+          ]
+        },
+        "warnings": [
+          "dali_connection_error",
+          "lamp_error_alert_in_24h"
+        ]
       },
     });
   });
@@ -38,26 +82,72 @@ describe('Status and usage', () => {
       fport: 23,
       data: '01 F37F205E 8244 32 09 16 20 09 01 D2 02 9455 04 01 2100 FE 50 19 00 12 50 19 00',
       expected: {
-        "data": {
-          "packet_type": { "value": "status_packet" },
-          "device_unix_epoch": { "value": "2020-01-16T15:23:31.000Z", "raw": 1579188211 },
+        data: {
+          "packet_type": "status_packet",
+          "device_unix_epoch": "2020-01-16T15:23:31.000Z",
           "status": {
-            "dali_connection_error": { "value": true },
-            "metering_com_error": { "value": false },
-            "ext_rtc_warning": { "value": false },
-            "internal_relay_closed": { "value": true },
-            "open_drain_output_on": { "value": true },
-            "lumalink_connected": { "value": true },
-            "lumalink_connected_once": { "value": false }
+            "dali_connection_error": true,
+            "metering_com_error": false,
+            "ext_rtc_warning": false,
+            "internal_relay_closed": true,
+            "open_drain_output_on": true,
+            "lumalink_connected": true,
+            "lumalink_connected_once": false
           },
-          "downlink_rssi": { "value": -50, "unit": "dBm" },
-          "downlink_snr": { "value": 9, "unit": "dB" },
-          "mcu_temperature": { "value": 22, "unit": "°C" },
-          "active_alerts": { "voltage_alert_in_24h": { "value": false }, "lamp_error_alert_in_24h": { "value": true }, "power_alert_in_24h": { "value": false }, "power_factor_alert_in_24h": { "value": false } },
-          "sensor_source": { "ldr_input": { "value": 210 }, "light_sensor": { "value": "299.9", "unit": "lx" }, "dig_input_1_on": { "value": true } },
-          "dimming_source": [{ "address": { "value": "dali_broadcast", "raw": 254 }, "reason": "calendar_dusk_step", "dimming_level": { "value": 25, "raw": 25, "unit": "%" }, "status": { "driver_error": { "value": false }, "lamp_failure": { "value": false }, "lamp_on": { "value": false }, "limit_error": { "value": false }, "fade_running": { "value": false }, "reset_state": { "value": false }, "missing_short_address": { "value": false }, "power_failure": { "value": false } } }, { "address": { "value": "dali_single_9", "raw": 18 }, "reason": "calendar_dusk_step", "dimming_level": { "value": 25, "raw": 25, "unit": "%" }, "status": { "driver_error": { "value": false }, "lamp_failure": { "value": false }, "lamp_on": { "value": false }, "limit_error": { "value": false }, "fade_running": { "value": false }, "reset_state": { "value": false }, "missing_short_address": { "value": false }, "power_failure": { "value": false } } }]
-        }, "warnings": ["dali_connection_error", "lamp_error_alert_in_24h"],
-        "errors": ["unsupported_sensor_source"],
+          "downlink_rssi__dBm": -50,
+          "downlink_snr__dB": 9,
+          "mcu_temperature__C": 22,
+          "active_alerts": {
+            "voltage_alert_in_24h": false,
+            "lamp_error_alert_in_24h": true,
+            "power_alert_in_24h": false,
+            "power_factor_alert_in_24h": false
+          },
+          "sensor_source": {
+            "ldr_input": 210,
+            "light_sensor__lx": "299.9",
+            "dig_input_1_on": true
+          },
+          "dimming_source": [
+            {
+              "address": "dali_broadcast",
+              "reason": "calendar_dusk_step",
+              "dimming_level__percent": 25,
+              "status": {
+                "driver_error": false,
+                "lamp_failure": false,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            },
+            {
+              "address": "dali_single_9",
+              "reason": "calendar_dusk_step",
+              "dimming_level__percent": 25,
+              "status": {
+                "driver_error": false,
+                "lamp_failure": false,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            }
+          ]
+        },
+        "warnings": [
+          "dali_connection_error",
+          "lamp_error_alert_in_24h"
+        ],
+        "errors": [
+          "unsupported_sensor_source"
+        ]
       },
     });
   });
@@ -70,130 +160,56 @@ describe('Status and usage', () => {
       data: '00 F37F205E 92 32 09 16 00  FE 50 19 00  12 50 19 00',
       expected: {
         data: {
-          packet_type: {
-            value: 'status_packet',
+          "packet_type": "status_packet",
+          "device_unix_epoch": "2020-01-16T15:23:31.000Z",
+          "status": {
+            "dali_connection_error": true,
+            "metering_com_error": false,
+            "ext_rtc_warning": false,
+            "internal_relay_closed": true,
+            "ldr_input_on": false,
+            "dig_input_on": true,
+            "open_drain_output_on": false
           },
-          device_unix_epoch: {
-            value: '2020-01-16T15:23:31.000Z',
-            raw: 1579188211,
-          },
-          status: {
-            dali_connection_error: {
-              value: true,
-            },
-            metering_com_error: {
-              value: false,
-            },
-            ext_rtc_warning: {
-              value: false,
-            },
-            internal_relay_closed: {
-              value: true,
-            },
-            ldr_input_on: {
-              value: false,
-            },
-            dig_input_on: {
-              value: true,
-            },
-            open_drain_output_on: {
-              value: false,
-            },
-          },
-          downlink_rssi: {
-            value: -50,
-            unit: 'dBm',
-          },
-          downlink_snr: {
-            value: 9,
-            unit: 'dB',
-          },
-          mcu_temperature: {
-            value: 22,
-            unit: '°C',
-          },
-          dimming_source: [
+          "downlink_rssi__dBm": -50,
+          "downlink_snr__dB": 9,
+          "mcu_temperature__C": 22,
+          "dimming_source": [
             {
-              address: {
-                value: 'dali_broadcast',
-                raw: 254,
-              },
-              reason: 'calendar_dusk_step',
-              dimming_level: {
-                value: 25,
-                raw: 25,
-                unit: '%',
-              },
-              status: {
-                driver_error: {
-                  value: false,
-                },
-                lamp_failure: {
-                  value: false,
-                },
-                lamp_on: {
-                  value: false,
-                },
-                limit_error: {
-                  value: false,
-                },
-                fade_running: {
-                  value: false,
-                },
-                reset_state: {
-                  value: false,
-                },
-                missing_short_address: {
-                  value: false,
-                },
-                power_failure: {
-                  value: false,
-                },
-              },
+              "address": "dali_broadcast",
+              "reason": "calendar_dusk_step",
+              "dimming_level__percent": 25,
+              "status": {
+                "driver_error": false,
+                "lamp_failure": false,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
             },
             {
-              address: {
-                value: 'dali_single_9',
-                raw: 18,
-              },
-              reason: 'calendar_dusk_step',
-              dimming_level: {
-                value: 25,
-                raw: 25,
-                unit: '%',
-              },
-              status: {
-                driver_error: {
-                  value: false,
-                },
-                lamp_failure: {
-                  value: false,
-                },
-                lamp_on: {
-                  value: false,
-                },
-                limit_error: {
-                  value: false,
-                },
-                fade_running: {
-                  value: false,
-                },
-                reset_state: {
-                  value: false,
-                },
-                missing_short_address: {
-                  value: false,
-                },
-                power_failure: {
-                  value: false,
-                },
-              },
-            },
-          ],
+              "address": "dali_single_9",
+              "reason": "calendar_dusk_step",
+              "dimming_level__percent": 25,
+              "status": {
+                "driver_error": false,
+                "lamp_failure": false,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            }
+          ]
         },
-        warnings: [
-          'dali_connection_error',
-        ],
+        "warnings": [
+          "dali_connection_error"
+        ]
       },
     });
   });
@@ -205,37 +221,41 @@ describe('Status and usage', () => {
       data: '00F6E5853800340718000EF5FFFF',
       expected: {
         data: {
-          packet_type: { value: 'status_packet' },
-          device_unix_epoch: { value: 'invalid_timestamp', raw: 948299254 },
-          status: {
-            dali_connection_error: { value: false },
-            metering_com_error: { value: false },
-            ext_rtc_warning: { value: false },
-            internal_relay_closed: { value: false },
-            ldr_input_on: { value: false },
-            dig_input_on: { value: false },
-            open_drain_output_on: { value: false },
+          "packet_type": "status_packet",
+          "device_unix_epoch": "invalid_timestamp",
+          "status": {
+            "dali_connection_error": false,
+            "metering_com_error": false,
+            "ext_rtc_warning": false,
+            "internal_relay_closed": false,
+            "ldr_input_on": false,
+            "dig_input_on": false,
+            "open_drain_output_on": false
           },
-          downlink_rssi: { value: -52, unit: 'dBm' },
-          downlink_snr: { value: 7, unit: 'dB' },
-          mcu_temperature: { value: 24, unit: '°C' },
-          dimming_source: [{
-            address: { value: 'dali_single_7', raw: 14 },
-            reason: 'relay_off',
-            dimming_level: { value: 'ignore', raw: 255, unit: '' },
-            status: {
-              driver_error: { value: false },
-              lamp_failure: { value: false },
-              lamp_on: { value: false },
-              limit_error: { value: false },
-              fade_running: { value: false },
-              reset_state: { value: false },
-              missing_short_address: { value: false },
-              power_failure: { value: false },
-            },
-          }],
+          "downlink_rssi__dBm": -52,
+          "downlink_snr__dB": 7,
+          "mcu_temperature__C": 24,
+          "dimming_source": [
+            {
+              "address": "dali_single_7",
+              "reason": "relay_off",
+              "dimming_level__percent": "ignore",
+              "status": {
+                "driver_error": false,
+                "lamp_failure": false,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            }
+          ]
         },
-        warnings: ['invalid_timestamp'],
+        "warnings": [
+          "invalid_timestamp"
+        ]
       },
     });
   });
@@ -247,60 +267,25 @@ describe('Status and usage', () => {
       data: '00 FF 80 D0EF2F01 12 FF 47940300 2A00 F94A0300 2700 5D E5 C072D902 D0EF2F01  ',
       expected: {
         data: {
-          packet_type: {
-            value: 'usage_packet',
-          },
-          consumption: [
+          "packet_type": "usage_packet",
+          "consumption": [
             {
-              address: {
-                value: 'internal_measurement',
-                raw: 255,
-              },
-              lamp_on_time: {
-                value: 19918800,
-                unit: 's',
-              },
+              "address": "internal_measurement",
+              "lamp_on_time__s": 19918800
             },
             {
-              address: {
-                value: 'dali_single_9',
-                raw: 18,
-              },
-              active_energy: {
-                value: 234567,
-                unit: 'Wh',
-              },
-              active_power: {
-                value: 42,
-                unit: 'W',
-              },
-              load_side_energy: {
-                value: 215801,
-                unit: 'Wh',
-              },
-              load_side_power: {
-                value: 39,
-                unit: 'W',
-              },
-              power_factor: {
-                raw: 93,
-                value: 0.93,
-              },
-              mains_voltage: {
-                value: 229,
-                unit: 'V',
-              },
-              driver_operating_time: {
-                value: 47805120,
-                unit: 's',
-              },
-              lamp_on_time: {
-                value: 19918800,
-                unit: 's',
-              },
-            },
-          ],
-        },
+              "address": "dali_single_9",
+              "active_energy__Wh": 234567,
+              "active_power__W": 42,
+              "load_side_energy__Wh": 215801,
+              "load_side_power__W": 39,
+              "power_factor": 0.93,
+              "mains_voltage__V": 229,
+              "driver_operating_time__s": 47805120,
+              "lamp_on_time__s": 19918800
+            }
+          ]
+        }
       },
     });
   });
@@ -312,7 +297,17 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '01FE64',
-      expected: { data: { packet_type: { value: 'manual_dimming' }, destination: [{ address: { value: 'dali_broadcast', raw: 254 }, dimming_level: { value: 100, unit: '%', raw: 100 } }] } },
+      expected: {
+        data: {
+          "packet_type": "manual_dimming",
+          "destination": [
+            {
+              "address": "dali_broadcast",
+              "dimming_level__percent": 100
+            }
+          ]
+        }
+      },
     });
   });
 
@@ -321,7 +316,12 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '0348A1FE48A2A848A3FE48A4FE48A507',
-      expected: { data: { packet_type: { value: 'custom_dali_request' }, query_data_raw: { value: '48A1FE48A2A848A3FE48A4FE48A507' } } },
+      expected: {
+        data: {
+          "packet_type": "custom_dali_request",
+          "query_data_raw": "48A1FE48A2A848A3FE48A4FE48A507"
+        }
+      },
     });
   });
 
@@ -330,7 +330,14 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '04027F0321032B',
-      expected: { data: { packet_type: { value: 'custom_dali_command' }, dali_command: { value: '027F0321032B' } } },
+      expected: {
+        data: {
+          "packet_type": "custom_dali_command",
+          "dali_command": "027F0321032B"
+        }
+      }
+      
+      ,
     });
   });
 
@@ -341,14 +348,19 @@ describe('Commands', () => {
       data: '05 04 12 94 fe 00',
       expected: {
         data: {
-          packet_type: { value: 'status_usage_request' },
-          status_requested: { value: false },
-          usage_requested: { value: false },
-          dim_map_report_requested: { value: true },
-          drivers: [{
-            address: { value: 'dali_single_9', raw: 18 }, dali_min_level: { value: 148 }, dali_max_level: { value: 254 }, dimming_curve: { value: 'logarithmic', raw: 0 },
-          }],
-        },
+          "packet_type": "status_usage_request",
+          "status_requested": false,
+          "usage_requested": false,
+          "dim_map_report_requested": true,
+          "drivers": [
+            {
+              "address": "dali_single_9",
+              "dali_min_level": 148,
+              "dali_max_level": 254,
+              "dimming_curve": "logarithmic"
+            }
+          ]
+        }
       },
     });
   });
@@ -360,8 +372,12 @@ describe('Commands', () => {
       data: '080400030607edface82e5',
       expected: {
         data: {
-          packet_type: { value: 'driver_memory_write' }, address: { value: 'dali_single_2', raw: 4 }, memory_bank: { value: 0 }, memory_address: { value: 3 }, memory_value: { value: '0607EDFACE82E5' },
-        },
+          "packet_type": "driver_memory_write",
+          "address": "dali_single_2",
+          "memory_bank": 0,
+          "memory_address": 3,
+          "memory_value": "0607EDFACE82E5"
+        }
       },
     });
   });
@@ -371,7 +387,14 @@ describe('Commands', () => {
       decoderFn: decodeRaw,
       fport: 60,
       data: '08',
-      expected: { data: { packet_type: { value: 'driver_memory_write' } }, warnings: ['driver_memory_write_failed'] },
+      expected: {
+        data: {
+          "packet_type": "driver_memory_write"
+        },
+        "warnings": [
+          "driver_memory_write_failed"
+        ]
+      },
     });
   });
 });
@@ -382,7 +405,16 @@ describe('Alerts, notifications', () => {
       decoderFn: decodeRaw,
       fport: 61,
       data: '804106000000',
-      expected: { data: { packet_type: { value: 'dig_input_alert' }, dig_input_on: { value: true }, dig_input_event_counter: { value: 6 } }, warnings: ['dig_input_alert'] },
+      expected: {
+        data: {
+          "packet_type": "dig_input_alert",
+          "dig_input_on": true,
+          "dig_input_event_counter": 6
+        },
+        "warnings": [
+          "dig_input_alert"
+        ]
+      },
 
     });
   });
@@ -392,7 +424,16 @@ describe('Alerts, notifications', () => {
       decoderFn: decodeRaw,
       fport: 61,
       data: '81200079',
-      expected: { data: { packet_type: { value: 'ldr_input_alert' }, ldr_input_on: { value: false }, ldr_input_value: { value: 121 } }, warnings: ['ldr_input_alert'] },
+      expected: {
+        data: {
+          "packet_type": "ldr_input_alert",
+          "ldr_input_on": false,
+          "ldr_input_value": 121
+        },
+        "warnings": [
+          "ldr_input_alert"
+        ]
+      },
     });
   });
 
@@ -403,22 +444,26 @@ describe('Alerts, notifications', () => {
       data: '83200202',
       expected: {
         data: {
-          packet_type: { value: 'dali_driver_alert' },
-          drivers: [{
-            address: { value: 'dali_single_1', raw: 2 },
-            status: {
-              driver_error: { value: false },
-              lamp_failure: { value: true },
-              lamp_on: { value: false },
-              limit_error: { value: false },
-              fade_running: { value: false },
-              reset_state: { value: false },
-              missing_short_address: { value: false },
-              power_failure: { value: false },
-            },
-          }],
+          "packet_type": "dali_driver_alert",
+          "drivers": [
+            {
+              "address": "dali_single_1",
+              "status": {
+                "driver_error": false,
+                "lamp_failure": true,
+                "lamp_on": false,
+                "limit_error": false,
+                "fade_running": false,
+                "reset_state": false,
+                "missing_short_address": false,
+                "power_failure": false
+              }
+            }
+          ]
         },
-        warnings: ['dali_single_1 lamp_failure'],
+        "warnings": [
+          "dali_single_1 lamp_failure"
+        ]
       },
     });
   });
@@ -430,9 +475,19 @@ describe('Alerts, notifications', () => {
       data: '84025900e50056',
       expected: {
         data: {
-          packet_type: { value: 'metering_alert' }, lamp_error_alert: { value: false }, over_current_alert: { value: true }, under_voltage_alert: { value: false }, over_voltage_alert: { value: false }, low_power_factor_alert: { value: false }, power: { value: 89, unit: 'W' }, voltage: { value: 229, unit: 'V' }, power_factor: { value: 0.86 },
+          "packet_type": "metering_alert",
+          "lamp_error_alert": false,
+          "over_current_alert": true,
+          "under_voltage_alert": false,
+          "over_voltage_alert": false,
+          "low_power_factor_alert": false,
+          "power__W": 89,
+          "voltage__V": 229,
+          "power_factor": 0.86
         },
-        warnings: ['metering_over_current'],
+        "warnings": [
+          "metering_over_current"
+        ]
       },
     });
   });
@@ -446,31 +501,25 @@ describe('Boot, etc sys packets', () => {
       data: '000D008350010101F37F205E000CFE0104',
       expected: {
         data: {
-          packet_type: { value: 'boot_packet' },
-          device_serial: { value: '5083000D' },
-          firmware_version: { value: '1.1.1', raw: 65793 },
-          device_unix_epoch: { value: '2020-01-16T15:23:31.000Z', raw: 1579188211 },
-          device_config: { value: 'dali', raw: 0 },
-          optional_features: {
-            dig_input: {
-              value: true,
-            },
-            ldr_input: {
-              value: true,
-            },
-            open_drain_output: {
-              value: false,
-            },
-            metering: {
-              value: false,
-            },
+          "packet_type": "boot_packet",
+          "device_serial": "5083000D",
+          "firmware_version": "1.1.1",
+          "device_unix_epoch": "2020-01-16T15:23:31.000Z",
+          "device_config": "dali",
+          "optional_features": {
+            "dig_input": true,
+            "ldr_input": true,
+            "open_drain_output": false,
+            "metering": false
           },
-          dali_supply_state: { value: 'bus_high', raw: 126 },
-          dali_power_source_external: { value: 'external', raw: true },
-          dali_addressed_driver_count: { value: 1 },
-          dali_unadressed_driver_found: { value: false },
-          reset_reason: { value: ['soft_reset'], raw: 4 },
-        },
+          "dali_supply_state__V": "bus_high",
+          "dali_power_source_external": "external",
+          "dali_addressed_driver_count": 1,
+          "dali_unadressed_driver_found": false,
+          "reset_reason": [
+            "soft_reset"
+          ]
+        }
       },
     });
   });
@@ -482,60 +531,26 @@ describe('Boot, etc sys packets', () => {
       data: '00563412510100168e436d3803687e0000',
       expected: {
         data: {
-          packet_type: {
-            value: 'boot_packet',
+          "packet_type": "boot_packet",
+          "device_serial": "51123456",
+          "firmware_version": "1.0.22",
+          "device_unix_epoch": "invalid_timestamp",
+          "device_config": "analog_nc",
+          "optional_features": {
+            "dig_input": false,
+            "ldr_input": true,
+            "open_drain_output": false,
+            "metering": true
           },
-          device_serial: {
-            value: '51123456',
-          },
-          firmware_version: {
-            value: '1.0.22',
-            raw: 65558,
-          },
-          device_unix_epoch: {
-            value: 'invalid_timestamp',
-            raw: 946684814,
-          },
-          device_config: {
-            value: 'analog_nc',
-            raw: 3,
-          },
-          optional_features: {
-            dig_input: {
-              value: false,
-            },
-            ldr_input: {
-              value: true,
-            },
-            open_drain_output: {
-              value: false,
-            },
-            metering: {
-              value: true,
-            },
-          },
-          dali_supply_state: {
-            value: 'bus_high',
-            raw: 126,
-          },
-          dali_power_source_external: {
-            value: 'internal',
-            raw: false,
-          },
-          dali_addressed_driver_count: {
-            value: 0,
-          },
-          dali_unadressed_driver_found: {
-            value: false,
-          },
-          reset_reason: {
-            value: [],
-            raw: 0,
-          },
+          "dali_supply_state__V": "bus_high",
+          "dali_power_source_external": "internal",
+          "dali_addressed_driver_count": 0,
+          "dali_unadressed_driver_found": false,
+          "reset_reason": []
         },
-        warnings: [
-          'invalid_timestamp',
-        ],
+        "warnings": [
+          "invalid_timestamp"
+        ]
       },
     });
   });
@@ -545,7 +560,16 @@ describe('Boot, etc sys packets', () => {
       decoderFn: decodeRaw,
       fport: 99,
       data: '13320a',
-      expected: { data: { packet_type: { value: 'invalid_downlink_packet' }, downlink_from_fport: { value: 50 }, error_reason: { value: 'unsupported_header', raw: 10 } }, warnings: ['downlink_unsupported_header'] },
+      expected: {
+        data: {
+          "packet_type": "invalid_downlink_packet",
+          "downlink_from_fport": 50,
+          "error_reason": "unsupported_header"
+        },
+        "warnings": [
+          "downlink_unsupported_header"
+        ]
+      },
     });
   });
 });
