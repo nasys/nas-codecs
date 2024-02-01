@@ -31,7 +31,7 @@
   <input type="text" id="payload_raw" size="100"><br><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2024-02-01T14:32:57.682Z</div>
+<div class="footer">Generated at 2024-02-01T16:05:45.323Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -989,7 +989,7 @@ function extractRegisters(dataView, result, err){
     var key = res.name;
     if (res.unit.length) {
       key = res.name + '__' + res.unit;
-    }result[key] = res.val;
+    }result["kamstrup_" + key] = res.val;
   }
 }
 
@@ -1008,7 +1008,7 @@ function extractRegisterList(dataView, result, err){
       err.errors.push('invalid_register_' + res.name);
       break;
     }
-  }result.registers = out;
+  }result.kamstrup_registers = out;
 }
 
 function statusParser(dataView, result, err){

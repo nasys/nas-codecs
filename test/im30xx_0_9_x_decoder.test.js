@@ -19,12 +19,12 @@ describe('IM30xx tests', () => {
       data: 'ff36e20f5fff9d010c1003003b0c1d6500',
       expected: {
         data: {
-          'date':'2020-07-16',
+          'kamstrup_date':'2020-07-16',
           'metering_time': 'live',
           'packet_type':'status_packet',
           'sensor_battery': 255,
           'sensor_rssi__dBm': -99,
-          'serial_no': 6626572, 
+          'kamstrup_serial_no': 6626572, 
           'utc_timestamp': '2020-07-16T05:14:30Z'
         },errors: [],
         warnings: [],
@@ -39,12 +39,13 @@ describe('IM30xx tests', () => {
       expected:{
         data: {
           'packet_type': 'usage_packet',
-          'flow_v1_actual__L_per_h': 0,
-          'heat_energy_e1__kWh': 1329052.13,
+          'kamstrup_flow_v1_actual__L_per_h': 0,
+          'kamstrup_heat_energy_e1__kWh': 1329052.13,
           'measuring_time': '05:10:00Z',
-          'operating_hours':46667,
-          't1_t2_diff_temp__C': 4.78,
-          'time': '05:10:00Z','volume_v1__m3':54708.44
+          'kamstrup_operating_hours':46667,
+          'kamstrup_t1_t2_diff_temp__C': 4.78,
+          'kamstrup_time': '05:10:00Z',
+          'kamstrup_volume_v1__m3':54708.44
         },errors: [],
         warnings: [],
       },
@@ -83,7 +84,7 @@ describe('IM30xx tests', () => {
       data: '000D',
       expected:{
         data:{'packet_type':'request_register_values',
-        'registers': ['volume_v1']
+        'kamstrup_registers': ['volume_v1']
       },errors: [],
       warnings: [],
       },

@@ -808,7 +808,7 @@ function extractRegisters(dataView, result, err){
     var key = res.name;
     if (res.unit.length) {
       key = res.name + '__' + res.unit;
-    }result[key] = res.val;
+    }result["kamstrup_" + key] = res.val;
   }
 }
 
@@ -827,7 +827,7 @@ function extractRegisterList(dataView, result, err){
       err.errors.push('invalid_register_' + res.name);
       break;
     }
-  }result.registers = out;
+  }result.kamstrup_registers = out;
 }
 
 function statusParser(dataView, result, err){
