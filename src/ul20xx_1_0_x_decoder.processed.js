@@ -116,7 +116,7 @@ export function decodeUnixEpoch(epoch, err) {
 }
 
 export function decodeLdrConfig(dataView, result) {
-  result.packet_type = 'ldr_input_config_packet';
+  result.packet_type = 'deprecated_ldr_input_config_packet';
 
   var high = dataView.getUint8();
   result.ldr_off_threshold_high = high === 0xFF ? 'disabled' : high;
@@ -129,6 +129,13 @@ export function decodeLdrConfig(dataView, result) {
   result.trigger_alert_enabled = behaviorBits.getBits(1);
 }
 
+export function decodeDimNotifyConfig(dataView, result, err){
+  result.packet_type = 'dim_notify_config_packet';
+  var rdly = dataView.getUint8();
+  result.random_delay__s = rdly === 0xff ? 'disabled' : rdly * 5;
+  result.packet_limit__s = dataView.getUint8() * 60;
+}
+
 export function decodeDimmingLevel(level, ffName) {
   if (level === 0xFF) {
     return ffName;
@@ -137,7 +144,7 @@ export function decodeDimmingLevel(level, ffName) {
 }
 
 export function decodeDigConfig(dataView, result, err) {
-  result.packet_type = 'dig_input_config_packet';
+  result.packet_type = 'deprecated_dig_input_config_packet';
 
   var time = dataView.getUint16();
   result.light_on_duration__s = time === 0xFFFF ? 'dig_input_disabled' : time;
@@ -203,8 +210,8 @@ export function decodeCalendarConfigV10(dataView, result) {
 
   var clear = sunrise === -1 && sunset === -1;
 
-  result.sunrise_offset__min = clear ? 'disabled' : sunrise;
-  result.sunset_offset__min = clear ? 'disabled' : sunset;
+  result.sunrise_offset__minutes = clear ? 'disabled' : sunrise;
+  result.sunset_offset__minutes = clear ? 'disabled' : sunset;
 
   result.latitude__deg = lat;
   result.longitude__deg = lon;
@@ -321,9 +328,10 @@ export function decodeDaliMonitorConfig(dataView, result) {
   result.periodic_bus_scan_enabled = bits.getBits(1);
 
   var interval = dataView.getUint16();
-  result.monitoring_interval__s = interval;
   if (interval === 0) {
-    result.monitoring_interval = 'disabled';
+    result.monitoring_interval__s = 'disabled';
+  } else{
+    result.monitoring_interval__s = interval;
   }
 }
 
@@ -428,7 +436,7 @@ export function decodeMeteringAlertConfig(dataView, result, err) {
   result.packet_type = 'metering_alert_config_packet';
   var header = dataView.getUint8();
   if (header !== 0x01) {
-    err.errors.push('invalid_header');
+    err.errors.push('invalid_packet_type');
     return;
   }
   var minPower = dataView.getUint16();
@@ -561,7 +569,7 @@ export function decodeFport50(dataView, result, err) {
       return;
 
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -770,7 +778,7 @@ export function decodeTimedDimming(dataView, err) {
 
   result.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'resume');
 
-  result.duration__min = dataView.getUint8();
+  result.duration__minutes = dataView.getUint8();
   return result;
 }
 
@@ -783,7 +791,7 @@ export function decodeTimedDimmingCommand(dataView, result, err) {
 }
 
 export function decodeAddressDaliDriver(dataView, result, err) {
-  result.packet_type = { value: 'address_dali_driver' };
+  result.packet_type = 'address_dali_driver' ;
   result.address = addressParse(dataView.getUint8(), 'rescan_dali_bus', err);
 }
 
@@ -887,6 +895,7 @@ function decodeSensorSource(dataView, header, result, err) {
   return 0;
 }
 
+
 function statusParser1_0(dataView, result, err) {
   // does not support 1.0.x legacy mode status packet!
   result.packet_type = 'status_packet';
@@ -987,7 +996,6 @@ function usageConsumptionParse(dataView, err) {
   }
   return result;
 }
-
 function usageParser(dataView, result, err) {
 
   result.packet_type = 'usage_packet';
@@ -1167,9 +1175,8 @@ function configFailedParser(dataView, result, err) {
   result.downlink_from_fport = dataView.getUint8();
   var error = errorCodeParser(dataView.getUint8());
   result.error_reason = error;
-  err.warnings.push('downlink_' + error);
+  err.warnings.push('downlink_error ' + error);
 }
-
 function decodeFport99(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
@@ -1180,7 +1187,7 @@ function decodeFport99(dataView, result, err) {
       configFailedParser(dataView, result, err);
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -1256,20 +1263,19 @@ function decodeFport61(dataView, result, err) {
       result.power_factor = dataView.getUint8() / 100;
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
-
 // DOWNLINK ONLY THINGS
 
 function decodeFport49(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
     case 0x01:
-      result.packet_type = 'ldr_input_config_request';
+      result.packet_type = 'deprecated_ldr_input_config_request';
       return;
     case 0x03:
-      result.packet_type = 'dig_input_config_request';
+      result.packet_type = 'deprecated_dig_input_config_request';
       return;
     case 0x07:
       result.packet_type = 'status_config_request';
@@ -1315,7 +1321,7 @@ function decodeFport49(dataView, result, err) {
       result.packet_type = 'location_config_request';
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -1367,13 +1373,6 @@ export function decodeRaw(fport, bytes) {
   } catch (error) {
     err.errors.push(error.message);
   }
-  var out = { data: res };
-  if (err.errors.length) {
-    out.errors = err.errors;
-  }
-  if (err.warnings.length) {
-    out.warnings = err.warnings;
-  }
-  return out;
+  return { data: res, errors: err.errors, warnings: err.warnings };
 }
 

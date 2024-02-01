@@ -451,16 +451,8 @@ function bootPacketReason(reason, err) {
 }
 
 // USAGE PAYLOAD
-function usageParser(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
-
-  var packetType = dataView.getUint8();
-  if (packetType === 0x04) {
-    result._packet_type = 'usage_packet';
-  } else {
-    err.errors.push('invalid_packet_type ' + packetType);
-    return;
-  }
+function usageParser(dataView, result, err) {
+  result.packet_type = 'usage_packet';
 
   var activeAlerts = {};
   var bits1 = dataView.getUint8Bits();
@@ -473,25 +465,25 @@ function usageParser(buffer, result, err) {
   activeAlerts.no_usage = bits1.getBits(1);
   // TODO add to warnings
   // var anyAlertActiveNow = bits1.getBits(1);
-  result.active_alerts = objToList(activeAlerts);
+  result.active_alerts = activeAlerts;
 
   result.meter_status = meterStatusFormat(dataView.getUint8(), err);
 
   var bits2 = dataView.getUint8Bits();
-  result._meter_multiplier = meterMultiplierConvert(bits2.getBits(3));
-  if (result._meter_multiplier < 0) {
+  result.meter_multiplier = meterMultiplierConvert(bits2.getBits(3));
+  if (result.meter_multiplier < 0) {
     err.errors.push('invalid_multiplier');
     return;
   }
-  result._meter_medium = meterMediumFormat(bits2.getBits(2), err);
-  result._meter_unit = meterUnitFormat(bits2.getBits(2), err);
+  result.meter_medium = meterMediumFormat(bits2.getBits(2), err);
+  result.meter_unit = meterUnitFormat(bits2.getBits(2), err);
   var privacyModeActive = bits2.getBits(1);
 
   var actuality = dataView.getUint8();
   result.meter_actuality_duration__minutes = actualityDurationToMinutesFormat(actuality);
   result.meter_actuality_duration_formatted = actualityDurationToFormatStr(actuality);
 
-  result['meter_accumulated_volume__' + result._meter_unit] = volumeFormatUnit(result._meter_multiplier * dataView.getUint32(), result._meter_multiplier);
+  result['meter_accumulated_volume__' + result.meter_unit] = volumeFormatUnit(result.meter_multiplier * dataView.getUint32(), result.meter_multiplier);
 
   if (privacyModeActive) {
     var bits3 = dataView.getUint8Bits();
@@ -503,29 +495,29 @@ function usageParser(buffer, result, err) {
     var year = 2000 + yearLower + 8 * yearUpper;
     var date = new Date();
     date.setUTCFullYear(year);
-    date.setUTCMonth(month);
+    date.setUTCMonth(month, day);
     date.setUTCDate(day);
     // eslint-disable-next-line prefer-destructuring
     result.meter_readout_date = date.toISOString().split(/[T ]/i, 1)[0];
   }
 
   var bits5 = dataView.getUint8Bits();
-  result._app_connected_within_a_day = bits5.getBits(1);
+  result.app_connected_within_a_day = bits5.getBits(1);
   var deviceStatusSent = bits5.getBits(1);
 
   if (deviceStatusSent) {
     result.battery_remaining__years = parseFloat((dataView.getUint8() / 12.0).toFixed(1));
-    result._battery_voltage__V = parseFloat((dataView.getUint8() / 100.0 + 1.5).toFixed(2));
+    result.battery_voltage__V = parseFloat((dataView.getUint8() / 100.0 + 1.5).toFixed(2));
 
     result.internal_temperature__C = dataView.getInt8();
     var bits6 = dataView.getUint8Bits();
-    result._internal_temperature_min__C = bits6.getBits(4) * -2 + result.internal_temperature__C;
-    result._internal_temperature_max__C = bits6.getBits(4) * 2 + result.internal_temperature__C;
+    result.internal_temperature_min__C = bits6.getBits(4) * -2 + result.internal_temperature__C;
+    result.internal_temperature_max__C = bits6.getBits(4) * 2 + result.internal_temperature__C;
 
     result.radio_downlink_rssi__dBm = -1 * dataView.getUint8();
     var bits7 = dataView.getUint8Bits();
-    result._radio_downlink_snr__dB = bits7.getBits(4) * 2 - 20;
-    result._radio_uplink_power__dBm = bits7.getBits(4) * 2;
+    result.radio_downlink_snr__dB = bits7.getBits(4) * 2 - 20;
+    result.radio_uplink_power__dBm = bits7.getBits(4) * 2;
 
     result.meter_serial = serialFormat(dataView.getUint32());
   }
@@ -533,7 +525,7 @@ function usageParser(buffer, result, err) {
 
 // CONFIGURATION PAYLOADS
 function generalConfigurationParser(dataView, result, err) {
-  result._packet_type = 'general_configuration_packet';
+  result.packet_type = 'general_configuration_packet';
 
   var configuredParameters = {};
   var bits1 = dataView.getUint8Bits();
@@ -611,7 +603,7 @@ function generalConfigurationParser(dataView, result, err) {
 }
 
 function locationConfigurationParser(dataView, result) {
-  result._packet_type = 'location_configuration_packet';
+  result.packet_type = 'location_configuration_packet';
 
   var configuredParams = {};
   var bits1 = dataView.getUint8Bits();
@@ -642,43 +634,34 @@ function locationConfigurationParser(dataView, result) {
   }
 }
 
-function configurationParser(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
-
-  var packetType = dataView.getUint8();
-  if (packetType === 0x20) {
+function configurationParser(dataView, packet_type, result, err) {
+  if (packet_type === 0x20) {
     generalConfigurationParser(dataView, result, err);
-  } else if (packetType === 0x21) {
+  } else if (packet_type === 0x21) {
     locationConfigurationParser(dataView, result);
   } else {
-    err.errors.push('invalid_configuration_type ' + packetType);
+    err.errors.push('invalid_configuration_type ' + packet_type);
   }
 }
 
 // CONFIGURATION REQUESTS AND COMMANDS
-function configurationRequestsParser(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
-
-  var packetType = dataView.getUint8();
-  if (packetType === 0x20) {
-    result._packet_type = 'general_configuration_request';
-  } else if (packetType === 0x21) {
-    result._packet_type = 'location_configuration_request';
+function configurationRequestsParser(result, err) {
+  if (packet_type === 0x20) {
+    result.packet_type = 'general_configuration_request';
+  } else if (packet_type === 0x21) {
+    result.packet_type = 'location_configuration_request';
   } else {
-    err.errors.push('invalid_request_type ' + packetType);
+    err.errors.push('invalid_request_type ' + packet_type);
   }
 }
 
-function commandParser(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
-
-  var packetType = dataView.getUint8();
-  if (packetType === 0x03) {
-    if (buffer.length === 1) {
-      result._packet_type = 'local_time_request';
+function commandParser(dataView, packet_type, result, err) {
+  if (packet_type === 0x03) {
+    if (dataView.availableLen() === 1) {
+      result.packet_type = 'local_time_request';
       return;
     }
-    result._packet_type = 'local_time_response';
+    result.packet_type = 'local_time_response';
     result.device_local_time__s = dataView.getUint32();
 
     var date = new Date(result.device_local_time__s * 1000);
@@ -687,25 +670,22 @@ function commandParser(buffer, result, err) {
     if (result.device_local_time__s < startOf2020) {
       result.device_local_time_formatted = 'invalid';
     }
-  } else if (packetType === 0xFF) {
-    result._packet_type = 'enter_dfu_command';
+  } else if (packet_type === 0xFF) {
+    result.packet_type = 'enter_dfu_command';
   } else {
-    err.errors.push('invalid_command_type ' + packetType);
+    err.errors.push('invalid_command_type ' + packet_type);
   }
 }
 
 // SYSTEM MESSAGES
-function sysMessagesParser(buffer, result, err) {
-  var dataView = new BinaryExtract(buffer);
-
-  var packetType = dataView.getUint8();
-  if (packetType === 0x13) {
-    result._packet_type = 'faulty_downlink_packet';
+function sysMessagesParser(dataView, packet_type, result, err) {
+  if (packet_type === 0x13) {
+    result.packet_type = 'faulty_downlink_packet';
     result.packet_fport = dataView.getUint8();
     result.packet_error_reason = packetErrorReasonFormatter(dataView.getUint8());
     err.warnings.push('faulty_downlink_packet: ' + result.packet_error_reason);
-  } else if (packetType === 0x00) {
-    result._packet_type = 'boot_packet';
+  } else if (packet_type === 0x00) {
+    result.packet_type = 'boot_packet';
     result.device_serial = serialFormat(dataView.getUint32());
 
     result.device_firmware_version = dataView.getUint8().toString() + '.' + dataView.getUint8() + '.' + dataView.getUint8();
@@ -732,14 +712,17 @@ function sysMessagesParser(buffer, result, err) {
     dataView.getUint8();
     dataView.getUint8();
     result.device_uptime_accumulated__days = parseFloat((dataView.getUint24() / 24.0).toFixed(2));
-  } else if (packetType === 0x01) {
+  } else if (packet_type === 0x01) {
     var shutdownReason = shutdownReasonFormat(dataView.getUint8(), err);
-    var bufferUsage = buffer.slice(2);
-    usageParser(bufferUsage, result, err);
-    result._packet_type = 'shutdown_packet';
-    result._shutdown_reason = shutdownReason;
+    var usage_header = dataView.getUint8();
+    if (usage_header !== 0x04) {
+      err.errors.push('no_usage_header_found');
+    }
+    usageParser(dataView, result, err);
+    result.packet_type = 'shutdown_packet';
+    result.shutdown_reason = shutdownReason;
   } else {
-    err.errors.push('invalid_sys_msg_type ' + packetType);
+    err.errors.push('invalid_sys_msg_type ' + packet_type);
   }
 }
 
@@ -750,27 +733,35 @@ function checkFport(fport, expectedFport, err) {
 }
 
 function decodeByPacketHeader(fport, bytes, result, err) {
-  if (bytes.length === 0) {
+  var dataView = new BinaryExtract(bytes);
+  if (dataView.availableLen() === 0) {
     err.errors.push('empty_payload');
-  } else if (bytes[0] === 0x04) {
-    usageParser(bytes, result, err);
+    return result;
+  }
+  var packet_type = dataView.getUint8();
+  if (packet_type === 0x04) {
+    usageParser(dataView, result, err);
     checkFport(fport, 25, err);
-  } else if (bytes[0] === 0x20 || bytes[0] === 0x21) {
+  } else if (packet_type === 0x20 || packet_type === 0x21) {
     if (bytes.length === 1) {
-      configurationRequestsParser(bytes, result, err);
+      configurationRequestsParser(packet_type, result);
       checkFport(fport, 49, err);
     } else {
-      configurationParser(bytes, result, err);
+      configurationParser(dataView, packet_type, result, err);
       checkFport(fport, 50, err);
     }
-  } else if (bytes[0] === 0x03 || bytes[0] === 0xFF) {
-    commandParser(bytes, result, err);
+  } else if (packet_type === 0x03 || packet_type === 0xFF) {
+    commandParser(dataView, packet_type, result, err);
     checkFport(fport, 60, err);
-  } else if (bytes[0] === 0x00 || bytes[0] === 0x01 || bytes[0] === 0x13) {
-    sysMessagesParser(bytes, result, err);
+  } else if (packet_type === 0x00 || packet_type === 0x01 || packet_type === 0x13) {
+    sysMessagesParser(dataView, packet_type, result, err);
     checkFport(fport, 99, err);
   } else {
-    err.errors.push('invalid_header');
+    err.errors.push('invalid_packet_type');
+  }
+
+  if (dataView.availableLen() > 0) {
+    err.errors.push('packet_too_long');
   }
   return result;
 }
@@ -783,15 +774,7 @@ function decodeRaw(fport, bytes) {
   } catch (error) {
     err.errors.push(error.message);
   }
-  //  res._raw_payload = bytesToHexStr(bytes);
-  var out = { data: res };
-  if (err.errors.length) {
-    out.errors = err.errors;
-  }
-  if (err.warnings.length) {
-    out.warnings = err.warnings;
-  }
-  return out;
+  return { data: res, errors: err.errors, warnings: err.warnings };
 }
 
 // You need only one entrypoint, others can be removed.

@@ -1,43 +1,3 @@
-
-<!DOCTYPE html>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<html>
-<head>
-<style>
-    body {background-color: white; padding:0px; margin:0px; font-family: Helvetica; font-weight: lighter;}
-    h2   {background-color: #004f9e; color: white; font-weight:normal; padding: 10px; margin-block-start:0em;}
-    pre  {font-family: monospace; font-size: 9.5pt;}
-    span.dim {color: #bbbbbb;}
-    .footer{position: fixed; text-align: left; bottom: 0px; width: 100%; color: #bbbbbb; background-color: white; padding-left: 10px; font-size: 9pt;}
-</style>
-</head>
-<body>
-<h2>NAS UL20xx Payload Decoder for 1.0.x</h2>
-<div style="padding-left: 10px;">
-  <label>Supported devices: UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x firmwares.</label><br><br>
-  <label for="fport">fPort: </label>
-  <select id="fport">
-  
-    <option value="24">24 - Status</option>
-    <option value="25">25 - Usage</option>
-    <option value="49">49 - Config Requests</option>
-    <option value="50">50 - Configurations</option>
-    <option value="51">51 - DFU Command</option>
-    <option value="60">60 - Commands</option>
-    <option value="61">61 - Event Notification</option>
-    <option value="99">99 - System Messages</option>
-  </select><br><br>
-  <label for="checkbox">Encoding Base64 / Hex: </label>
-  <input type="checkbox" id="payload_is_base64"><br><br>
-  <label for="payload_raw">Payload: </label>
-  <input type="text" id="payload_raw" size="100"><br><br>
-<p id="demo"></p>
-</div>
-<div class="footer">Generated at 2024-02-01T12:48:13.045Z</div>
-<script>
-
-/// CODEC JAVASCRIPT STARTS FROM HERE
-
 function stringFromUTF8Array(data) {
   // from https://weblog.rogueamoeba.com/2017/02/27/javascript-correctly-converting-a-byte-array-to-a-utf-8-string/
   var extraByteMap = [1, 1, 1, 1, 2, 2, 3, 0];
@@ -225,36 +185,6 @@ function bytesToHexStr(byteArr) {
   return res;
 }
 
-function profileReason(reason, err) {
-  if (reason < 240) {
-    return reason;
-  }
-
-  switch (reason) {
-    case 247:
-      return 'calendar_active';
-    case 248:
-      return 'init_active';
-    case 249:
-      return 'profile_not_active';
-    case 254:
-      return 'value_differ';
-    case 246:
-      return 'driver_not_found';
-    case 250:
-      return 'ldr_input_active';
-    case 252:
-      return 'dig_input_active';
-    case 253:
-      return 'manual_active';
-    case 255:
-      return 'unknown';
-    default:
-      err.errors.push('invalid_reason');
-      return 'invalid_reason';
-  }
-}
-
 function addressParse(addr, ffStr, err) {
   if (addr === 0x01) {
     return 'analog_0_10v';
@@ -289,8 +219,7 @@ function profileParserPartial(dataView, profile, err) {
   profile.profile_id = id === 255 ? 'no_profile' : id;
 
   var length = 0;
-  var ver = dataView.getUint8();
-  profile.profile_version = profileReason(ver, err);
+  length = dataView.getUint8();
 
   var addr = dataView.getUint8();
   profile.address = addressParse(addr, "all_devices", err);
@@ -324,6 +253,7 @@ function profileParserPartial(dataView, profile, err) {
   }
   profile.days_active = days;
 
+  dataView.getUint8();
   return length;
 }
 
@@ -350,6 +280,43 @@ function decodeLdrConfig(dataView, result) {
   behaviorBits.getBits(2);
   result.trigger_alert_enabled = behaviorBits.getBits(1);
 }
+function decodeLightDimStep(dataView) {
+  var res = {};
+  var light = dataView.getFloat();
+  var level = dataView.getUint8();
+  res.light_level__lx = formatLightLx(light);
+  res.dimming_level__percent = decodeDimmingLevel(level, 'inactive');
+  return res;
+}
+
+function decodeLightSensorConfig(dataView, result, err) {
+  result.packet_type = 'light_sensor_config_packet';
+
+  if (dataView.getUint8() === 0xFF) {
+    return;
+  }
+  var bits = dataView.getUint8Bits();
+  result.alert_on_every_step = bits.getBits(1);
+  result.clamp_profile = bits.getBits(1);
+  result.clamp_dig = bits.getBits(1);
+  result.interpolate_steps = bits.getBits(1);
+
+  result.measurement_duration__s = dataView.getUint8();
+
+  result.address = addressParse(dataView.getUint8(), "all_devices", err);
+
+  result.dim_steps = [];
+  while (dataView.availableLen()) {
+    result.dim_steps.push(decodeLightDimStep(dataView));
+  }
+}
+
+function decodeDimNotifyConfig(dataView, result, err){
+  result.packet_type = 'dim_notify_config_packet';
+  var rdly = dataView.getUint8();
+  result.random_delay__s = rdly === 0xff ? 'disabled' : rdly * 5;
+  result.packet_limit__s = dataView.getUint8() * 60;
+}
 
 function decodeDimmingLevel(level, ffName) {
   if (level === 0xFF) {
@@ -374,6 +341,31 @@ function decodeDigConfig(dataView, result, err) {
   result.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'disabled');
 }
 
+function decodeDigInputConfigNew(dataView, result, err) {
+  result.packet_type = 'dig_input_config_packet';
+
+  var index = dataView.getUint8();
+  if (index === 0xFF) {
+    return;
+  }
+
+  var bits = dataView.getUint8Bits();
+  result.dig_mode_button = bits.getBits(1);
+  result.polarity_high_or_rising = bits.getBits(1);
+  result.alert_on_activation = bits.getBits(1);
+  result.alert_on_inactivation = bits.getBits(1);
+
+  result.address = addressParse(dataView.getUint8(), "all_devices", err);
+
+  result.active_dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'inactive');
+  result.inactive_dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'inactive');
+
+  var on_delay = dataView.getUint16();
+  var off_delay = dataView.getUint16();
+  result.on_delay__s = on_delay;
+  result.off_delay__s = off_delay;
+}
+
 function decodeStepTime(inByte) {
   var minTotal = inByte * 10;
   var hour = Math.trunc(minTotal / 60);
@@ -390,21 +382,39 @@ function decodeOdRelaySwStep(dataView) {
   return res;
 }
 
-function decodeCalendarConfigV10(dataView, result) {
+function decodeZenithStep(dataView) {
+  var step = {};
+  step.zenith_angle__deg = (dataView.getInt8() / 6 + 90).toFixed(2);
+
+  var dim = dataView.getUint8();
+  step.dimming_level__percent = decodeDimmingLevel(dim, 'disabled');
+  return step;
+}
+
+function decodeCalendarConfigV11(dataView, result) {
   result.packet_type = 'calendar_config_packet';
 
-  var sunrise = dataView.getInt8();
-  var sunset = dataView.getInt8();
-  var lat = dataView.getInt16() / 100;
-  var lon = dataView.getInt16() / 100;
+  var steps = dataView.getUint8Bits();
+  var sunriseSteps = steps.getBits(4);
+  var sunsetSteps = steps.getBits(4);
 
-  var clear = sunrise === -1 && sunset === -1;
+  var bits = dataView.getUint8Bits();
+  result.calendar_prefers_meta_pos = bits.getBits(1);
+  result.calendar_clamps_profiles = bits.getBits(1);
+  result.calendar_clamps_dig = bits.getBits(1);
 
-  result.sunrise_offset__minutes = clear ? 'disabled' : sunrise;
-  result.sunset_offset__minutes = clear ? 'disabled' : sunset;
+  result.latitude__deg = dataView.getInt16() / 100;
+  result.longitude__deg = dataView.getInt16() / 100;
 
-  result.latitude__deg = lat;
-  result.longitude__deg = lon;
+  result.sunrise_steps = [];
+  result.sunset_steps = [];
+
+  for (var i1 = 0; i1 < sunriseSteps; i1 += 1) {
+    result.sunrise_steps.push(decodeZenithStep(dataView));
+  }
+  for (var i2 = 0; i2 < sunsetSteps; i2 += 1) {
+    result.sunset_steps.push(decodeZenithStep(dataView));
+  }
 }
 
 function decodeStatusConfig(dataView, result) {
@@ -422,10 +432,10 @@ function decodeDimmingStep(dataView) {
 
 function decodeProfileConfig(dataView, result, err) {
   result.packet_type = 'profile_config_packet';
-  profileParserPartial(dataView, result, err);
+  var len = profileParserPartial(dataView, result, err);
   result.dimming_steps = [];
 
-  while (dataView.availableLen()) {
+  for (var i = 0; i < len; i += 1) {
     result.dimming_steps.push(decodeDimmingStep(dataView));
   }
 }
@@ -434,21 +444,13 @@ function decodeTimeConfig(dataView, result, err) {
   result.packet_type = 'time_config_packet';
 
   var epoch = dataView.getUint32();
+  if (epoch == 0) {
+    result.device_unix_epoch = 'force_lorawan_devicetimereq';
+  }
+  else
   {
     result.device_unix_epoch = decodeUnixEpoch(epoch, err);
   }
-}
-
-function decodeLegacyDefaultsConfig(dataView, result) {
-  result.packet_type = 'legacy_defaults_config_packet';
-
-  result.default_dim__percent = dataView.getUint8();
-
-  var alerts = dataView.getUint8Bits();
-  result.ldr_alert_enabled = alerts.getBits(1);
-  alerts.getBits(1);
-  result.dig_alert_enabled = alerts.getBits(1);
-  result.dali_alert_enabled = alerts.getBits(1);
 }
 
 function decodeUsageConfig(dataView, result) {
@@ -470,9 +472,36 @@ function decodeHolidayConfig(dataView, result) {
   result.packet_type = 'holiday_config_packet';
   result.holidays = [];
 
-  while (dataView.availableLen()) {
+  var len = dataView.getUint8();
+  for (var i = 0; i < len; i += 1) {
     result.holidays.push(decodeMonthDay(dataView));
   }
+}
+
+function decodeDaliMonitorConfig(dataView, result) {
+  var bits = dataView.getUint8Bits();
+  result.packet_type = 'dali_monitor_config_packet';
+  result.send_dali_alert = bits.getBits(1);
+  result.correct_dali_dimming_level = bits.getBits(1);
+  result.periodic_bus_scan_enabled = bits.getBits(1);
+
+  var interval = dataView.getUint16();
+  if (interval === 0) {
+    result.monitoring_interval__s = 'disabled';
+  } else {
+    result.monitoring_interval__s = interval;
+  }
+}
+
+function decodeFallbackDimConfig(dataView, result) {
+  result.packet_type = 'fallback_dim_config_packet';
+  result.fallback_dimming_level__percent = dataView.getUint8();
+}
+
+function decodeMulticastFcntConfig(dataView, result) {
+  result.packet_type = 'multicast_fcnt_config_packet';
+  result.multicast_device = dataView.getUint8();
+  result.multicast_fcnt = dataView.getUint32();
 }
 
 function decodeBootDelayConfig(dataView, result) {
@@ -495,49 +524,37 @@ function decodeFade(fade, err) {
   }
 }
 
-function decodeDefaultsConfig(dataView, result, err) {
-  result.packet_type = 'defaults_config_packet';
-  var bits = dataView.getUint8Bits();
-  var dim = bits.getBits(1);
-  var maxDim = bits.getBits(1);
-  var fade = bits.getBits(1);
-  var sunsetMode = bits.getBits(1);
-  var legacyMode = bits.getBits(1);
-  if (dim) {
-    result.default_dim__percent = dataView.getUint8();
-  }
-  if (maxDim) {
-    var md = dataView.getUint8();
-    result.max_dim__percent = md === 0xff ? 'default' : md;
-  }
-  if (fade) {
-    var f = dataView.getUint8();
-    result.fade_duration__s = decodeFade(f, err);
-  }
-  if (sunsetMode) {
-    result.switch_point_sunset = dataView.getUint8Bits().getBits(1) ? 'sunset' : 'twilight';
-  }
-  if (legacyMode) {
-    result.legacy_mode_enabled = dataView.getUint8Bits().getBits(1);
-  }
-}
-
-function decodeLocationConfigV10(dataView, result) {
+function decodeLocationConfigV11(dataView, result) {
   result.packet_type = 'location_config_packet';
 
-  var bits1 = dataView.getUint8Bits();
-  var positionSent = bits1.getBits(1);
-  var addressSent = bits1.getBits(1);
+  var addressLen = dataView.getUint8();
 
-  if (positionSent) {
-    result.latitude__deg = dataView.getInt32() / 10000000.0;
-    result.longitude__deg = dataView.getInt32() / 10000000.0;
-  }
-  if (addressSent) {
-    result.address = dataView.getTextUtf8(dataView.getUint8());
+  result.latitude__deg = dataView.getInt32() / 10000000.0;
+  result.longitude__deg = dataView.getInt32() / 10000000.0;
+
+  result.address = dataView.getTextUtf8(addressLen);
+}
+
+function decodeLumalinkMode(mode, err) {
+  switch (mode) {
+    case 0:
+      return 'never_advertise';
+    case 1:
+      return 'first_commission';
+    case 2:
+      return 'every_boot';
+    case 3:
+      return 'always';
+    default:
+      err.errors.push('invalid_mode');
+      return 'invalid_mode';
   }
 }
 
+function decodeLumalinkConfig(dataView, result, err) {
+  result.packet_type = 'lumalink_config_packet';
+  result.access_mode = decodeLumalinkMode(dataView.getUint8(), err);
+}
 
 function decodeLedConfig(dataView, result) {
   result.packet_type = 'onboard_led_config_packet';
@@ -570,12 +587,16 @@ function decodeMeteringAlertConfig(dataView, result, err) {
   result.min_power_factor = minPf === 0xFF ? 'alert_off' : minPf / 100.0;
 }
 
+function decodeFadeConfig(dataView, result, err) {
+  result.packet_type = 'fade_config_packet' ;
+  result.fade_duration__s = decodeFade(dataView.getUint8(), err);
+}
+
 function decodeMulticastConfig(dataView, result, err) {
   result.packet_type = 'multicast_config_packet';
   var dev = dataView.getUint8();
 
   var invalidMc = dev > 3;
-  invalidMc = dev === 0 || dev > 4;
   if (invalidMc) {
     err.errors.push('invalid_multicast_device');
     return;
@@ -597,14 +618,11 @@ function decodeClearConfig(dataView, result, err) {
     case 0x03:
       result.reset_target = 'dig_input_config';
       break;
-    case 0x04:
+    case 0x21:
       result.reset_target = 'profile_config';
       result.address = addressParse(dataView.getUint8(), 'all_profiles', err);
-      if (dataView.availableLen()) {
-        result.profile_id = dataView.getUint8();
-      }
       break;
-    case 0x06:
+    case 0x23:
       result.reset_target = 'holiday_config';
       break;
     case 0x52:
@@ -662,97 +680,53 @@ function decodeFport50(dataView, result, err) {
       decodeClearConfig(dataView, result, err);
       return;
 
-    case 0x06:
-      decodeCalendarConfigV10(dataView, result);
+    case 0x20:
+      decodeCalendarConfigV11(dataView, result);
       return;
-    case 0x08:
+    case 0x21:
       decodeProfileConfig(dataView, result, err);
       return;
-    case 0x0A:
-      decodeLegacyDefaultsConfig(dataView, result);
+    case 0x22:
+      decodeFadeConfig(dataView, result, err);
       return;
-    case 0x0C:
+    case 0x23:
       decodeHolidayConfig(dataView, result);
       return;
-    case 0x0E:
-      decodeDefaultsConfig(dataView, result, err);
+    case 0x24:
+      decodeDaliMonitorConfig(dataView, result);
       return;
-    case 0x13:
-      decodeLocationConfigV10(dataView, result);
+    case 0x25:
+      decodeFallbackDimConfig(dataView, result);
       return;
-
+    case 0x26:
+      decodeLocationConfigV11(dataView, result);
+      return;
+    case 0x27:
+      decodeLumalinkConfig(dataView, result, err);
+      return;
+    case 0x28:
+      decodeDigInputConfigNew(dataView, result, err);
+      return;
+    case 0x29:
+      decodeLightSensorConfig(dataView, result, err);
+      return;
+    case 0x2A:
+      decodeDimNotifyConfig(dataView, result);
+      return;
+    case 0x53:
+      decodeMulticastFcntConfig(dataView, result);
+      return;
+    case 0xFE:
+      result.packet_type = 'chained_config_packet';
+      result.payloads = [];
+      while (dataView.availableLen()) {
+        var packet = {};
+        decodeFport50(dataView, packet, err);
+        result.payloads.push(packet);
+      }
+      return;
     default:
       err.errors.push('invalid_packet_type');
-  }
-}
-
-function daliStatus(bits, address, err) {
-  var status = {
-    driver_error: false,
-    lamp_failure: false,
-    lamp_on: false,
-    limit_error: false,
-    fade_running: false,
-    reset_state: false,
-    missing_short_address: false,
-    power_failure: false,
-  };
-  if (bits.data === 0xFF) return status;
-
-  var driverError = bits.getBits(1);
-  status.driver_error = driverError;
-
-  var lampFailure = bits.getBits(1);
-  status.lamp_failure = lampFailure;
-
-  status.lamp_on = bits.getBits(1);
-
-  var limitError = bits.getBits(1);
-  status.limit_error = limitError;
-
-  status.fade_running = bits.getBits(1);
-
-  var resetState = bits.getBits(1);
-  status.reset_state = resetState;
-
-  var missingAddress = bits.getBits(1);
-  status.missing_short_address = missingAddress;
-
-  var powerFailure = bits.getBits(1);
-  status.power_failure = powerFailure;
-
-  if (driverError) err.warnings.push(address + ' driver_error');
-  if (lampFailure) err.warnings.push(address + ' lamp_failure');
-  if (limitError) err.warnings.push(address + ' limit_error');
-  if (resetState) err.warnings.push(address + ' reset_state');
-  if (powerFailure) err.warnings.push(address + ' power_failure');
-  return status;
-}
-
-function decodeDaliStatus(dataView, err) {
-  var result = {};
-  var addr = dataView.getUint8();
-  var addrParsed = addressParse(addr, null, err);
-  result.address = addrParsed;
-
-  result.status = daliStatus(dataView.getUint8Bits(), addrParsed, err);
-  return result;
-}
-
-function decodeDaliStatusReq(dataView, result, err) {
-  result.packet_type = 'dali_status_request';
-  if (dataView.availableLen() === 1) {
-    var addr = dataView.getUint8();
-    if (addr === 0xFE) {
-      result.address = 'all_drivers';
-    } else {
-      result.address = addressParse(addr, null, err);
-    }
-  } else {
-    result.dali_statuses = [];
-    while (dataView.availableLen()) {
-      result.dali_statuses.push(decodeDaliStatus(dataView, err));
-    }
   }
 }
 
@@ -802,6 +776,14 @@ function decodeCustomDaliCommand(dataView, result) {
   result.dali_command = bytesToHexStr(dataView.getRaw(dataView.availableLen()));
 }
 
+function decodeDimMap(dataView, err) {
+  var result = {};
+  result.address = addressParse(dataView.getUint8(), null, err);
+  result.dali_min_level = dataView.getUint8();
+  result.dali_max_level = dataView.getUint8();
+  result.dimming_curve = dataView.getUint8() === 0 ? 'logarithmic' : 'linear';
+  return result;
+}
 
 function decodeStatusRequest(dataView, result, err) {
   result.packet_type = 'status_usage_request';
@@ -809,40 +791,14 @@ function decodeStatusRequest(dataView, result, err) {
   var bits = dataView.getUint8Bits();
   result.usage_requested = bits.getBits(1);
   result.status_requested = bits.getBits(1);
-}
-
-function decodeDigVal(val) {
-  if (val === 0x00) return 'off';
-  if (val === 0x01) return 'on';
-  if (val === 0xFF) return 'n/a';
-  return 'invalid_value';
-}
-
-function decodeInterfacesRequest(dataView, result, err) {
-  result.packet_type = 'interface_request';
-  if (dataView.availableLen() === 1) {
-    dataView.getUint8();
-    return;
+  result.dim_map_report_requested = bits.getBits(1);
+  
+  if (result.dim_map_report_requested && dataView.availableLen() > 0) {
+    result.drivers = [];
+    while (dataView.availableLen()) {
+      result.drivers.push(decodeDimMap(dataView, err));
+    }
   }
-
-  var dig = dataView.getUint8();
-  var digVal = dataView.getUint8();
-  var ldr = dataView.getUint8();
-  var ldrVal = dataView.getUint8();
-  var thr = dataView.getUint8();
-  dataView.getUint8();
-  var relay = dataView.getUint8();
-  var relayBits = dataView.getUint8Bits();
-  if (dig !== 0x01 || ldr !== 0x02 || thr !== 0x03 || relay !== 0x04) {
-    err.errors.push('invalid_interface');
-    return;
-  }
-
-  result.dig = decodeDigVal(digVal);
-  result.ldr = ldrVal === 0xFF ? 'n/a' : ldrVal;
-  // thr deprecated
-  result.internal_relay_closed = relayBits.getBits(1);
-  result.open_drain_output_on = relayBits.getBits(1);
 }
 
 function decodeDriverMemoryPartial(dataView, result, err) {
@@ -901,6 +857,15 @@ function decodeTimedDimmingCommand(dataView, result, err) {
   }
 }
 
+function decodeAddressDaliDriver(dataView, result, err) {
+  result.packet_type = 'address_dali_driver' ;
+  result.address = addressParse(dataView.getUint8(), 'rescan_dali_bus', err);
+}
+
+function decodeDaliIdentify(result) {
+  result.packet_type = 'dali_identify';
+}
+
 function decodeOpenDrainSwitching(dataView, result) {
   result.packet_type = 'open_drain_output_control';
   result.open_drain_output_on = dataView.getUint8Bits().getBits(1);
@@ -919,7 +884,7 @@ function decodeFport60(dataView, result, err) {
       decodeCustomDaliCommand(dataView, result);
       return;
     case 0x05:
-      decodeStatusRequest(dataView, result);
+      decodeStatusRequest(dataView, result, err);
       return;
     case 0x07:
       decodeReadDriverMemory(dataView, result, err);
@@ -934,11 +899,11 @@ function decodeFport60(dataView, result, err) {
       decodeOpenDrainSwitching(dataView, result);
       return;
 
-    case 0x00:
-      decodeDaliStatusReq(dataView, result, err);
+    case 0x0A:
+      decodeAddressDaliDriver(dataView, result, err);
       return;
-    case 0x06:
-      decodeInterfacesRequest(dataView, result, err);
+    case 0x0B:
+      decodeDaliIdentify(result);
       return;
 
     default:
@@ -946,387 +911,12 @@ function decodeFport60(dataView, result, err) {
   }
 }
 
-// UPLINK ONLY THINGS
-
-function statusProfileParser(dataView, err) {
-  var profile = {};
-  profileParserPartial(dataView, profile, err);
-
-  var level = dataView.getUint8();
-  profile.dimming_level__percent = decodeDimmingLevel(level, 'resume');
-  return profile;
-}
-
-
-function statusParser1_0(dataView, result, err) {
-  // does not support 1.0.x legacy mode status packet!
-  result.packet_type = 'status_packet';
-
-  var epoch = dataView.getUint32();
-  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
-
-  var statusField = {};
-  var bits = dataView.getUint8Bits();
-
-  var daliErrExt = bits.getBits(1);
-  var daliErrConn = bits.getBits(1);
-  var ldrOn = bits.getBits(1);
-  bits.getBits(1);
-  var digOn = bits.getBits(1);
-  var err1 = bits.getBits(1);
-  bits.getBits(1);
-  var internalRelay = bits.getBits(1);
-
-  statusField.dali_error_external = daliErrExt;
-  if (daliErrExt) err.warnings.push('dali_external_error');
-
-  statusField.dali_connection_error = daliErrConn;
-  if (daliErrConn) err.warnings.push('dali_connection_error');
-
-  statusField.hardware_error = err1;
-  if (err1) err.warnings.push('hardware_error');
-
-  statusField.internal_relay_closed = internalRelay;
-  statusField.ldr_input_on = ldrOn;
-  statusField.dig_input_on = digOn;
-
-  result.status = statusField;
-
-  result.downlink_rssi__dBm = -1 * dataView.getUint8();
-
-  result.downlink_snr__dB = dataView.getInt8();
-
-  result.mcu_temperature__C = dataView.getInt8();
-
-  var reportedFields = {};
-  var bits2 = dataView.getUint8Bits();
-  bits2.getBits(1); // legacy thr
-  var ldrSent = bits2.getBits(1);
-  var odOn = bits2.getBits(1);
-  bits2.getBits(1);
-
-  result.status.open_drain_output_on = odOn;
-
-  reportedFields.voltage_alert_in_24h = bits2.getBits(1);
-  reportedFields.lamp_error_alert_in_24h = bits2.getBits(1);
-  reportedFields.power_alert_in_24h = bits2.getBits(1);
-  reportedFields.power_factor_alert_in_24h = bits2.getBits(1);
-  result.analog_interfaces = reportedFields;
-
-  if (ldrSent) {
-    result.ldr_input_value = dataView.getUint8();
-  }
-
-  result.profiles = [];
-  while (dataView.availableLen()) {
-    result.profiles.push(statusProfileParser(dataView, err));
-  }
-}
-
-function usageConsumptionParse(dataView, err) {
-  var result = {};
-  var addr = dataView.getUint8();
-  result.address = addressParse(addr, 'internal_measurement', err);
-
-  var bits = dataView.getUint8Bits();
-  if (bits.getBits(1)) {
-    result.active_energy__Wh = dataView.getUint32();
-  }
-  if (bits.getBits(1)) {
-    result.active_power__W = dataView.getUint16();
-  }
-  if (bits.getBits(1)) {
-    result.load_side_energy__Wh = dataView.getUint32();
-  }
-  if (bits.getBits(1)) {
-    result.load_side_power__W = dataView.getUint16();
-  }
-  if (bits.getBits(1)) {
-    var rawPf = dataView.getUint8();
-    result.power_factor = rawPf === 0xFF ? 'unknown' : (rawPf / 100.0);
-  }
-  if (bits.getBits(1)) {
-    result.mains_voltage__V = dataView.getUint8();
-  }
-  if (bits.getBits(1)) {
-    result.driver_operating_time__s = dataView.getUint32();
-  }
-  if (bits.getBits(1)) {
-    var sec = dataView.getUint32();
-    if (addr === 0xFF) sec = sec * 3600;
-    result.lamp_on_time__s = sec;
-  }
-  return result;
-}
-function usageParser(dataView, result, err) {
-
-  result.packet_type = 'usage_packet';
-
-  result.consumption = [];
-  while (dataView.availableLen()) {
-    result.consumption.push(usageConsumptionParse(dataView, err));
-  }
-}
-
-function deviceConfigParser(config, err) {
-  switch (config) {
-    case 0:
-      return 'dali';
-    case 1:
-      return 'dali_nc';
-    case 2:
-      return 'dali_no';
-    case 3:
-      return 'analog_nc';
-    case 4:
-      return 'analog_no';
-    case 5:
-      return 'dali_analog_nc';
-    case 6:
-      return 'dali_analog_no';
-    case 7:
-      return 'dali_analog_nc_no';
-    default:
-      err.errors.push('invalid_device_config');
-      return 'invalid_config';
-  }
-}
-
-function optionalFeaturesParser(byte) {
-  var res = {};
-  var bits = new BitExtract(byte);
-  bits.getBits(1);
-  bits.getBits(1);
-  res.dig_input = bits.getBits(1);
-  res.ldr_input = bits.getBits(1);
-  res.open_drain_output = bits.getBits(1);
-  res.metering = bits.getBits(1);
-  bits.getBits(1);
-  bits.getBits(1);
-  return res;
-}
-
-function daliSupplyParse(data, err) {
-  if (data < 0x70) {
-    return data;
-  }
-  switch (data) {
-    case 0x7E:
-      return 'bus_high';
-    case 0x7f:
-      err.warnings.push('dali_bus_error');
-      return 'bus_error';
-    default:
-      return 'invalid_value';
-  }
-}
-
-function resetReasonParse(byte, err) {
-  var res = [];
-  var bits = new BitExtract(byte);
-  if (bits.getBits(1)) {
-    res.push('reset_0');
-  }
-  if (bits.getBits(1)) {
-    res.push('watchdog_reset');
-    err.warnings.push('watchdog_reset');
-  }
-  if (bits.getBits(1)) {
-    res.push('soft_reset');
-  }
-  if (bits.getBits(1)) {
-    res.push('reset_3');
-  }
-  if (bits.getBits(1)) {
-    res.push('reset_4');
-  }
-  if (bits.getBits(1)) {
-    res.push('reset_5');
-  }
-  if (bits.getBits(1)) {
-    res.push('reset_6');
-  }
-  if (bits.getBits(1)) {
-    res.push('reset_7');
-  }
-  return res;
-}
-
-function bootParser(dataView, result, err) {
-  result.packet_type = 'boot_packet';
-
-  result.device_serial = intToHexStr(dataView.getUint32(), 8);
-
-  // eslint-disable-next-line no-bitwise
-  result.firmware_version = dataView.getUint8() + '.' + dataView.getUint8() + '.' + dataView.getUint8();
-
-  result.device_unix_epoch = decodeUnixEpoch(dataView.getUint32(), err);
-
-  result.device_config = deviceConfigParser(dataView.getUint8(), err);
-
-  result.optional_features = optionalFeaturesParser(dataView.getUint8());
-
-  var daliBits = dataView.getUint8Bits();
-  result.dali_supply_state__V = daliSupplyParse(daliBits.getBits(7), err);
-  result.dali_power_source_external = daliBits.getBits(1) ? 'external' : 'internal';
-
-  var driver = dataView.getUint8Bits();
-  result.dali_addressed_driver_count = driver.getBits(7);
-  var unadressed = driver.getBits(1);
-  result.dali_unadressed_driver_found = unadressed;
-  if (unadressed) {
-    err.warnings.push("unadressed_dali_driver_on_bus");
-  }
-
-  if (dataView.availableLen()) {
-    result.reset_reason = resetReasonParse(dataView.getUint8(), err);
-  }
-}
-
-function errorCodeParser(reason) {
-  switch (reason) {
-    case 0x00:
-      return 'n/a';
-    case 0x01:
-      return 'n/a';
-    case 0x02:
-      return 'unknown_fport';
-    case 0x03:
-      return 'packet_size_short';
-    case 0x04:
-      return 'packet_size_long';
-    case 0x05:
-      return 'value_error';
-    case 0x06:
-      return 'protocol_parse_error';
-    case 0x07:
-      return 'reserved_flag_set';
-    case 0x08:
-      return 'invalid_flag_combination';
-    case 0x09:
-      return 'unavailable_feature_request';
-    case 0x0A:
-      return 'unsupported_header';
-    case 0x0B:
-      return 'unreachable_hw_request';
-    case 0x0C:
-      return 'address_not_available';
-    case 0x0D:
-      return 'internal_error';
-    case 0x0E:
-      return 'packet_size_error';
-    case 0x81:
-      return 'profile_id_seq_error';
-    case 0x82:
-      return 'profile_destination_eror';
-    case 0x83:
-      return 'profile_days_error';
-    case 0x84:
-      return 'profile_step_count_error';
-    case 0x85:
-      return 'profile_step_value_error';
-    case 0x86:
-      return 'profile_step_unsorted_error';
-    default:
-      return 'invalid_error_code';
-  }
-}
-
-function configFailedParser(dataView, result, err) {
-  result.packet_type = 'invalid_downlink_packet';
-  result.downlink_from_fport = dataView.getUint8();
-  var error = errorCodeParser(dataView.getUint8());
-  result.error_reason = error;
-  err.warnings.push('downlink_error ' + error);
-}
-function decodeFport99(dataView, result, err) {
-  var header = dataView.getUint8();
-  switch (header) {
-    case 0x00:
-      bootParser(dataView, result, err);
-      return;
-    case 0x13:
-      configFailedParser(dataView, result, err);
-      return;
-    default:
-      err.errors.push('invalid_packet_type');
-  }
-}
-
-function decodeFport61(dataView, result, err) {
-  var header = dataView.getUint8();
-  var rawByte2 = dataView.getUint8();
-  // eslint-disable-next-line no-bitwise
-  var len = rawByte2 >> 4;
-  switch (header) {
-    case 0x80:
-      result.packet_type = 'dig_input_alert';
-      err.warnings.push('dig_input_alert');
-
-      if (len === 2) {
-        result.dig_input_event_counter = dataView.getUint16();
-      }
-      else if (len === 4) {
-        var bit2 = new BitExtract(rawByte2);
-        result.dig_input_on = bit2.getBits(1);
-        result.dig_input_event_counter = dataView.getUint32();
-      }
-      else {
-        err.errors.push('invalid_packet_length');
-      }
-      return;
-    case 0x81:
-      result.packet_type = 'ldr_input_alert';
-      if (len !== 2) {
-        err.errors.push('invalid_packet_length');
-        return;
-      }
-      err.warnings.push('ldr_input_alert');
-
-      var state = dataView.getUint8Bits().getBits(1);
-      var val = dataView.getUint8();
-      result.ldr_input_on = state;
-      result.ldr_input_value = val;
-      return;
-    case 0x83:
-      result.packet_type = 'dali_driver_alert';
-
-      result.drivers = [];
-      while (dataView.availableLen()) {
-        result.drivers.push(decodeDaliStatus(dataView, err));
-      }
-      return;
-    case 0x84:
-      result.packet_type = 'metering_alert';
-      var cond = new BitExtract(rawByte2);
-
-      var lampError = cond.getBits(1);
-      var overCurrent = cond.getBits(1);
-      var underVoltage = cond.getBits(1);
-      var overVoltage = cond.getBits(1);
-      var lowPowerFactor = cond.getBits(1);
-
-      result.lamp_error_alert = lampError;
-      result.over_current_alert = overCurrent;
-      result.under_voltage_alert = underVoltage;
-      result.over_voltage_alert = overVoltage;
-      result.low_power_factor_alert = lowPowerFactor;
-
-      if (lampError) err.warnings.push('metering_lamp_error');
-      if (overCurrent) err.warnings.push('metering_over_current');
-      if (underVoltage) err.warnings.push('metering_under_voltage');
-      if (overVoltage) err.warnings.push('metering_over_voltage');
-      if (lowPowerFactor) err.warnings.push('metering_low_power_factor');
-
-      result.power__W = dataView.getUint16();
-
-      result.voltage__V = dataView.getUint16();
-
-      result.power_factor = dataView.getUint8() / 100;
-      return;
-    default:
-      err.errors.push('invalid_packet_type');
-  }
+function formatLightLx(lx) {
+  var log10_val = Math.log10(lx);
+  var log10_pos = log10_val >= 0 ? log10_val : 0;
+  var log10_lim = log10_pos > 3 ? 3 : log10_pos;
+  var decimals = 3 - Math.trunc(log10_lim);
+  return lx.toFixed(decimals);
 }
 // DOWNLINK ONLY THINGS
 
@@ -1362,25 +952,37 @@ function decodeFport49(dataView, result, err) {
       var mcDevice = dataView.getUint8();
       result.multicast_device = mcDevice === 0xFF ? 'all' : mcDevice;
       return;
-    case 0x06:
+    case 0x20:
       result.packet_type = 'calendar_config_request';
       return;
-    case 0x08:
+    case 0x21:
       result.packet_type = 'profile_config_request';
-      var id = dataView.getUint8();
-      result.profile_id = id === 0xFF ? 'all_profiles' : id;
+      var pid = dataView.getUint8();
+      result.profile_id = pid === 0xFF ? 'all_profiles' : pid;
       return;
-    case 0x0A:
-      result.packet_type = 'default_dim_config_request';
+    case 0x22:
+      result.packet_type = 'fade_config_request';
       return;
-    case 0x0C:
+    case 0x23:
       result.packet_type = 'holiday_config_request';
       return;
-    case 0x0E:
-      result.packet_type = 'defaults_config_request';
+    case 0x24:
+      result.packet_type = 'dali_monitor_config_request';
       return;
-    case 0x13:
+    case 0x25:
+      result.packet_type = 'fallback_dim_config_request';
+      return;
+    case 0x26:
       result.packet_type = 'location_config_request';
+      return;
+    case 0x27:
+      result.packet_type = 'lumalink_config_request';
+      return;
+    case 0x28:
+      result.packet_type = 'dig_input_config_request';
+      return;
+    case 0x29:
+      result.packet_type = 'light_input_config_request';
       return;
     default:
       err.errors.push('invalid_packet_type');
@@ -1393,6 +995,9 @@ function decodeFport51(dataView, result, err) {
     case 0xFF:
       result.packet_type = 'activate_dfu_command';
       return;
+    case 0xFE:
+      result.packet_type = 'restart_controller_command';
+      return;
     default:
       err.errors.push('invalid_command');
   }
@@ -1402,10 +1007,6 @@ function decodeByFport(fport, bytes, result, err) {
   var dataView = new BinaryExtract(bytes);
   if (dataView.availableLen() === 0) {
     err.errors.push('empty_payload');
-  } else if (fport === 24) {
-    statusParser1_0(dataView, result, err);
-  } else if (fport === 25) {
-    usageParser(dataView, result, err);
   } else if (fport === 49) {
     decodeFport49(dataView, result, err);
   } else if (fport === 50) {
@@ -1414,10 +1015,6 @@ function decodeByFport(fport, bytes, result, err) {
     decodeFport51(dataView, result, err);
   } else if (fport === 60) {
     decodeFport60(dataView, result, err);
-  } else if (fport === 61) {
-    decodeFport61(dataView, result, err);
-  } else if (fport === 99) {
-    decodeFport99(dataView, result, err);
   } else {
     err.errors.push('invalid_fport');
   }
@@ -1438,118 +1035,9 @@ function decodeRaw(fport, bytes) {
   return { data: res, errors: err.errors, warnings: err.warnings };
 }
 
-// You need only one entrypoint, others can be removed.
-
-// entry point for TTN new api
-function decodeDownlink(input) {
-  return decodeRaw(input.fPort, input.bytes);
-}
-
 // entry point for TTN new api
 function decodeUplink(input) {
   return decodeRaw(input.fPort, input.bytes);
 }
 
-// entry point for TTN old version
-function Decoder(bytes, fport) {
-  return decodeRaw(fport, bytes);
-}
 
-// entry point for Chirpstack
-function Decode(fport, bytes) {
-  return decodeRaw(fport, bytes);
-}
-
-
-
-
-// END THE COPY SELECTION HERE
-
-function filterForHex(raw) {
-    return raw.replace(/[^a-fA-F0-9]/g,'');
-}
-
-function filterForBase64(raw) {
-    return raw.replace(/[^a-zA-z0-9+/=]/g,'');
-}
-
-function hexToBytes(hex) {
-    for (var bytes = [], c = 0; c < hex.length; c += 2)
-    bytes.push(parseInt(hex.substr(c, 2), 16));
-    return bytes;
-}
-
-function base64ToBytes(base64) {
-    try {
-        return Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-    } catch(err) {
-        return [];
-    }
-}
-
-function runOnPageLoad() {
-    document.getElementById('payload_raw').value = "DFD41D5E004B041502AE05050AFF32030306FF00";
-    dataInputHandler();
-}
-
-window.onload = runOnPageLoad;    
- 
-function is_base64() {
-    return document.getElementById('payload_is_base64').checked;
-}
-
-const base64InputHandler = function(e) {
-    document.getElementById('payload_raw').placeholder= (is_base64() ? "Paste base64" : "Paste hex");
-    document.getElementById('payload_raw').value = "";
-}
-
-function jsonToHtmlFormatter(json_txt) {
-	var html_out = '<pre>'+json_txt.replace(/\n/g, '<br />') + '</pre>';
-    return html_out.replace(/(["{[\]},:])/g, '<span class="dim">$1</span>');
-}
-
-function setOutput(res) {
-  var str_json = JSON.stringify(res, null, 2);
-
-	str_html = jsonToHtmlFormatter(str_json);
-	console.log(str_html);
-    document.getElementById("demo").innerHTML = str_html;
-}
-
-const dataInputHandler = function(e) {
-    var raw = document.getElementById('payload_raw').value;
-    var fport = parseInt(document.getElementById('fport').value);
-
-    var buffer;
-    if (is_base64()) {
-      var filtered = filterForBase64(raw);
-      document.getElementById('payload_raw').value = filtered;
-  
-      var buffer = base64ToBytes(filtered);
-  
-    }
-    else {
-      var filtered = filterForHex(raw);
-      if (filtered.length % 2 !== 0) {
-        var res = { error: "invalid_hex_input" };
-        setOutput(res);
-        return;
-      }
-      document.getElementById('payload_raw').value = filtered;
-  
-      var buffer = hexToBytes(filtered);
-    }
-    var res = decodeRaw(fport, buffer);
-
-    setOutput(res);
-}
-
-document.getElementById('payload_raw').addEventListener('input', dataInputHandler);  
-document.getElementById('fport').addEventListener('input', dataInputHandler);  
-document.getElementById('payload_is_base64').addEventListener('input', dataInputHandler);
-document.getElementById('payload_is_base64').addEventListener('input', base64InputHandler);  
-
-</script>
-
-</body>
-</html>

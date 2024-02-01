@@ -1232,33 +1232,37 @@ function ssiSensor(status, err) {
 }
 
 // USAGE PAYLOAD
-function pulseUsageParse(interfaceName, dataView, result, err) {
+function pulseUsageParse(dataView, err) {
+  var res = {};
   var bits4 = dataView.getUint8Bits();
-  result[interfaceName + '_input_state'] = bits4.getBits(1) === true ? 'closed' : 'open';
+  res['input_state'] = bits4.getBits(1) === true ? 'closed' : 'open';
   var serialSent = bits4.getBits(1);
   var multiplier = usagePulseMultiplier(bits4.getBits(2));
-  result['_' + interfaceName + '_muliplier'] = multiplier;
+  res['muliplier'] = multiplier;
   var mediumType = usagePulseMediumType(bits4.getBits(4), err);
-  result['_' + interfaceName + '_medium_type'] = mediumType;
+  res['medium_type'] = mediumType;
 
-  result[interfaceName + '_accumulated__' + mediumType] = dataView.getUint32() * multiplier;
+  res['accumulated__' + mediumType] = dataView.getUint32() * multiplier;
   if (serialSent) {
-    result[interfaceName + '_serial'] = serialFormat(dataView.getUint32());
+    res['serial'] = serialFormat(dataView.getUint32());
   }
+  return res
 }
 
 function usageAndStatusParser(buffer, result, err) {
+  var mbus_res = {};
+  var ssi_res = {};
   var dataView = new BinaryExtract(buffer);
 
   var deviceStatusSent = false;
   var packetType = dataView.getUint8();
   if (packetType === 0x02) {
-    result._packet_type = 'usage_packet';
+    result.packet_type = 'usage_packet';
   } else if (packetType === 0x82) {
-    result._packet_type = 'status_packet';
+    result.packet_type = 'status_packet';
     deviceStatusSent = true;
   } else {
-    err.errors.push('invalid_packet_type ' + packetType);
+    err.errors.push('invalidpacket_type ' + packetType);
     return;
   }
 
@@ -1268,23 +1272,23 @@ function usageAndStatusParser(buffer, result, err) {
   activeAlerts.pulse_2_trigger_alert = bits1.getBits(1);
   bits1.getBits(4);
   activeAlerts.low_battery = bits1.getBits(1);
-  result._app_connected_within_a_day = bits1.getBits(1);
-  result.active_alerts = objToList(activeAlerts);
+  result.app_connected_within_a_day = bits1.getBits(1);
+  result.active_alerts = activeAlerts;
   // TODO add to warnings
 
   if (deviceStatusSent) {
     result.battery_remaining__years = parseFloat((dataView.getUint8() / 12.0).toFixed(1));
-    result._battery_voltage__V = dataView.getUint8() / 100.0 + 1.5;
+    result.battery_voltage__V = dataView.getUint8() / 100.0 + 1.5;
 
     result.internal_temperature__C = dataView.getInt8();
     var bits5 = dataView.getUint8Bits();
-    result._internal_temperature_min__C = bits5.getBits(4) * -2 + result.internal_temperature__C;
-    result._internal_temperature_max__C = bits5.getBits(4) * 2 + result.internal_temperature__C;
+    result.internal_temperature_min__C = bits5.getBits(4) * -2 + result.internal_temperature__C;
+    result.internal_temperature_max__C = bits5.getBits(4) * 2 + result.internal_temperature__C;
 
     result.radio_downlink_rssi__dBm = -1 * dataView.getUint8();
     var bits6 = dataView.getUint8Bits();
-    result._radio_downlink_snr__dB = bits6.getBits(4) * 2 - 20;
-    result._radio_uplink_power__dBm = bits6.getBits(4) * 2;
+    result.radio_downlink_snr__dB = bits6.getBits(4) * 2 - 20;
+    result.radio_uplink_power__dBm = bits6.getBits(4) * 2;
   }
 
   var actuality = dataView.getUint8();
@@ -1299,46 +1303,45 @@ function usageAndStatusParser(buffer, result, err) {
   var ssiSent = mainInterfaceSent === 0x04;
 
   if (pulse1Sent) {
-    pulseUsageParse('pulse_1', dataView, result, err);
+    result.pulse_1 = pulseUsageParse(dataView, err);
   }
   if (pulse2Sent) {
-    pulseUsageParse('pulse_2', dataView, result, err);
+    result.pulse_2 = pulseUsageParse(dataView, err);
   }
   if (mbusSent) {
     var bits7 = dataView.getUint8Bits();
-    result.mbus_last_status = mbusStatus(bits7.getBits(4), err);
-    result._mbus_data_records_truncated = bits7.getBits(1);
+    mbus_res.last_bus_status = mbusStatus(bits7.getBits(4), err);
+    mbus_res.records_truncated = bits7.getBits(1);
     var stateAndSerialSent = bits7.getBits(1);
     var serialExtensionSent = bits7.getBits(1);
 
     if (stateAndSerialSent) {
-      result.mbus_status = '0x' + intToHexStr(dataView.getUint8(), 2);
-      result.mbus_serial = serialFormat(dataView.getUint32());
+      mbus_res.status = '0x' + intToHexStr(dataView.getUint8(), 2);
+      mbus_res.serial = serialFormat(dataView.getUint32());
     }
     if (serialExtensionSent) {
-      result.mbus_manufacturer = mbusManufacturer(dataView.getUint16());
-      result.mbus_version = dataView.getUint8();
-      result.mbus_medium = mbusMedium(dataView.getUint8());
+      mbus_res.manufacturer = mbusManufacturer(dataView.getUint16());
+      mbus_res.version = dataView.getUint8();
+      mbus_res.medium = mbusMedium(dataView.getUint8());
     }
-
     var hex_buf = [];
     while (dataView.offset < dataView.buffer.length) {
       var hex = intToHexStr(dataView.getUint8(), 2);
       hex_buf.push(hex);
     }
     var mbus_hex = hex_buf.join('');
-    result.mbus_data_records_raw = mbus_hex;
-
+    mbus_res.data_records_raw = mbus_hex;
+    mbus_res.data_records = {};
     var decoded_tmbus = decode_mbus(mbus_hex);
     for (var key in decoded_tmbus) {
-      var name = 'mbus_d_' + key;
-      result[name] = decoded_tmbus[key];
+      mbus_res.data_records[key] = decoded_tmbus[key];
     }
+    result.mbus = mbus_res;
   }
 
   if (ssiSent) {
     var bits8 = dataView.getUint8Bits();
-    result.ssi_sensor = ssiSensor(bits8.getBits(6), err);
+    ssi_res.sensor = ssiSensor(bits8.getBits(6), err);
 
     var bits9 = dataView.getUint8Bits();
     var ch1Inst = bits9.getBits(1);
@@ -1350,21 +1353,23 @@ function usageAndStatusParser(buffer, result, err) {
     var ch4Inst = bits9.getBits(1);
     var ch4Avg = bits9.getBits(1);
 
-    if (ch1Inst) result.ssi_channel_1 = parseFloat(dataView.getFloat().toFixed(5));
-    if (ch1Avg) result.ssi_channel_1_avg = parseFloat(dataView.getFloat().toFixed(5));
-    if (ch2Inst) result.ssi_channel_2 = parseFloat(dataView.getFloat().toFixed(5));
-    if (ch2Avg) result.ssi_channel_2_avg = parseFloat(dataView.getFloat().toFixed(5));
-    if (ch3Inst) result.ssi_channel_3 = parseFloat(dataView.getFloat().toFixed(5));
-    if (ch3avg) result.ssi_channel_3_avg = parseFloat(dataView.getFloat().toFixed(5));
-    if (ch4Inst) result.ssi_channel_4 = parseFloat(dataView.getFloat().toFixed(5));
-    if (ch4Avg) result.ssi_channel_4_avg = parseFloat(dataView.getFloat().toFixed(5));
+    if (ch1Inst) ssi_res.channel_1 = parseFloat(dataView.getFloat().toFixed(5));
+    if (ch1Avg) ssi_res.channel_1_avg = parseFloat(dataView.getFloat().toFixed(5));
+    if (ch2Inst) ssi_res.channel_2 = parseFloat(dataView.getFloat().toFixed(5));
+    if (ch2Avg) ssi_res.channel_2_avg = parseFloat(dataView.getFloat().toFixed(5));
+    if (ch3Inst) ssi_res.channel_3 = parseFloat(dataView.getFloat().toFixed(5));
+    if (ch3avg) ssi_res.channel_3_avg = parseFloat(dataView.getFloat().toFixed(5));
+    if (ch4Inst) ssi_res.channel_4 = parseFloat(dataView.getFloat().toFixed(5));
+    if (ch4Avg) ssi_res.channel_4_avg = parseFloat(dataView.getFloat().toFixed(5));
+    result.ssi = ssi_res;
   }
 }
 
 // CONFIGURATION PAYLOADS
 
-function pulseConfigParse(interfaceName, dataView, result, err) {
-  result[interfaceName + '_input_mode_and_unit'] = pulseInputModeAndUnit(dataView.getUint8Bits().getBits(4), err);
+function pulseConfigParse(dataView, err) {
+  var res = {};
+  res['input_mode_and_unit'] = pulseInputModeAndUnit(dataView.getUint8Bits().getBits(4), err);
 
   var bits2 = dataView.getUint8Bits();
   var multiplierSent = bits2.getBits(1);
@@ -1375,25 +1380,26 @@ function pulseConfigParse(interfaceName, dataView, result, err) {
   var multiplier = usagePulseMultiplier(bits2.getBits(2));
 
   if (multiplierSent) {
-    result[interfaceName + '_multiplier_numerator'] = dataView.getUint16();
-    result[interfaceName + '_multiplier_denominator'] = dataView.getUint8();
+    res['multiplier_numerator'] = dataView.getUint16();
+    res['multiplier_denominator'] = dataView.getUint8();
   }
   if (accumulatedAbsoluteSent) {
-    result[interfaceName + '_accumulated_absolute'] = dataView.getUint32() * multiplier;
+    res['accumulated_absolute'] = dataView.getUint32() * multiplier;
   }
   if (accumulatedOffsetSent) {
-    result[interfaceName + '_accumulated_offset'] = dataView.getInt32() * multiplier;
+    res['accumulated_offset'] = dataView.getInt32() * multiplier;
   }
   if (serialSent) {
-    result[interfaceName + '_serial'] = serialFormat(dataView.getUint32());
+    res['serial'] = serialFormat(dataView.getUint32());
   }
+  return res;
 }
 
 function generalConfigurationParser(buffer, result, err) {
   var dataView = new BinaryExtract(buffer);
 
   var packetType = dataView.getUint8();
-  if (packetType === 0x12) { result._packet_type = 'general_configuration_packet'; } else {
+  if (packetType === 0x12) { result.packet_type = 'general_configuration_packet'; } else {
     err.errors.push('invalid_configuration_type ' + packetType);
     return;
   }
@@ -1412,10 +1418,10 @@ function generalConfigurationParser(buffer, result, err) {
     result.radio_wmbus_profile = wmbusProfileFormat(dataView.getUint8(), err);
   }
   if (pulse1Sent) {
-    pulseConfigParse('pulse_1', dataView, result, err);
+    result.pulse_1 = pulseConfigParse(dataView, err);
   }
   if (pulse2Sent) {
-    pulseConfigParse('pulse_2', dataView, result, err);
+    result.pulse_2 = pulseConfigParse( dataView, err);
   }
 }
 
@@ -1423,7 +1429,7 @@ function mbusConfigurationParser(buffer, result, err) {
   var dataView = new BinaryExtract(buffer);
 
   var packetType = dataView.getUint8();
-  if (packetType === 0x14) { result._packet_type = 'mbus_configuration_packet'; } else {
+  if (packetType === 0x14) { result.packet_type = 'mbus_configuration_packet'; } else {
     err.errors.push('invalid_configuration_type ' + packetType);
     return;
   }
@@ -1434,9 +1440,11 @@ function mbusConfigurationParser(buffer, result, err) {
     err.errors.push('invalid_usage_or_status_count');
     return;
   }
-  result.mbus_data_record_headers_unparsed = '';
+  // result.mbus_usage_data_record_headers = {};
+  // result.mbus_status_data_record_headers = {};
+  result.mbus_data_record_header_raw = '';
   while (dataView.offset < dataView.buffer.length) {
-    result.mbus_data_record_headers_unparsed += intToHexStr(dataView.getUint8(), 2);
+    result.mbus_data_record_header_raw += intToHexStr(dataView.getUint8(), 2);
   }
 }
 
@@ -1444,7 +1452,7 @@ function locationConfigurationParser(buffer, result, err) {
   var dataView = new BinaryExtract(buffer);
 
   var packetType = dataView.getUint8();
-  if (packetType === 0x21) { result._packet_type = 'location_configuration_packet'; } else {
+  if (packetType === 0x21) { result.packet_type = 'location_configuration_packet'; } else {
     err.errors.push('invalid_configuration_type ' + packetType);
     return;
   }
@@ -1483,11 +1491,11 @@ function configurationRequestsParser(buffer, result, err) {
 
   var packetType = dataView.getUint8();
   if (packetType === 0x12) {
-    result._packet_type = 'general_configuration_request';
+    result.packet_type = 'general_configuration_request';
   } else if (packetType === 0x14) {
-    result._packet_type = 'mbus_configuration_request';
+    result.packet_type = 'mbus_configuration_request';
   } else if (packetType === 0x21) {
-    result._packet_type = 'location_configuration_request';
+    result.packet_type = 'location_configuration_request';
   } else {
     err.errors.push('invalid_request_type ' + packetType);
   }
@@ -1499,10 +1507,10 @@ function commandParser(buffer, result, err) {
   var packetType = dataView.getUint8();
   if (packetType === 0x03) {
     if (buffer.length === 1) {
-      result._packet_type = 'local_time_request';
+      result.packet_type = 'local_time_request';
       return;
     }
-    result._packet_type = 'local_time_response';
+    result.packet_type = 'local_time_response';
     result.device_local_time__s = dataView.getUint32();
 
     var date = new Date(result.device_local_time__s * 1000);
@@ -1511,33 +1519,35 @@ function commandParser(buffer, result, err) {
     if (result.device_local_time__s < startOf2020) { result.device_local_time_formatted = 'invalid'; }
   } else if (packetType === 0x81) {
     if (buffer.length === 1) {
-      result._packet_type = 'mbus_available_data_records_request';
+      result.packet_type = 'mbus_available_data_records_request';
       return;
     }
+    result.packet_type = 'mbus_available_data_records';
+
     var bits = dataView.getUint8Bits();
-    result._packet_number = bits.getBits(3);
-    result._more_packets_following = bits.getBits(1);
+    result.packet_number = bits.getBits(3);
+    result.more_packets_following = bits.getBits(1);
     bits.getBits(2);
     var mbusHeaderSent = bits.getBits(1);
 
     if (mbusHeaderSent) {
-      result._packet_type = 'mbus_available_data_records';
-      result.mbus_header_serial = serialFormat(dataView.getUint32());
-      result.mbus_header_manufacturer = mbusManufacturer(dataView.getUint16());
-      result.mbus_header_version = '0x' + intToHexStr(dataView.getUint8(), 2);
-      result.mbus_header_medium = mbusMedium(dataView.getUint8());
-      result.mbus_header_access_number = dataView.getUint8();
-      result.mbus_header_status = '0x' + intToHexStr(dataView.getUint8(), 2);
+      result.mbus_header = {};
+      result.mbus_header.serial = serialFormat(dataView.getUint32());
+      result.mbus_header.manufacturer = mbusManufacturer(dataView.getUint16());
+      result.mbus_header.version = '0x' + intToHexStr(dataView.getUint8(), 2);
+      result.mbus_header.medium = mbusMedium(dataView.getUint8());
+      result.mbus_header.access_number = dataView.getUint8();
+      result.mbus_header.status = '0x' + intToHexStr(dataView.getUint8(), 2);
       var sig1 = intToHexStr(dataView.getUint8(), 2);
       var sig2 = intToHexStr(dataView.getUint8(), 2);
-      result.mbus_header_signature = sig1 + sig2;
+      result.mbus_header.signature = sig1 + sig2;
     }
-
-    result.mbus_data_record_headers_unparsed = '';
+    //result.mbus_data_record_headers = {};
+    result.mbus_data_record_header_raw = '';
     while (dataView.offset < dataView.buffer.length) {
-      result.mbus_data_record_headers_unparsed += intToHexStr(dataView.getUint8(), 2);
+      result.mbus_data_record_header_raw += intToHexStr(dataView.getUint8(), 2);
     }
-  } else if (packetType === 0xFF) { result._packet_type = 'enter_dfu_command'; } else {
+  } else if (packetType === 0xFF) { result.packet_type = 'enter_dfu_command'; } else {
     err.errors.push('invalid_command_type ' + packetType);
   }
 }
@@ -1548,12 +1558,12 @@ function sysMessagesParser(buffer, result, err) {
 
   var packetType = dataView.getUint8();
   if (packetType === 0x13) {
-    result._packet_type = 'faulty_downlink_packet';
+    result.packet_type = 'faulty_downlink_packet';
     result.packet_fport = dataView.getUint8();
     result.packet_error_reason = packetErrorReasonFormatter(dataView.getUint8(), err);
     err.warnings.push('faulty_downlink_packet: ' + result.packet_error_reason);
   } else if (packetType === 0x00) {
-    result._packet_type = 'boot_packet';
+    result.packet_type = 'boot_packet';
     result.device_serial = serialFormat(dataView.getUint32());
 
     result.device_firmware_version = dataView.getUint8().toString() + '.' + dataView.getUint8() + '.' + dataView.getUint8();
@@ -1582,8 +1592,8 @@ function sysMessagesParser(buffer, result, err) {
     var shutdownReason = shutdownReasonFormat(dataView.getUint8(), err);
     var bufferUsage = buffer.slice(2);
     usageAndStatusParser(bufferUsage, result);
-    result._packet_type = 'shutdown_packet';
-    result._shutdown_reason = shutdownReason;
+    result.packet_type = 'shutdown_packet';
+    result.shutdown_reason = shutdownReason;
   } else {
     err.errors.push('invalid_command_type ' + packetType);
   }
@@ -1637,7 +1647,7 @@ function decodeByPacketHeader(fport, bytes, result, err) {
     sysMessagesParser(bytes, result, err);
     checkFport(fport, 99, err);
   } else {
-    err.errors.push('invalid_header');
+    err.errors.push('invalid_packet_type');
   }
 }
 
@@ -1650,15 +1660,7 @@ function decodeRaw(fport, bytes) {
   } catch (error) {
     err.errors.push(error.message);
   }
-  //  res._raw_payload = bytesToHexStr(bytes);
-  var out = { data: res };
-  if (err.errors.length) {
-    out.errors = err.errors;
-  }
-  if (err.warnings.length) {
-    out.warnings = err.warnings;
-  }
-  return out;
+  return { data: res, errors: err.errors, warnings: err.warnings };
 }
 
 // You need only one entrypoint, others can be removed.

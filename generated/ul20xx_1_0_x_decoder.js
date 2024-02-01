@@ -298,7 +298,7 @@ function decodeUnixEpoch(epoch, err) {
 }
 
 function decodeLdrConfig(dataView, result) {
-  result.packet_type = 'ldr_input_config_packet';
+  result.packet_type = 'deprecated_ldr_input_config_packet';
 
   var high = dataView.getUint8();
   result.ldr_off_threshold_high = high === 0xFF ? 'disabled' : high;
@@ -319,7 +319,7 @@ function decodeDimmingLevel(level, ffName) {
 }
 
 function decodeDigConfig(dataView, result, err) {
-  result.packet_type = 'dig_input_config_packet';
+  result.packet_type = 'deprecated_dig_input_config_packet';
 
   var time = dataView.getUint16();
   result.light_on_duration__s = time === 0xFFFF ? 'dig_input_disabled' : time;
@@ -360,8 +360,8 @@ function decodeCalendarConfigV10(dataView, result) {
 
   var clear = sunrise === -1 && sunset === -1;
 
-  result.sunrise_offset__min = clear ? 'disabled' : sunrise;
-  result.sunset_offset__min = clear ? 'disabled' : sunset;
+  result.sunrise_offset__minutes = clear ? 'disabled' : sunrise;
+  result.sunset_offset__minutes = clear ? 'disabled' : sunset;
 
   result.latitude__deg = lat;
   result.longitude__deg = lon;
@@ -514,7 +514,7 @@ function decodeMeteringAlertConfig(dataView, result, err) {
   result.packet_type = 'metering_alert_config_packet';
   var header = dataView.getUint8();
   if (header !== 0x01) {
-    err.errors.push('invalid_header');
+    err.errors.push('invalid_packet_type');
     return;
   }
   var minPower = dataView.getUint16();
@@ -642,7 +642,7 @@ function decodeFport50(dataView, result, err) {
       return;
 
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -849,7 +849,7 @@ function decodeTimedDimming(dataView, err) {
 
   result.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'resume');
 
-  result.duration__min = dataView.getUint8();
+  result.duration__minutes = dataView.getUint8();
   return result;
 }
 
@@ -916,6 +916,7 @@ function statusProfileParser(dataView, err) {
   profile.dimming_level__percent = decodeDimmingLevel(level, 'resume');
   return profile;
 }
+
 
 function statusParser1_0(dataView, result, err) {
   // does not support 1.0.x legacy mode status packet!
@@ -1017,7 +1018,6 @@ function usageConsumptionParse(dataView, err) {
   }
   return result;
 }
-
 function usageParser(dataView, result, err) {
 
   result.packet_type = 'usage_packet';
@@ -1197,9 +1197,8 @@ function configFailedParser(dataView, result, err) {
   result.downlink_from_fport = dataView.getUint8();
   var error = errorCodeParser(dataView.getUint8());
   result.error_reason = error;
-  err.warnings.push('downlink_' + error);
+  err.warnings.push('downlink_error ' + error);
 }
-
 function decodeFport99(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
@@ -1210,7 +1209,7 @@ function decodeFport99(dataView, result, err) {
       configFailedParser(dataView, result, err);
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -1286,20 +1285,19 @@ function decodeFport61(dataView, result, err) {
       result.power_factor = dataView.getUint8() / 100;
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
-
 // DOWNLINK ONLY THINGS
 
 function decodeFport49(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
     case 0x01:
-      result.packet_type = 'ldr_input_config_request';
+      result.packet_type = 'deprecated_ldr_input_config_request';
       return;
     case 0x03:
-      result.packet_type = 'dig_input_config_request';
+      result.packet_type = 'deprecated_dig_input_config_request';
       return;
     case 0x07:
       result.packet_type = 'status_config_request';
@@ -1345,7 +1343,7 @@ function decodeFport49(dataView, result, err) {
       result.packet_type = 'location_config_request';
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -1397,14 +1395,7 @@ function decodeRaw(fport, bytes) {
   } catch (error) {
     err.errors.push(error.message);
   }
-  var out = { data: res };
-  if (err.errors.length) {
-    out.errors = err.errors;
-  }
-  if (err.warnings.length) {
-    out.warnings = err.warnings;
-  }
-  return out;
+  return { data: res, errors: err.errors, warnings: err.warnings };
 }
 
 // You need only one entrypoint, others can be removed.

@@ -348,9 +348,9 @@ function leakage_limit_cold(data, err){
   return leakage_limit;
 }
 
-function kampstrup_config1(conf, err){
+function kamstrup_config1(conf, err){
   if(conf.length < 8){
-    err.errors.push('Invalid_kampstrup_config_1_length');
+    err.errors.push('Invalid_kamstrup_config_1_length');
   }else {
     return conf.slice(0,1) + ' ' + conf.slice(1,2) + ' ' + conf.slice(2,5) + ' ' + conf.slice(5,8)
   }
@@ -363,18 +363,18 @@ function bootParser(dataView, result, err){
   var min = dataView.getUint8();
   var patch = dataView.getUint8();
   result.device_firmware_version = maj + '.' + min + '.' + patch;
-  result.kampstrup_meter_id = dataView.getUint32() + 0x100000000 * dataView.getUint8();
+  result.kamstrup_meter_id = dataView.getUint32() + 0x100000000 * dataView.getUint8();
 
-  result.kampstrup_config_1 = kampstrup_config1(pad(dataView.getUint32(), 8), err);
+  result.kamstrup_config_1 = kamstrup_config1(pad(dataView.getUint32(), 8), err);
   var raw_kamstrup_type = dataView.getUint16();
-  var raw_kampstrup_tariff = dataView.getUint8();
+  var raw_kamstrup_tariff = dataView.getUint8();
   var raw_kamstrup_pulse_input_a = dataView.getUint8();
   var raw_kamstrup_pulse_input_b = dataView.getUint8();
   var raw_kamstrup_leakage_limits_v1_v2 = dataView.getUint8();
   var raw_kamstrup_leakage_limit_cold_ina_inb = dataView.getUint8();
-  result.kampstrup_config_2 = raw_kamstrup_type + ' ' + pad(raw_kampstrup_tariff, 2) + ' ' + pad(raw_kamstrup_pulse_input_a, 2) + ' ' + raw_kamstrup_pulse_input_b + ' ' + pad(raw_kamstrup_leakage_limits_v1_v2, 2) + ' ' + pad(raw_kamstrup_leakage_limit_cold_ina_inb, 2);
+  result.kamstrup_config_2 = raw_kamstrup_type + ' ' + pad(raw_kamstrup_tariff, 2) + ' ' + pad(raw_kamstrup_pulse_input_a, 2) + ' ' + raw_kamstrup_pulse_input_b + ' ' + pad(raw_kamstrup_leakage_limits_v1_v2, 2) + ' ' + pad(raw_kamstrup_leakage_limit_cold_ina_inb, 2);
   result.kamstrup_type = meter_display(raw_kamstrup_type, err);
-  result.kamstrup_tariff = meter_tariff(raw_kampstrup_tariff, err);
+  result.kamstrup_tariff = meter_tariff(raw_kamstrup_tariff, err);
   result.kamstrup_pulse_input_a = pulse_input(raw_kamstrup_pulse_input_a, err);
   result.kamstrup_pulse_input_b = pulse_input(raw_kamstrup_pulse_input_b, err);
   result.kamstrup_leakage_limits_v1_v2 = meter_leakage_limit(raw_kamstrup_leakage_limits_v1_v2);
@@ -997,8 +997,8 @@ function usageParser(dataView, result, err){
     result.packet_type = 'pulse_usage_packet';
     var measuring_time = dataView.getUint8();
     result.measuring_time = meteringTimeFormat(measuring_time, err);
-    result.kampstrup_pulse_1_count = dataView.getUint32();
-    result.kmapstrup_pulse_2_count = dataView.getUint32();
+    result.kamstrup_pulse_1_count = dataView.getUint32();
+    result.kamstrup_pulse_2_count = dataView.getUint32();
     return;
   }
   else {
@@ -1041,7 +1041,7 @@ function configuration_packet(dataView, result, err){
       result.device_time_offset__s = dataView.getInt16();
       break;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
       break;
   }
 }
@@ -1092,7 +1092,7 @@ function boot_debug_packet(dataView, result, err){
       result.packet_type = 'shutdown_packet';
       break;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -1136,12 +1136,8 @@ function decodeRaw(fport, bytes){
     decodeByFport(fport, bytes, res, err);
   } catch (error) {
     err.errors.push(error.message);
-  } var out = { data: res };
-  if (err.errors.length){
-    out.errors = err.errors;
-  } if (err.warnings.length){
-    out.warnings = err.warnings;
-  } return out;
+  } 
+  return { data: res, errors: err.errors, warnings: err.warnings };
 }
 
 // You need only one entrypoint, others can be removed.

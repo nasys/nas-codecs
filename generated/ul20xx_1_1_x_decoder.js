@@ -309,7 +309,7 @@ function decodeUnixEpoch(epoch, err) {
 }
 
 function decodeLdrConfig(dataView, result) {
-  result.packet_type = 'ldr_input_config_packet';
+  result.packet_type = 'deprecated_ldr_input_config_packet';
 
   var high = dataView.getUint8();
   result.ldr_off_threshold_high = high === 0xFF ? 'disabled' : high;
@@ -352,6 +352,13 @@ function decodeLightSensorConfig(dataView, result, err) {
   }
 }
 
+function decodeDimNotifyConfig(dataView, result, err){
+  result.packet_type = 'dim_notify_config_packet';
+  var rdly = dataView.getUint8();
+  result.random_delay__s = rdly === 0xff ? 'disabled' : rdly * 5;
+  result.packet_limit__s = dataView.getUint8() * 60;
+}
+
 function decodeDimmingLevel(level, ffName) {
   if (level === 0xFF) {
     return ffName;
@@ -360,7 +367,7 @@ function decodeDimmingLevel(level, ffName) {
 }
 
 function decodeDigConfig(dataView, result, err) {
-  result.packet_type = 'dig_input_config_packet';
+  result.packet_type = 'deprecated_dig_input_config_packet';
 
   var time = dataView.getUint16();
   result.light_on_duration__s = time === 0xFFFF ? 'dig_input_disabled' : time;
@@ -520,9 +527,10 @@ function decodeDaliMonitorConfig(dataView, result) {
   result.periodic_bus_scan_enabled = bits.getBits(1);
 
   var interval = dataView.getUint16();
-  result.monitoring_interval__s = interval;
   if (interval === 0) {
-    result.monitoring_interval = 'disabled';
+    result.monitoring_interval__s = 'disabled';
+  } else {
+    result.monitoring_interval__s = interval;
   }
 }
 
@@ -604,7 +612,7 @@ function decodeMeteringAlertConfig(dataView, result, err) {
   result.packet_type = 'metering_alert_config_packet';
   var header = dataView.getUint8();
   if (header !== 0x01) {
-    err.errors.push('invalid_header');
+    err.errors.push('invalid_packet_type');
     return;
   }
   var minPower = dataView.getUint16();
@@ -743,11 +751,14 @@ function decodeFport50(dataView, result, err) {
     case 0x29:
       decodeLightSensorConfig(dataView, result, err);
       return;
+    case 0x2A:
+      decodeDimNotifyConfig(dataView, result);
+      return;
     case 0x53:
       decodeMulticastFcntConfig(dataView, result);
       return;
     case 0xFE:
-      result.packet_type = { value: 'chained_config_packet' };
+      result.packet_type = 'chained_config_packet';
       result.payloads = [];
       while (dataView.availableLen()) {
         var packet = {};
@@ -756,7 +767,7 @@ function decodeFport50(dataView, result, err) {
       }
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -875,7 +886,7 @@ function decodeStatusRequest(dataView, result, err) {
   result.usage_requested = bits.getBits(1);
   result.status_requested = bits.getBits(1);
   result.dim_map_report_requested = bits.getBits(1);
-
+  
   if (result.dim_map_report_requested && dataView.availableLen() > 0) {
     result.drivers = [];
     while (dataView.availableLen()) {
@@ -928,7 +939,7 @@ function decodeTimedDimming(dataView, err) {
 
   result.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'resume');
 
-  result.duration__min = dataView.getUint8();
+  result.duration__minutes = dataView.getUint8();
   return result;
 }
 
@@ -941,7 +952,7 @@ function decodeTimedDimmingCommand(dataView, result, err) {
 }
 
 function decodeAddressDaliDriver(dataView, result, err) {
-  result.packet_type = { value: 'address_dali_driver' };
+  result.packet_type = 'address_dali_driver' ;
   result.address = addressParse(dataView.getUint8(), 'rescan_dali_bus', err);
 }
 
@@ -1053,7 +1064,7 @@ function statusParser1_1(dataView, result, err) {
   var header = dataView.getUint8();
   var header_below_1_1_4 = header === 0x00;
   if (!header_below_1_1_4 && header !== 0x01) {
-    err.errors.push('invalid_header');
+    err.errors.push('invalid_packet_type');
     return;
   }
 
@@ -1096,7 +1107,7 @@ function statusParser1_1(dataView, result, err) {
     bits1.getBits(1);
     bits1.getBits(1);
     statusField.lumalink_connected = bits1.getBits(1);
-    statusField.lumalink_connected_once = bits1.getBits(1);
+    statusField.lumalink_connected_after_boot = bits1.getBits(1);
   }
 
   result.status = statusField;
@@ -1213,10 +1224,9 @@ function usageConsumptionParse(dataView, err) {
   }
   return result;
 }
-
 function usageParser(dataView, result, err) {
   if (dataView.getUint8() !== 0) {
-    err.errors.push('invalid_header');
+    err.errors.push('invalid_packet_type');
     return;
   }
 
@@ -1397,9 +1407,8 @@ function configFailedParser(dataView, result, err) {
   result.downlink_from_fport = dataView.getUint8();
   var error = errorCodeParser(dataView.getUint8());
   result.error_reason = error;
-  err.warnings.push('downlink_' + error);
+  err.warnings.push('downlink_error ' + error);
 }
-
 function decodeFport99(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
@@ -1410,7 +1419,7 @@ function decodeFport99(dataView, result, err) {
       configFailedParser(dataView, result, err);
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -1486,20 +1495,19 @@ function decodeFport61(dataView, result, err) {
       result.power_factor = dataView.getUint8() / 100;
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
-
 // DOWNLINK ONLY THINGS
 
 function decodeFport49(dataView, result, err) {
   var header = dataView.getUint8();
   switch (header) {
     case 0x01:
-      result.packet_type = 'ldr_input_config_request';
+      result.packet_type = 'deprecated_ldr_input_config_request';
       return;
     case 0x03:
-      result.packet_type = 'dig_input_config_request';
+      result.packet_type = 'deprecated_dig_input_config_request';
       return;
     case 0x07:
       result.packet_type = 'status_config_request';
@@ -1557,7 +1565,7 @@ function decodeFport49(dataView, result, err) {
       result.packet_type = 'light_input_config_request';
       return;
     default:
-      err.errors.push('invalid_header');
+      err.errors.push('invalid_packet_type');
   }
 }
 
@@ -1612,14 +1620,7 @@ function decodeRaw(fport, bytes) {
   } catch (error) {
     err.errors.push(error.message);
   }
-  var out = { data: res };
-  if (err.errors.length) {
-    out.errors = err.errors;
-  }
-  if (err.warnings.length) {
-    out.warnings = err.warnings;
-  }
-  return out;
+  return { data: res, errors: err.errors, warnings: err.warnings };
 }
 
 // You need only one entrypoint, others can be removed.

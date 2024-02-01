@@ -10,7 +10,8 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "status_config_request"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -23,7 +24,8 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "calendar_config_request"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -37,7 +39,8 @@ describe('Config requests', function () {
         data: {
           "packet_type": "profile_config_request",
           "profile_id": "all_profiles"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -50,7 +53,8 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "fade_config_request"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -63,7 +67,8 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "holiday_config_request"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -76,7 +81,8 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "dali_monitor_config_request"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -89,7 +95,8 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "fallback_dim_config_request"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -102,7 +109,8 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "location_config_request"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -115,7 +123,8 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "lumalink_config_request"
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });
@@ -133,7 +142,8 @@ describe('Commands', function () {
           "usage_requested": false,
           "status_requested": false,
           "dim_map_report_requested": true
-        }
+        },errors: [],
+        warnings: [],
       },
     });
   });

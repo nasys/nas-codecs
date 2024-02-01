@@ -18,6 +18,12 @@ export function bytesToHexStr(byteArr) {
   return res;
 }
 
+export function hexToBytes(hex) {
+  for (var bytes = [], c = 0; c < hex.length; c += 2)
+  bytes.push(parseInt(hex.substr(c, 2), 16));
+  return bytes;
+}
+
 export function objToList(obj) {
   var res = [];
   // eslint-disable-next-line no-restricted-syntax

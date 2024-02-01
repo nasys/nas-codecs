@@ -64,7 +64,8 @@ describe('Status and usage', () => {
               "dimming_level__percent": 0
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -115,8 +116,8 @@ describe('Status and usage', () => {
               "dimming_level__percent": 0
             }
           ]
-        },
-        "warnings": [
+        }, errors: [],
+        warnings: [
           "dali_external_error"
         ]
       },
@@ -143,7 +144,8 @@ describe('Status and usage', () => {
               "active_power__W": 0
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -163,7 +165,8 @@ describe('Status and usage', () => {
               "active_power__W": 0
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -193,7 +196,8 @@ describe('Status and usage', () => {
               "lamp_on_time__s": 17
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -223,8 +227,8 @@ describe('Status and usage', () => {
               "lamp_on_time__s": 17
             }
           ]
-        },
-        "warnings": [
+        }, errors: [],
+        warnings: [
           "invalid_address"
         ]
       },
@@ -247,7 +251,8 @@ describe('Commands', () => {
               "dimming_level__percent": 100
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -301,8 +306,8 @@ describe('Commands', () => {
               }
             }
           ]
-        },
-        "warnings": [
+        }, errors: [],
+          warnings: [
           "dali_single_3 lamp_failure",
           "dali_single_6 lamp_failure"
         ]
@@ -324,7 +329,8 @@ describe('Commands', () => {
               "dimming_level__percent": 100
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -338,7 +344,8 @@ describe('Commands', () => {
         data: {
           "packet_type": "custom_dali_request",
           "query_data_raw": "48A1FE48A2A848A3FE48A4FE48A507"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -352,7 +359,8 @@ describe('Commands', () => {
         data: {
           "packet_type": "custom_dali_command",
           "dali_command": "027F0321032B"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -369,7 +377,8 @@ describe('Commands', () => {
           "ldr": 69,
           "internal_relay_closed": false,
           "open_drain_output_on": false
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -386,7 +395,8 @@ describe('Commands', () => {
           "memory_bank": 0,
           "memory_address": 3,
           "memory_value": "0607EDFACE82E5"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -399,8 +409,8 @@ describe('Commands', () => {
       expected: {
         data: {
           "packet_type": "driver_memory_write"
-        },
-        "warnings": [
+        }, errors: [],
+        warnings: [
           "driver_memory_write_failed"
         ]
       },
@@ -418,8 +428,8 @@ describe('Alerts, notifications', () => {
         data: {
           "packet_type": "dig_input_alert",
           "dig_input_event_counter": 6
-        },
-        "warnings": [
+        }, errors: [],
+        warnings: [
           "dig_input_alert"
         ]
       },
@@ -436,8 +446,8 @@ describe('Alerts, notifications', () => {
           "packet_type": "ldr_input_alert",
           "ldr_input_on": false,
           "ldr_input_value": 121
-        },
-        "warnings": [
+        }, errors: [],
+        warnings: [
           "ldr_input_alert"
         ]
       },
@@ -468,8 +478,8 @@ describe('Alerts, notifications', () => {
               }
             }
           ]
-        },
-        "warnings": [
+        }, errors: [],
+        warnings: [
           "dali_single_1 lamp_failure"
         ]
       },
@@ -492,8 +502,8 @@ describe('Alerts, notifications', () => {
           "power__W": 89,
           "voltage__V": 229,
           "power_factor": 0.86
-        },
-        "warnings": [
+        }, errors: [],
+        warnings: [
           "metering_over_current"
         ]
       },
@@ -527,7 +537,8 @@ describe('Boot, etc sys packets', () => {
           "reset_reason": [
             "soft_reset"
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -555,8 +566,8 @@ describe('Boot, etc sys packets', () => {
           "dali_addressed_driver_count": 0,
           "dali_unadressed_driver_found": false,
           "reset_reason": []
-        },
-        "warnings": [
+        }, errors: [],
+        warnings: [
           "invalid_timestamp"
         ]
       },
@@ -573,9 +584,9 @@ describe('Boot, etc sys packets', () => {
           "packet_type": "invalid_downlink_packet",
           "downlink_from_fport": 50,
           "error_reason": "unsupported_header"
-        },
-        "warnings": [
-          "downlink_unsupported_header"
+        }, errors: [],
+         warnings: [
+          "downlink_error unsupported_header"
         ]
       },
     });

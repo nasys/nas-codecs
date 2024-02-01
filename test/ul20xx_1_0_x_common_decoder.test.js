@@ -18,11 +18,12 @@ describe('Config packts', () => {
       data: '01A03004',
       expected: {
         data: {
-          "packet_type": "ldr_input_config_packet",
+          "packet_type": "deprecated_ldr_input_config_packet",
           "ldr_off_threshold_high": 160,
           "ldr_on_threshold_low": 48,
           "trigger_alert_enabled": true
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -34,13 +35,14 @@ describe('Config packts', () => {
       data: '032C0102FE32',
       expected: {
         data: {
-          "packet_type": "dig_input_config_packet",
+          "packet_type": "deprecated_dig_input_config_packet",
           "light_on_duration__s": 300,
           "signal_edge_rising": true,
           "trigger_alert_enabled": false,
           "address": "dali_broadcast",
           "dimming_level__percent": 50
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -53,11 +55,12 @@ describe('Config packts', () => {
       expected: {
         data: {
           "packet_type": "calendar_config_packet",
-          "sunrise_offset__min": -30,
-          "sunset_offset__min": 30,
+          "sunrise_offset__minutes": -30,
+          "sunset_offset__minutes": 30,
           "latitude__deg": 65.5,
           "longitude__deg": 24.83
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -71,7 +74,8 @@ describe('Config packts', () => {
         data: {
           "packet_type": "status_config_packet",
           "status_interval__s": 3600
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -115,7 +119,8 @@ describe('Config packts', () => {
               "dimming_level__percent": 80
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -129,7 +134,8 @@ describe('Config packts', () => {
         data: {
           "packet_type": "time_config_packet",
           "device_unix_epoch": "2017-08-22T11:50:00.000Z"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -146,7 +152,8 @@ describe('Config packts', () => {
           "ldr_alert_enabled": false,
           "dig_alert_enabled": false,
           "dali_alert_enabled": false
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -161,7 +168,8 @@ describe('Config packts', () => {
           "packet_type": "usage_config_packet",
           "usage_interval__s": 3600,
           "mains_voltage__V": 230
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -182,7 +190,8 @@ describe('Config packts', () => {
             "08/14",
             "12/17"
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -196,7 +205,8 @@ describe('Config packts', () => {
         data: {
           "packet_type": "boot_delay_config_packet",
           "boot_delay_range__s": 120
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -210,7 +220,8 @@ describe('Config packts', () => {
         data: {
           "packet_type": "boot_delay_config_packet",
           "boot_delay_range__s": 300
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -225,7 +236,8 @@ describe('Config packts', () => {
           "packet_type": "defaults_config_packet",
           "default_dim__percent": 0,
           "fade_duration__s": 2.83
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -240,7 +252,8 @@ describe('Config packts', () => {
           "packet_type": "location_config_packet",
           "latitude__deg": 59.42864,
           "longitude__deg": 24.6610052
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -256,7 +269,8 @@ describe('Config packts', () => {
           "latitude__deg": 59.437022,
           "longitude__deg": 24.753536,
           "address": "Ööbiku Str. 2-16"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -274,7 +288,8 @@ describe('Config packts', () => {
           "min_voltage__V": 215,
           "max_voltage__V": 245,
           "min_power_factor": 0.8
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -292,7 +307,8 @@ describe('Config packts', () => {
           "min_voltage__V": "alert_off",
           "max_voltage__V": 245,
           "min_power_factor": "alert_off"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -309,7 +325,8 @@ describe('Config packts', () => {
           "devaddr": "11223344",
           "nwkskey": "82840C7056429B143D21974557F93A53",
           "appskey": "82840C70C08494B931FE2FA6F8835C6A"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -323,7 +340,8 @@ describe('Config packts', () => {
         data: {
           "packet_type": "clear_config_packet",
           "reset_target": "ldr_input_config"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -337,7 +355,8 @@ describe('Config packts', () => {
         data: {
           "packet_type": "clear_config_packet",
           "reset_target": "dig_input_config"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -352,7 +371,8 @@ describe('Config packts', () => {
           "packet_type": "clear_config_packet",
           "reset_target": "profile_config",
           "address": "dali_single_5"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -366,7 +386,8 @@ describe('Config packts', () => {
         data: {
           "packet_type": "clear_config_packet",
           "reset_target": "holiday_config"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -381,7 +402,8 @@ describe('Config packts', () => {
           "packet_type": "clear_config_packet",
           "reset_target": "multicast_config",
           "multicast_device": "all_multicast_devices"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -396,7 +418,8 @@ describe('Config packts', () => {
           "packet_type": "clear_config_packet",
           "reset_target": "factory_reset",
           "device_serial": "5083000D"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });

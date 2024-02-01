@@ -1,3 +1,10 @@
+# Version 0.8 01.02.2024 (Breaking changes)
+  - Removal of '_' in front of the parameter names on following devices: {CM30xx_2_3_x, UM30xx_4_0_X}. __NB! Breaking change__
+  - Added UL20xx_1_1_x javascript encoder.
+  - Added UL20xx_1_1_x uplink and downlink with combined decoder & encoder in TTN format.
+  - Changed invalid_header to invalid_packet_type on next devices: {im30xx_0_9_x, cm30xx_2_3_x, ul20xx_1_0_x, ul20xx_1_1_x, um30xx_4_0_x}.
+  - Output always contains errors and warnings lists even if empty.
+
 # Version 0.7 15.01.2024 (Breaking change)
   - Removal of formatter options in the html live decoder. Everything is now formatted as { "key__unit": value }.
   - UL20xx 1.0.x and 1.1.x decoder style unified to { "key__unit": value } format. __NB! Breaking change__.

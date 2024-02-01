@@ -9,8 +9,9 @@ describe('Config requests', () => {
       data: '01',
       expected: {
         data: {
-          "packet_type": "ldr_input_config_request"
-        }
+          "packet_type": "deprecated_ldr_input_config_request"
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -22,8 +23,9 @@ describe('Config requests', () => {
       data: '03',
       expected: {
         data: {
-          "packet_type": "dig_input_config_request"
-        }
+          "packet_type": "deprecated_dig_input_config_request"
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -36,7 +38,8 @@ describe('Config requests', () => {
       expected: {
         data: {
           "packet_type": "calendar_config_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -49,7 +52,8 @@ describe('Config requests', () => {
       expected: {
         data: {
           "packet_type": "status_config_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -59,7 +63,13 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '0806',
-      expected: { data: { packet_type: 'profile_config_request', profile_id: 6} },
+      expected: {
+        data: {
+          packet_type: 'profile_config_request',
+          profile_id: 6
+        }, errors: [],
+        warnings: [],
+      },
     });
   });
 
@@ -68,7 +78,13 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '08FF',
-      expected: { data: { packet_type: 'profile_config_request', profile_id: 'all_profiles' }},
+      expected: {
+        data: {
+          packet_type: 'profile_config_request',
+          profile_id: 'all_profiles'
+        }, errors: [],
+        warnings: [],
+      },
     });
   });
 
@@ -80,7 +96,8 @@ describe('Config requests', () => {
       expected: {
         data: {
           "packet_type": "default_dim_config_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -93,7 +110,8 @@ describe('Config requests', () => {
       expected: {
         data: {
           "packet_type": "usage_config_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -106,7 +124,8 @@ describe('Config requests', () => {
       expected: {
         data: {
           "packet_type": "holiday_config_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -119,7 +138,8 @@ describe('Config requests', () => {
       expected: {
         data: {
           "packet_type": "boot_delay_config_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -132,7 +152,8 @@ describe('Config requests', () => {
       expected: {
         data: {
           "packet_type": "defaults_config_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -145,7 +166,8 @@ describe('Config requests', () => {
       expected: {
         data: {
           "packet_type": "location_config_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -155,7 +177,12 @@ describe('Config requests', () => {
       decoderFn: decodeRaw,
       fport: 49,
       data: '16',
-      expected: { data: { packet_type: 'metering_alert_confic_request' } },
+      expected: {
+        data: { 
+          packet_type: 'metering_alert_confic_request' 
+        }, errors: [],
+        warnings: [],
+        },
     });
   });
 
@@ -168,7 +195,8 @@ describe('Config requests', () => {
         data: {
           "packet_type": "multicast_config_request",
           "multicast_device": 2
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -183,7 +211,8 @@ describe('Commands', () => {
       expected: {
         data: {
           "packet_type": "activate_dfu_command"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -197,7 +226,8 @@ describe('Commands', () => {
         data: {
           "packet_type": "dali_status_request",
           "address": "all_drivers"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -217,7 +247,8 @@ describe('Commands', () => {
               "dimming_level__percent": 100
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -231,7 +262,8 @@ describe('Commands', () => {
         data: {
           "packet_type": "custom_dali_request",
           "query_data_raw": "48A148A248A348A448A5"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -245,7 +277,8 @@ describe('Commands', () => {
         data: {
           "packet_type": "custom_dali_command",
           "dali_command": "027F0321032B"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -260,7 +293,8 @@ describe('Commands', () => {
           "packet_type": "status_usage_request",
           "usage_requested": true,
           "status_requested": false
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -273,7 +307,8 @@ describe('Commands', () => {
       expected: {
         data: {
           "packet_type": "interface_request"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -290,7 +325,8 @@ describe('Commands', () => {
           "memory_bank": 0,
           "memory_address": 3,
           "read_size__bytes": 6
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -307,7 +343,8 @@ describe('Commands', () => {
           "memory_bank": 0,
           "memory_address": 3,
           "memory_value": "0607EDFACE82E5"
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -321,7 +358,8 @@ describe('Commands', () => {
         data: {
           "packet_type": "open_drain_output_control",
           "open_drain_output_on": true
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });
@@ -338,10 +376,11 @@ describe('Commands', () => {
             {
               "address": "dali_broadcast",
               "dimming_level__percent": 100,
-              "duration__min": 15
+              "duration__minutes": 15
             }
           ]
-        }
+        }, errors: [],
+        warnings: [],
       },
     });
   });

@@ -129,7 +129,7 @@ Node must be installed. To install dependencies:
 `npm run build_ul20xx_1_1_x && npm run build_ul20xx_1_1_x_html`
 `npm run build_um30xx_4_0_x && npm run build_um30xx_4_0_x_html`
 `npm run build_im30xx_0_9_x && npm run build_im30xx_0_9_x_html`
-
+`npm run build_ul20xx_1_1_x_encoder`
 ## Running tests:
 `npm test`
 If src folder has been modified, run at least first half of the build command (generating html not needed).
