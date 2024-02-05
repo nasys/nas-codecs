@@ -1072,6 +1072,9 @@ export function formatLightLx(lx) {
 }
 
 function calcLightLx(light_raw) {
+  if (light_raw === 0xFFFF){
+    return 'unavailable'
+  }
   var light_val = light_raw & 0x7FFF;
   var lx = Math.pow(10, light_val / 4000.0) / 1000.0;
   return formatLightLx(lx);
@@ -1332,15 +1335,15 @@ function usageConsumptionParse(dataView, err) {
     result.mains_voltage__V = dataView.getUint8();
   }
   if (bits.getBits(1)) {
-    result.driver_operating_time__s = dataView.getUint32();
+    result.driver_operating_time__h = dataView.getUint32() / 3600;
   }
   if (bits.getBits(1)) {
     // #ifdef VER1_0
     var sec = dataView.getUint32();
-    if (addr === 0xFF) sec = sec * 3600;
-    result.lamp_on_time__s = sec;
+    if (addr === 0xFF) sec = sec / 3600;
+    result.lamp_on_time__h = sec / 3600;
     // #else
-    result.lamp_on_time__s = dataView.getUint32();
+    result.lamp_on_time__h = dataView.getUint32() / 3600;
     // #endif
   }
   return result;

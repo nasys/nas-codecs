@@ -1,3 +1,8 @@
+# Version 0.8.1 05.02.2024
+  - UL20xx_1_0_x & UL20xx_1_1_x changed driver_operating_time__s to driver_operation_time__h, now units are in a hour
+  - UL20xx_1_0_x & UL20xx_1_1_x changed lamp_on_time__s to lamp_on_time__h, now units are in hour
+  - UL20xx_1_1_x & UL20xx_1_1_x light_sensor & d4i_light_sensor 0xFFFF now display unavailable
+
 # Version 0.8 01.02.2024 (Breaking changes)
   - Removal of '_' in front of the parameter names on following devices: {CM30xx_2_3_x, UM30xx_4_0_X}. __NB! Breaking change__
   - Added UL20xx_1_1_x javascript encoder.

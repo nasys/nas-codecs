@@ -978,6 +978,9 @@ export function formatLightLx(lx) {
 }
 
 function calcLightLx(light_raw) {
+  if (light_raw === 0xFFFF){
+    return 'unavailable'
+  }
   var light_val = light_raw & 0x7FFF;
   var lx = Math.pow(10, light_val / 4000.0) / 1000.0;
   return formatLightLx(lx);
@@ -1235,10 +1238,10 @@ function usageConsumptionParse(dataView, err) {
     result.mains_voltage__V = dataView.getUint8();
   }
   if (bits.getBits(1)) {
-    result.driver_operating_time__s = dataView.getUint32();
+    result.driver_operating_time__h = dataView.getUint32() / 3600;
   }
   if (bits.getBits(1)) {
-    result.lamp_on_time__s = dataView.getUint32();
+    result.lamp_on_time__h = dataView.getUint32() / 3600;
   }
   return result;
 }
