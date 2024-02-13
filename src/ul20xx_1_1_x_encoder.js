@@ -84,7 +84,7 @@ function encode_deprecated_dig_input_config(data, pack, err){
     bits1.addBit(data.trigger_alert_enabled, 'trigger_alert_enabled');
     pack.addUint8(bits1.data_byte)
     pack.addUint8(addressEncode(data.address, err));
-    pack.addUint8(dimLevelEncode(data.dimming_level__percent), 'dimming_level__percent');
+    pack.addUint8(dimLevelEncode(data.dimming_level__percent, err), 'dimming_level__percent');
 }
 
 function status_config(data, pack, err){
@@ -95,7 +95,7 @@ function status_config(data, pack, err){
         pack.addUint32(60);
     } else if (interval > 86400){
         err.warnings.push('status_interval_86400s_maximum');
-        pack.addUint(86400)
+        pack.addUint8(86400)
     } else {
         pack.addUint32(interval, 'status_interval__s');
     }
@@ -342,8 +342,8 @@ function light_sensor_config(data, pack, err){
 
     var bits1 = new BitPack(err);
     bits1.addBit(data.alert_on_every_step, 'alert_on_every_step');
-    bits1.addBit(data.clamp_profile, 'clamp_profile');
-    bits1.addBit(data.clamp_dig, 'clamp_dig');
+    bits1.addBit(data.light_sensor_clamps_profile, 'light_sensor_clamps_profile');
+    bits1.addBit(data.light_sensor_clamps_dig, 'light_sensor_clamps_dig');
     bits1.addBit(data.interpolate_steps, 'interpolate_steps');
     pack.addUint8(bits1.data_byte);
 
@@ -359,8 +359,8 @@ function light_sensor_config(data, pack, err){
 
 function dim_notify_config(data, pack, err){
     pack.addUint8(0x2A);
-    pack.addUint8(strLookup(data.random_delay__s, {'disabled': 0xFF}, err), 'random_delay__s');
-    pack.addUint8(data.packet_limit__s, 'packet_limit__s');
+    pack.addUint8(strLookup(data.random_delay__s / 5, {'disabled': 0xFF}, err), 'random_delay__s');
+    pack.addUint8((data.packet_limit__s / 60), 'packet_limit__s');
 }
 
 function multicast_config(data, pack, err){
@@ -571,7 +571,7 @@ function open_drain_ouptut_control(data, pack, err){
     pack.addUint8(0x0C);
     var bits1 = new BitPack(err);
     bits1.addBit(data.open_drain_output_on, 'open_drain_output_on');
-    pack.addUint8(bits.data_byte);
+    pack.addUint8(bits1.data_byte);
 }
 
 function custom_dali_request(data, pack, err){
@@ -674,7 +674,7 @@ function encode_packet(data, pack, err) {
     } else if (data.packet_type === 'status_usage_request'){
         status_usage_request(data, pack, err);
         fport = 60;
-    } else if (data.packet_type === 'open_drain_ouptut_control'){
+    } else if (data.packet_type === 'open_drain_output_control'){
         open_drain_ouptut_control(data, pack, err);
         fport = 60;
     } else if (data.packet_type === 'custom_dali_request'){

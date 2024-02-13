@@ -33,7 +33,7 @@
   <input type="text" id="payload_raw" size="100"><br><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2024-02-01T12:48:13.045Z</div>
+<div class="footer">Generated at 2024-02-13T12:34:02.207Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -957,7 +957,6 @@ function statusProfileParser(dataView, err) {
   return profile;
 }
 
-
 function statusParser1_0(dataView, result, err) {
   // does not support 1.0.x legacy mode status packet!
   result.packet_type = 'status_packet';
@@ -1049,11 +1048,11 @@ function usageConsumptionParse(dataView, err) {
     result.mains_voltage__V = dataView.getUint8();
   }
   if (bits.getBits(1)) {
-    result.driver_operating_time__s = dataView.getUint32();
+    result.driver_operating_time__h = Math.round(dataView.getUint32() / 3600);
   }
   if (bits.getBits(1)) {
     var sec = dataView.getUint32();
-    if (addr === 0xFF) sec = sec * 3600;
+    if (addr === 0xFF) sec = sec;
     result.lamp_on_time__s = sec;
   }
   return result;
@@ -1488,8 +1487,23 @@ function base64ToBytes(base64) {
 }
 
 function runOnPageLoad() {
-    document.getElementById('payload_raw').value = "DFD41D5E004B041502AE05050AFF32030306FF00";
-    dataInputHandler();
+    var queryString = window.location.search;
+    var urlParams = new URLSearchParams(queryString);
+    var hex = urlParams.get('hex');
+    var fport = urlParams.get('fport');
+    if (hex && fport){
+      var raw = hex;
+      var fport = parseInt(fport);
+      document.getElementById('fport').value = fport;
+      var filtered = filterForHex(raw)
+      var buffer = hexToBytes(filtered)
+      var res = decodeRaw(fport, buffer);
+      document.getElementById('payload_raw').value = filtered;
+      setOutput(res);
+    } else {
+      document.getElementById('payload_raw').value = "DFD41D5E004B041502AE05050AFF32030306FF00";
+      dataInputHandler();
+    }
 }
 
 window.onload = runOnPageLoad;    
@@ -1508,9 +1522,27 @@ function jsonToHtmlFormatter(json_txt) {
     return html_out.replace(/(["{[\]},:])/g, '<span class="dim">$1</span>');
 }
 
+function replaceUrlParams(fport, hex) {
+  var url = new URL(window.location);
+  var searchParams = url.searchParams;
+
+  if (fport !== '') {
+      searchParams.set('fport', fport);
+  } else {
+      searchParams.delete('fport');
+  }
+
+  if (hex !== '') {
+      searchParams.set('hex', hex);
+  } else {
+      searchParams.delete('hex');
+  }
+  var newUrl = url.protocol + '//' + url.host + url.pathname + '?' + searchParams.toString();
+  window.history.replaceState({}, '', newUrl);
+}
+
 function setOutput(res) {
   var str_json = JSON.stringify(res, null, 2);
-
 	str_html = jsonToHtmlFormatter(str_json);
 	console.log(str_html);
     document.getElementById("demo").innerHTML = str_html;
@@ -1519,7 +1551,6 @@ function setOutput(res) {
 const dataInputHandler = function(e) {
     var raw = document.getElementById('payload_raw').value;
     var fport = parseInt(document.getElementById('fport').value);
-
     var buffer;
     if (is_base64()) {
       var filtered = filterForBase64(raw);
@@ -1539,8 +1570,8 @@ const dataInputHandler = function(e) {
   
       var buffer = hexToBytes(filtered);
     }
+    replaceUrlParams(fport, filtered);
     var res = decodeRaw(fport, buffer);
-
     setOutput(res);
 }
 

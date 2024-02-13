@@ -89,7 +89,7 @@ if (device_name == 'CM30xx') {
   var fport_options = `
         <option value="24">24 - Status</option>
         <option value="25">25 - Usage</option>
-        <option value="50">50 - Configuartions</option>
+        <option value="50">50 - Configuration</option>
         <option value="51">51 - DFU COMMAND</option>
         <option value="60">60 - Commands</option>
         <option value="99">99 - System Messages</option>`;
@@ -159,8 +159,23 @@ function base64ToBytes(base64) {
 }
 
 function runOnPageLoad() {
-    document.getElementById('payload_raw').value = "` + default_payload + `";
-    dataInputHandler();
+    var queryString = window.location.search;
+    var urlParams = new URLSearchParams(queryString);
+    var hex = urlParams.get('hex');
+    var fport = urlParams.get('fport');
+    if (hex && fport){
+      var raw = hex;
+      var fport = parseInt(fport);
+      document.getElementById('fport').value = fport;
+      var filtered = filterForHex(raw)
+      var buffer = hexToBytes(filtered)
+      var res = decodeRaw(fport, buffer);
+      document.getElementById('payload_raw').value = filtered;
+      setOutput(res);
+    } else {
+      document.getElementById('payload_raw').value = "` + default_payload + `";
+      dataInputHandler();
+    }
 }
 
 window.onload = runOnPageLoad;    
@@ -179,9 +194,27 @@ function jsonToHtmlFormatter(json_txt) {
     return html_out.replace(/(["{[\\]},:])/g, '<span class="dim">$1</span>');
 }
 
+function replaceUrlParams(fport, hex) {
+  var url = new URL(window.location);
+  var searchParams = url.searchParams;
+
+  if (fport !== '') {
+      searchParams.set('fport', fport);
+  } else {
+      searchParams.delete('fport');
+  }
+
+  if (hex !== '') {
+      searchParams.set('hex', hex);
+  } else {
+      searchParams.delete('hex');
+  }
+  var newUrl = url.protocol + '//' + url.host + url.pathname + '?' + searchParams.toString();
+  window.history.replaceState({}, '', newUrl);
+}
+
 function setOutput(res) {
   var str_json = JSON.stringify(res, null, 2);
-
 	str_html = jsonToHtmlFormatter(str_json);
 	console.log(str_html);
     document.getElementById("demo").innerHTML = str_html;
@@ -190,7 +223,6 @@ function setOutput(res) {
 const dataInputHandler = function(e) {
     var raw = document.getElementById('payload_raw').value;
     var fport = parseInt(document.getElementById('fport').value);
-
     var buffer;
     if (is_base64()) {
       var filtered = filterForBase64(raw);
@@ -210,8 +242,8 @@ const dataInputHandler = function(e) {
   
       var buffer = hexToBytes(filtered);
     }
+    replaceUrlParams(fport, filtered);
     var res = decodeRaw(fport, buffer);
-
     setOutput(res);
 }
 

@@ -93,8 +93,8 @@ describe('Config packts', () => {
         data: {
           "packet_type": "light_sensor_config_packet",
           "alert_on_every_step": false,
-          "clamp_profile": true,
-          "clamp_dig": true,
+          "light_sensor_clamps_profile": true,
+          "light_sensor_clamps_dig": true,
           "interpolate_steps": true,
           "measurement_duration__s": 60,
           "address": "dali_broadcast",

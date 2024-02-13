@@ -33,7 +33,7 @@
   <input type="text" id="payload_raw" size="100"><br><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2024-02-05T06:37:03.589Z</div>
+<div class="footer">Generated at 2024-02-13T12:34:11.182Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -378,8 +378,8 @@ function decodeLightSensorConfig(dataView, result, err) {
   }
   var bits = dataView.getUint8Bits();
   result.alert_on_every_step = bits.getBits(1);
-  result.clamp_profile = bits.getBits(1);
-  result.clamp_dig = bits.getBits(1);
+  result.light_sensor_clamps_profile = bits.getBits(1);
+  result.light_sensor_clamps_dig = bits.getBits(1);
   result.interpolate_steps = bits.getBits(1);
 
   result.measurement_duration__s = dataView.getUint8();
@@ -1260,10 +1260,10 @@ function usageConsumptionParse(dataView, err) {
     result.mains_voltage__V = dataView.getUint8();
   }
   if (bits.getBits(1)) {
-    result.driver_operating_time__h = dataView.getUint32() / 3600;
+    result.driver_operating_time__h = Math.round(dataView.getUint32() / 3600);
   }
   if (bits.getBits(1)) {
-    result.lamp_on_time__h = dataView.getUint32() / 3600;
+    result.lamp_on_time__s = dataView.getUint32();
   }
   return result;
 }
@@ -1716,8 +1716,23 @@ function base64ToBytes(base64) {
 }
 
 function runOnPageLoad() {
-    document.getElementById('payload_raw').value = "01F37F205E8244320916200701D20294550401FE50190012501900";
-    dataInputHandler();
+    var queryString = window.location.search;
+    var urlParams = new URLSearchParams(queryString);
+    var hex = urlParams.get('hex');
+    var fport = urlParams.get('fport');
+    if (hex && fport){
+      var raw = hex;
+      var fport = parseInt(fport);
+      document.getElementById('fport').value = fport;
+      var filtered = filterForHex(raw)
+      var buffer = hexToBytes(filtered)
+      var res = decodeRaw(fport, buffer);
+      document.getElementById('payload_raw').value = filtered;
+      setOutput(res);
+    } else {
+      document.getElementById('payload_raw').value = "01F37F205E8244320916200701D20294550401FE50190012501900";
+      dataInputHandler();
+    }
 }
 
 window.onload = runOnPageLoad;    
@@ -1736,9 +1751,27 @@ function jsonToHtmlFormatter(json_txt) {
     return html_out.replace(/(["{[\]},:])/g, '<span class="dim">$1</span>');
 }
 
+function replaceUrlParams(fport, hex) {
+  var url = new URL(window.location);
+  var searchParams = url.searchParams;
+
+  if (fport !== '') {
+      searchParams.set('fport', fport);
+  } else {
+      searchParams.delete('fport');
+  }
+
+  if (hex !== '') {
+      searchParams.set('hex', hex);
+  } else {
+      searchParams.delete('hex');
+  }
+  var newUrl = url.protocol + '//' + url.host + url.pathname + '?' + searchParams.toString();
+  window.history.replaceState({}, '', newUrl);
+}
+
 function setOutput(res) {
   var str_json = JSON.stringify(res, null, 2);
-
 	str_html = jsonToHtmlFormatter(str_json);
 	console.log(str_html);
     document.getElementById("demo").innerHTML = str_html;
@@ -1747,7 +1780,6 @@ function setOutput(res) {
 const dataInputHandler = function(e) {
     var raw = document.getElementById('payload_raw').value;
     var fport = parseInt(document.getElementById('fport').value);
-
     var buffer;
     if (is_base64()) {
       var filtered = filterForBase64(raw);
@@ -1767,8 +1799,8 @@ const dataInputHandler = function(e) {
   
       var buffer = hexToBytes(filtered);
     }
+    replaceUrlParams(fport, filtered);
     var res = decodeRaw(fport, buffer);
-
     setOutput(res);
 }
 

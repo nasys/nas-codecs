@@ -180,8 +180,8 @@ export function decodeLightSensorConfig(dataView, result, err) {
   }
   var bits = dataView.getUint8Bits();
   result.alert_on_every_step = bits.getBits(1);
-  result.clamp_profile = bits.getBits(1);
-  result.clamp_dig = bits.getBits(1);
+  result.light_sensor_clamps_profile = bits.getBits(1);
+  result.light_sensor_clamps_dig = bits.getBits(1);
   result.interpolate_steps = bits.getBits(1);
 
   result.measurement_duration__s = dataView.getUint8();
@@ -1335,15 +1335,15 @@ function usageConsumptionParse(dataView, err) {
     result.mains_voltage__V = dataView.getUint8();
   }
   if (bits.getBits(1)) {
-    result.driver_operating_time__h = dataView.getUint32() / 3600;
+    result.driver_operating_time__h = Math.round(dataView.getUint32() / 3600);
   }
   if (bits.getBits(1)) {
     // #ifdef VER1_0
     var sec = dataView.getUint32();
-    if (addr === 0xFF) sec = sec / 3600;
-    result.lamp_on_time__h = sec / 3600;
+    if (addr === 0xFF) sec = sec;
+    result.lamp_on_time__s = sec;
     // #else
-    result.lamp_on_time__h = dataView.getUint32() / 3600;
+    result.lamp_on_time__s = dataView.getUint32();
     // #endif
   }
   return result;

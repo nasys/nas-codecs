@@ -192,7 +192,7 @@ describe('Status and usage', () => {
               "active_power__W": 0,
               "load_side_energy__Wh": 0,
               "load_side_power__W": 0,
-              "driver_operating_time__s": 450160,
+              "driver_operating_time__h": 125,
               "lamp_on_time__s": 17
             }
           ]
@@ -223,7 +223,7 @@ describe('Status and usage', () => {
               "active_power__W": 0,
               "load_side_energy__Wh": 0,
               "load_side_power__W": 0,
-              "driver_operating_time__s": 450160,
+              "driver_operating_time__h": 125,
               "lamp_on_time__s": 17
             }
           ]

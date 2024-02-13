@@ -1,3 +1,11 @@
+# Version 0.9.0 13.02.2024
+  - Added UL20xx 1.1.x Encoder
+  - Decoders now support URL inputs (fport and hex)
+  - UL20xx decoder light_sensor clamp_profile renamed to light_sensor_clamps_profile
+  - UL20xx deocder clamp_dig renamed to light_sensor_clamps_dig
+  
+  - UL20xx clamp_profile/dig -> renamed to light_sensor_clamps_profile/dig
+
 # Version 0.8.1 05.02.2024
   - UL20xx_1_0_x & UL20xx_1_1_x changed driver_operating_time__s to driver_operation_time__h, now units are in a hour
   - UL20xx_1_0_x & UL20xx_1_1_x changed lamp_on_time__s to lamp_on_time__h, now units are in hour

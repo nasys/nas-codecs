@@ -1,4 +1,3 @@
-
 import { BinaryExtract, BitExtract } from './util/extract';
 import {
   pad, bytesToHexStr, intToHexStr,
@@ -157,8 +156,8 @@ export function decodeLightSensorConfig(dataView, result, err) {
   }
   var bits = dataView.getUint8Bits();
   result.alert_on_every_step = bits.getBits(1);
-  result.clamp_profile = bits.getBits(1);
-  result.clamp_dig = bits.getBits(1);
+  result.light_sensor_clamps_profile = bits.getBits(1);
+  result.light_sensor_clamps_dig = bits.getBits(1);
   result.interpolate_steps = bits.getBits(1);
 
   result.measurement_duration__s = dataView.getUint8();
@@ -979,6 +978,9 @@ export function formatLightLx(lx) {
 }
 
 function calcLightLx(light_raw) {
+  if (light_raw === 0xFFFF){
+    return 'unavailable'
+  }
   var light_val = light_raw & 0x7FFF;
   var lx = Math.pow(10, light_val / 4000.0) / 1000.0;
   return formatLightLx(lx);
@@ -1145,7 +1147,6 @@ function statusParser1_1(dataView, result, err) {
     result.dimming_source.push(dimmingSourceParser(dataView, err));
   }
 }
-
 function statusParser1_0(dataView, result, err) {
   // does not support 1.0.x legacy mode status packet!
   result.packet_type = 'status_packet';
@@ -1237,7 +1238,7 @@ function usageConsumptionParse(dataView, err) {
     result.mains_voltage__V = dataView.getUint8();
   }
   if (bits.getBits(1)) {
-    result.driver_operating_time__s = dataView.getUint32();
+    result.driver_operating_time__h = Math.round(dataView.getUint32() / 3600);
   }
   if (bits.getBits(1)) {
     result.lamp_on_time__s = dataView.getUint32();

@@ -917,7 +917,6 @@ function statusProfileParser(dataView, err) {
   return profile;
 }
 
-
 function statusParser1_0(dataView, result, err) {
   // does not support 1.0.x legacy mode status packet!
   result.packet_type = 'status_packet';
@@ -1009,11 +1008,11 @@ function usageConsumptionParse(dataView, err) {
     result.mains_voltage__V = dataView.getUint8();
   }
   if (bits.getBits(1)) {
-    result.driver_operating_time__s = dataView.getUint32();
+    result.driver_operating_time__h = Math.round(dataView.getUint32() / 3600);
   }
   if (bits.getBits(1)) {
     var sec = dataView.getUint32();
-    if (addr === 0xFF) sec = sec * 3600;
+    if (addr === 0xFF) sec = sec;
     result.lamp_on_time__s = sec;
   }
   return result;

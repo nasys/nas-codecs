@@ -185,6 +185,47 @@ function bytesToHexStr(byteArr) {
   return res;
 }
 
+function profileReason(reason, err) {
+
+  switch (reason) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+      return 'profile_' + reason;
+    case 0x21:
+      return 'calendar_day';
+    case 0x22:
+      return 'calendar_night';
+    case 0x30:
+      return 'calendar_dawn_step';
+    case 0x50:
+      return 'calendar_dusk_step';
+    case 245:
+      return 'relay_off';
+    // eslint-disable-next-line no-duplicate-case
+    case 248:
+      return 'fallback_active';
+    case 246:
+      return 'driver_not_found';
+    case 250:
+      return 'ldr_input_active';
+    case 252:
+      return 'dig_input_active';
+    case 253:
+      return 'manual_active';
+    case 255:
+      return 'unknown';
+    default:
+      err.errors.push('invalid_reason');
+      return 'invalid_reason';
+  }
+}
+
 function addressParse(addr, ffStr, err) {
   if (addr === 0x01) {
     return 'analog_0_10v';
@@ -297,8 +338,8 @@ function decodeLightSensorConfig(dataView, result, err) {
   }
   var bits = dataView.getUint8Bits();
   result.alert_on_every_step = bits.getBits(1);
-  result.clamp_profile = bits.getBits(1);
-  result.clamp_dig = bits.getBits(1);
+  result.light_sensor_clamps_profile = bits.getBits(1);
+  result.light_sensor_clamps_dig = bits.getBits(1);
   result.interpolate_steps = bits.getBits(1);
 
   result.measurement_duration__s = dataView.getUint8();
@@ -730,6 +771,59 @@ function decodeFport50(dataView, result, err) {
   }
 }
 
+function daliStatus(bits, address, err) {
+  var status = {
+    driver_error: false,
+    lamp_failure: false,
+    lamp_on: false,
+    limit_error: false,
+    fade_running: false,
+    reset_state: false,
+    missing_short_address: false,
+    power_failure: false,
+  };
+  if (bits.data === 0xFF) return status;
+
+  var driverError = bits.getBits(1);
+  status.driver_error = driverError;
+
+  var lampFailure = bits.getBits(1);
+  status.lamp_failure = lampFailure;
+
+  status.lamp_on = bits.getBits(1);
+
+  var limitError = bits.getBits(1);
+  status.limit_error = limitError;
+
+  status.fade_running = bits.getBits(1);
+
+  var resetState = bits.getBits(1);
+  status.reset_state = resetState;
+
+  var missingAddress = bits.getBits(1);
+  status.missing_short_address = missingAddress;
+
+  var powerFailure = bits.getBits(1);
+  status.power_failure = powerFailure;
+
+  if (driverError) err.warnings.push(address + ' driver_error');
+  if (lampFailure) err.warnings.push(address + ' lamp_failure');
+  if (limitError) err.warnings.push(address + ' limit_error');
+  if (resetState) err.warnings.push(address + ' reset_state');
+  if (powerFailure) err.warnings.push(address + ' power_failure');
+  return status;
+}
+
+function decodeDaliStatus(dataView, err) {
+  var result = {};
+  var addr = dataView.getUint8();
+  var addrParsed = addressParse(addr, null, err);
+  result.address = addrParsed;
+
+  result.status = daliStatus(dataView.getUint8Bits(), addrParsed, err);
+  return result;
+}
+
 function decodeDimming(dataView, err) {
   var result = {};
   result.address = addressParse(dataView.getUint8(), "all_devices", err);
@@ -911,12 +1005,501 @@ function decodeFport60(dataView, result, err) {
   }
 }
 
+function dimmingSourceParser(dataView, err) {
+  var source = {};
+
+  source.address = addressParse(dataView.getUint8(), null, err);
+  source.reason = profileReason(dataView.getUint8(), err);
+  source.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'ignore');
+  source.status = daliStatus(dataView.getUint8Bits(), source.address, err);
+  return source;
+}
+
 function formatLightLx(lx) {
   var log10_val = Math.log10(lx);
   var log10_pos = log10_val >= 0 ? log10_val : 0;
   var log10_lim = log10_pos > 3 ? 3 : log10_pos;
   var decimals = 3 - Math.trunc(log10_lim);
   return lx.toFixed(decimals);
+}
+
+function calcLightLx(light_raw) {
+  if (light_raw === 0xFFFF){
+    return 'unavailable'
+  }
+  var light_val = light_raw & 0x7FFF;
+  var lx = Math.pow(10, light_val / 4000.0) / 1000.0;
+  return formatLightLx(lx);
+}
+
+function decodeSensorSource(dataView, header, result, err) {
+  if (header === 0x01) {
+    result.sensor_source.ldr_input = dataView.getUint8();
+    return 1;
+  }
+  if (header == 0x02) {
+    result.sensor_source.light_sensor__lx = calcLightLx(dataView.getUint16());
+    return 2;
+  }
+  if (header == 0x03) {
+    result.sensor_source.d4i_light_sensor__lx = calcLightLx(dataView.getUint16());
+    return 2;
+  }
+  if (header == 0x04) {
+    var bits = dataView.getUint8Bits();
+    result.sensor_source.dig_input_1_on = bits.getBits(1);
+    return 1;
+  }
+  if (header == 0x08) {
+    var deg = dataView.getUint8();
+    if (deg == 0xFF) {
+      deg = null;
+    }
+    result.sensor_source.tilt_sensor__deg = deg;
+    return 1;
+  }
+  return 0;
+}
+
+function statusParser1_1(dataView, result, err) {
+  result.packet_type = 'status_packet';
+
+  var header = dataView.getUint8();
+  var header_below_1_1_4 = header === 0x00;
+  if (!header_below_1_1_4 && header !== 0x01) {
+    err.errors.push('invalid_packet_type');
+    return;
+  }
+
+  var epoch = dataView.getUint32();
+  result.device_unix_epoch = decodeUnixEpoch(epoch, err);
+
+  var statusField = {};
+  var bits = dataView.getUint8Bits();
+
+  bits.getBits(1);
+  var daliErrConn = bits.getBits(1);
+  var ldrOn = bits.getBits(1);
+  bits.getBits(1);
+  var digOn = bits.getBits(1);
+  var err1 = bits.getBits(1);
+  var err2 = bits.getBits(1);
+  var internalRelay = bits.getBits(1);
+
+  statusField.dali_connection_error = daliErrConn;
+  if (daliErrConn) err.warnings.push('dali_connection_error');
+
+  statusField.metering_com_error = err1;
+  if (err1) err.warnings.push('metering_com_error');
+
+  statusField.ext_rtc_warning = err2;
+  if (err2) err.warnings.push('ext_rtc_warning');
+
+  statusField.internal_relay_closed = internalRelay;
+  if (header_below_1_1_4) {
+    statusField.ldr_input_on = ldrOn;
+    statusField.dig_input_on = digOn;
+  }
+
+  if (!header_below_1_1_4) {
+    var bits1 = dataView.getUint8Bits();
+    bits1.getBits(1);
+    bits1.getBits(1);
+    statusField.open_drain_output_on = bits1.getBits(1);
+    bits1.getBits(1);
+    bits1.getBits(1);
+    bits1.getBits(1);
+    statusField.lumalink_connected = bits1.getBits(1);
+    statusField.lumalink_connected_after_boot = bits1.getBits(1);
+  }
+
+  result.status = statusField;
+
+  result.downlink_rssi__dBm = -1 * dataView.getUint8();
+
+  result.downlink_snr__dB = dataView.getInt8();
+
+  result.mcu_temperature__C = dataView.getInt8();
+
+  var alertsSent = true;
+  if (header_below_1_1_4) {
+    var bits2 = dataView.getUint8Bits();
+    bits2.getBits(1); // legacy thr
+    var ldrSent = bits2.getBits(1);
+    var odOn = bits2.getBits(1);
+    bits2.getBits(1);
+    result.status.open_drain_output_on = odOn;
+    alertsSent = bits2.getBits(1);
+
+    if (ldrSent) {
+      result.ldr_input_value = dataView.getUint8();
+    }
+
+  }
+
+  if (alertsSent) {
+    var bits4 = dataView.getUint8Bits();
+    bits4.getBits(4);
+    var alertVolt = bits4.getBits(1);
+    var alertLamp = bits4.getBits(1);
+    var alertPower = bits4.getBits(1);
+    var alertPF = bits4.getBits(1);
+
+    var alerts = {};
+    alerts.voltage_alert_in_24h = alertVolt;
+    alerts.lamp_error_alert_in_24h = alertLamp;
+    alerts.power_alert_in_24h = alertPower;
+    alerts.power_factor_alert_in_24h = alertPF;
+    result.active_alerts = alerts;
+
+    if (alertVolt) {
+      err.warnings.push('voltage_alert_in_24h');
+    }
+    if (alertLamp) {
+      err.warnings.push('lamp_error_alert_in_24h');
+    }
+    if (alertPower) {
+      err.warnings.push('power_alert_in_24h');
+    }
+    if (alertPF) {
+      err.warnings.push('power_factor_alert_in_24h');
+    }
+  }
+
+  if (!header_below_1_1_4) {
+    var senorSrcLeft = dataView.getUint8();
+    result.sensor_source = {};
+    while (senorSrcLeft > 0) {
+      var header = dataView.getUint8();
+      senorSrcLeft = senorSrcLeft - 1;
+      var consumed_len = decodeSensorSource(dataView, header, result);
+      if (consumed_len == 0) {
+        err.errors.push("unsupported_sensor_source");
+        // consume all leftover bytes assigned for sensor_source so that future sensor sources would not break the code
+        dataView.getRaw(senorSrcLeft);
+        senorSrcLeft = 0;
+      }
+      else {
+        senorSrcLeft = senorSrcLeft - consumed_len;
+      }
+    }
+    if (senorSrcLeft < 0) {
+      err.errors.push('error_decoding_sensor_source');
+    }
+  }
+
+  result.dimming_source = [];
+  while (dataView.availableLen()) {
+    result.dimming_source.push(dimmingSourceParser(dataView, err));
+  }
+}
+
+function usageConsumptionParse(dataView, err) {
+  var result = {};
+  var addr = dataView.getUint8();
+  result.address = addressParse(addr, 'internal_measurement', err);
+
+  var bits = dataView.getUint8Bits();
+  if (bits.getBits(1)) {
+    result.active_energy__Wh = dataView.getUint32();
+  }
+  if (bits.getBits(1)) {
+    result.active_power__W = dataView.getUint16();
+  }
+  if (bits.getBits(1)) {
+    result.load_side_energy__Wh = dataView.getUint32();
+  }
+  if (bits.getBits(1)) {
+    result.load_side_power__W = dataView.getUint16();
+  }
+  if (bits.getBits(1)) {
+    var rawPf = dataView.getUint8();
+    result.power_factor = rawPf === 0xFF ? 'unknown' : (rawPf / 100.0);
+  }
+  if (bits.getBits(1)) {
+    result.mains_voltage__V = dataView.getUint8();
+  }
+  if (bits.getBits(1)) {
+    result.driver_operating_time__h = Math.round(dataView.getUint32() / 3600);
+  }
+  if (bits.getBits(1)) {
+    result.lamp_on_time__s = dataView.getUint32();
+  }
+  return result;
+}
+function usageParser(dataView, result, err) {
+  if (dataView.getUint8() !== 0) {
+    err.errors.push('invalid_packet_type');
+    return;
+  }
+
+  result.packet_type = 'usage_packet';
+
+  result.consumption = [];
+  while (dataView.availableLen()) {
+    result.consumption.push(usageConsumptionParse(dataView, err));
+  }
+}
+
+function deviceConfigParser(config, err) {
+  switch (config) {
+    case 0:
+      return 'dali';
+    case 1:
+      return 'dali_nc';
+    case 2:
+      return 'dali_no';
+    case 3:
+      return 'analog_nc';
+    case 4:
+      return 'analog_no';
+    case 5:
+      return 'dali_analog_nc';
+    case 6:
+      return 'dali_analog_no';
+    case 7:
+      return 'dali_analog_nc_no';
+    default:
+      err.errors.push('invalid_device_config');
+      return 'invalid_config';
+  }
+}
+
+function optionalFeaturesParser(byte) {
+  var res = {};
+  var bits = new BitExtract(byte);
+  bits.getBits(1);
+  bits.getBits(1);
+  res.dig_input = bits.getBits(1);
+  res.ldr_input = bits.getBits(1);
+  res.open_drain_output = bits.getBits(1);
+  res.metering = bits.getBits(1);
+  bits.getBits(1);
+  bits.getBits(1);
+  return res;
+}
+
+function daliSupplyParse(data, err) {
+  if (data < 0x70) {
+    return data;
+  }
+  switch (data) {
+    case 0x7E:
+      return 'bus_high';
+    case 0x7f:
+      err.warnings.push('dali_bus_error');
+      return 'bus_error';
+    default:
+      return 'invalid_value';
+  }
+}
+
+function resetReasonParse(byte, err) {
+  var res = [];
+  var bits = new BitExtract(byte);
+  if (bits.getBits(1)) {
+    res.push('reset_0');
+  }
+  if (bits.getBits(1)) {
+    res.push('watchdog_reset');
+    err.warnings.push('watchdog_reset');
+  }
+  if (bits.getBits(1)) {
+    res.push('soft_reset');
+  }
+  if (bits.getBits(1)) {
+    res.push('reset_3');
+  }
+  if (bits.getBits(1)) {
+    res.push('reset_4');
+  }
+  if (bits.getBits(1)) {
+    res.push('reset_5');
+  }
+  if (bits.getBits(1)) {
+    res.push('reset_6');
+  }
+  if (bits.getBits(1)) {
+    res.push('reset_7');
+  }
+  return res;
+}
+
+function bootParser(dataView, result, err) {
+  result.packet_type = 'boot_packet';
+
+  result.device_serial = intToHexStr(dataView.getUint32(), 8);
+
+  // eslint-disable-next-line no-bitwise
+  result.firmware_version = dataView.getUint8() + '.' + dataView.getUint8() + '.' + dataView.getUint8();
+
+  result.device_unix_epoch = decodeUnixEpoch(dataView.getUint32(), err);
+
+  result.device_config = deviceConfigParser(dataView.getUint8(), err);
+
+  result.optional_features = optionalFeaturesParser(dataView.getUint8());
+
+  var daliBits = dataView.getUint8Bits();
+  result.dali_supply_state__V = daliSupplyParse(daliBits.getBits(7), err);
+  result.dali_power_source_external = daliBits.getBits(1) ? 'external' : 'internal';
+
+  var driver = dataView.getUint8Bits();
+  result.dali_addressed_driver_count = driver.getBits(7);
+  var unadressed = driver.getBits(1);
+  result.dali_unadressed_driver_found = unadressed;
+  if (unadressed) {
+    err.warnings.push("unadressed_dali_driver_on_bus");
+  }
+
+  if (dataView.availableLen()) {
+    result.reset_reason = resetReasonParse(dataView.getUint8(), err);
+  }
+}
+
+function errorCodeParser(reason) {
+  switch (reason) {
+    case 0x00:
+      return 'n/a';
+    case 0x01:
+      return 'n/a';
+    case 0x02:
+      return 'unknown_fport';
+    case 0x03:
+      return 'packet_size_short';
+    case 0x04:
+      return 'packet_size_long';
+    case 0x05:
+      return 'value_error';
+    case 0x06:
+      return 'protocol_parse_error';
+    case 0x07:
+      return 'reserved_flag_set';
+    case 0x08:
+      return 'invalid_flag_combination';
+    case 0x09:
+      return 'unavailable_feature_request';
+    case 0x0A:
+      return 'unsupported_header';
+    case 0x0B:
+      return 'unreachable_hw_request';
+    case 0x0C:
+      return 'address_not_available';
+    case 0x0D:
+      return 'internal_error';
+    case 0x0E:
+      return 'packet_size_error';
+    case 0x81:
+      return 'profile_id_seq_error';
+    case 0x82:
+      return 'profile_destination_eror';
+    case 0x83:
+      return 'profile_days_error';
+    case 0x84:
+      return 'profile_step_count_error';
+    case 0x85:
+      return 'profile_step_value_error';
+    case 0x86:
+      return 'profile_step_unsorted_error';
+    default:
+      return 'invalid_error_code';
+  }
+}
+
+function configFailedParser(dataView, result, err) {
+  result.packet_type = 'invalid_downlink_packet';
+  result.downlink_from_fport = dataView.getUint8();
+  var error = errorCodeParser(dataView.getUint8());
+  result.error_reason = error;
+  err.warnings.push('downlink_error ' + error);
+}
+function decodeFport99(dataView, result, err) {
+  var header = dataView.getUint8();
+  switch (header) {
+    case 0x00:
+      bootParser(dataView, result, err);
+      return;
+    case 0x13:
+      configFailedParser(dataView, result, err);
+      return;
+    default:
+      err.errors.push('invalid_packet_type');
+  }
+}
+
+function decodeFport61(dataView, result, err) {
+  var header = dataView.getUint8();
+  var rawByte2 = dataView.getUint8();
+  // eslint-disable-next-line no-bitwise
+  var len = rawByte2 >> 4;
+  switch (header) {
+    case 0x80:
+      result.packet_type = 'dig_input_alert';
+      err.warnings.push('dig_input_alert');
+
+      if (len === 2) {
+        result.dig_input_event_counter = dataView.getUint16();
+      }
+      else if (len === 4) {
+        var bit2 = new BitExtract(rawByte2);
+        result.dig_input_on = bit2.getBits(1);
+        result.dig_input_event_counter = dataView.getUint32();
+      }
+      else {
+        err.errors.push('invalid_packet_length');
+      }
+      return;
+    case 0x81:
+      result.packet_type = 'ldr_input_alert';
+      if (len !== 2) {
+        err.errors.push('invalid_packet_length');
+        return;
+      }
+      err.warnings.push('ldr_input_alert');
+
+      var state = dataView.getUint8Bits().getBits(1);
+      var val = dataView.getUint8();
+      result.ldr_input_on = state;
+      result.ldr_input_value = val;
+      return;
+    case 0x83:
+      result.packet_type = 'dali_driver_alert';
+
+      result.drivers = [];
+      while (dataView.availableLen()) {
+        result.drivers.push(decodeDaliStatus(dataView, err));
+      }
+      return;
+    case 0x84:
+      result.packet_type = 'metering_alert';
+      var cond = new BitExtract(rawByte2);
+
+      var lampError = cond.getBits(1);
+      var overCurrent = cond.getBits(1);
+      var underVoltage = cond.getBits(1);
+      var overVoltage = cond.getBits(1);
+      var lowPowerFactor = cond.getBits(1);
+
+      result.lamp_error_alert = lampError;
+      result.over_current_alert = overCurrent;
+      result.under_voltage_alert = underVoltage;
+      result.over_voltage_alert = overVoltage;
+      result.low_power_factor_alert = lowPowerFactor;
+
+      if (lampError) err.warnings.push('metering_lamp_error');
+      if (overCurrent) err.warnings.push('metering_over_current');
+      if (underVoltage) err.warnings.push('metering_under_voltage');
+      if (overVoltage) err.warnings.push('metering_over_voltage');
+      if (lowPowerFactor) err.warnings.push('metering_low_power_factor');
+
+      result.power__W = dataView.getUint16();
+
+      result.voltage__V = dataView.getUint16();
+
+      result.power_factor = dataView.getUint8() / 100;
+      return;
+    default:
+      err.errors.push('invalid_packet_type');
+  }
 }
 // DOWNLINK ONLY THINGS
 
@@ -1007,6 +1590,10 @@ function decodeByFport(fport, bytes, result, err) {
   var dataView = new BinaryExtract(bytes);
   if (dataView.availableLen() === 0) {
     err.errors.push('empty_payload');
+  } else if (fport === 23) {
+    statusParser1_1(dataView, result, err);
+  } else if (fport === 26) {
+    usageParser(dataView, result, err);
   } else if (fport === 49) {
     decodeFport49(dataView, result, err);
   } else if (fport === 50) {
@@ -1015,6 +1602,10 @@ function decodeByFport(fport, bytes, result, err) {
     decodeFport51(dataView, result, err);
   } else if (fport === 60) {
     decodeFport60(dataView, result, err);
+  } else if (fport === 61) {
+    decodeFport61(dataView, result, err);
+  } else if (fport === 99) {
+    decodeFport99(dataView, result, err);
   } else {
     err.errors.push('invalid_fport');
   }

@@ -39,6 +39,7 @@
     "build_im30xx_0_9_x_html": "node html/html_generate.js 'IM30xx' '0.9.x'",
 
     "build_ul20xx_1_1_x_encoder": "rollup config/ul20xx_1_1_x_encoder_entry.js --file generated/ul20xx_1_1_x_encoder.js --validate && node html/post_process.js generated/ul20xx_1_1_x_encoder.js && minify generated/ul20xx_1_1_x_encoder.js > generated/ul20xx_1_1_x_encoder.min.js",
+    "build_ul20xx_1_1_x_encoder_html": "node html/html_encoder_generate.js 'UL20xx' '1.1.x'", 
 
     "build_ul20xx_1_1_x_ttn_uplink"  : "preprocess src/ul20xx_decoder.js . -VER1_1=true > src/ul20xx_1_1_x_decoder.processed.js && rollup config/ul20xx_1_1_x_TTN_uplink_entry.js --file generated/ul20xx_1_1_x_TTN_uplink.js --validate && node html/post_process.js generated/ul20xx_1_1_x_TTN_uplink.js && minify generated/ul20xx_1_1_x_TTN_uplink.js > generated/ul20xx_1_1_x_TTN_uplink.min.js",
     "build_ul20xx_1_1_x_ttn_downlink": "preprocess src/ul20xx_decoder.js . -VER1_1=true -UPLINK_REMOVE=true > src/ul20xx_1_1_x_decoder_no_uplink.processed.js && rollup config/ul20xx_1_1_x_TTN_downlink_entry.js --file generated/ul20xx_1_1_x_TTN_downlink.js --validate && node html/post_process.js generated/ul20xx_1_1_x_TTN_downlink.js && minify generated/ul20xx_1_1_x_TTN_downlink.js > generated/ul20xx_1_1_x_TTN_downlink.min.js"
