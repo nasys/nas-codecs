@@ -429,9 +429,7 @@ describe('Alerts, notifications', () => {
           "packet_type": "dig_input_alert",
           "dig_input_event_counter": 6
         }, errors: [],
-        warnings: [
-          "dig_input_alert"
-        ]
+        warnings: []
       },
     });
   });
@@ -447,9 +445,7 @@ describe('Alerts, notifications', () => {
           "ldr_input_on": false,
           "ldr_input_value": 121
         }, errors: [],
-        warnings: [
-          "ldr_input_alert"
-        ]
+        warnings: []
       },
 
     });

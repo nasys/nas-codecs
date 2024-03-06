@@ -92,7 +92,7 @@ describe('Config packts', () => {
       expected: {
         data: {
           "packet_type": "light_sensor_config_packet",
-          "alert_on_every_step": false,
+          "notification_on_every_step": false,
           "light_sensor_clamps_profile": true,
           "light_sensor_clamps_dig": true,
           "interpolate_steps": true,
@@ -143,8 +143,8 @@ describe('Config packts', () => {
           "packet_type": "dig_input_config_packet",
           "dig_mode_button": true,
           "polarity_high_or_rising": true,
-          "alert_on_activation": false,
-          "alert_on_inactivation": false,
+          "notification_on_activation": false,
+          "notification_on_inactivation": false,
           "address": "dali_broadcast",
           "active_dimming_level__percent": 100,
           "inactive_dimming_level__percent": "inactive",

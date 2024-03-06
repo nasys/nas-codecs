@@ -407,39 +407,35 @@ describe('Commands', () => {
 });
 
 describe('Alerts, notifications', () => {
-  test('dig_input_alert from DS', () => {
+  test('dig_input_notification from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 61,
       data: '804106000000',
       expected: {
         data: {
-          "packet_type": "dig_input_alert",
+          "packet_type": "dig_input_notification",
           "dig_input_on": true,
           "dig_input_event_counter": 6
         },errors: [],
-        warnings: [
-          "dig_input_alert"
-        ]
+        warnings: []
       },
 
     });
   });
 
-  test('ldr_input_alert from DS', () => {
+  test('ldr_input_notification from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 61,
       data: '81200079',
       expected: {
         data: {
-          "packet_type": "ldr_input_alert",
+          "packet_type": "ldr_input_notification",
           "ldr_input_on": false,
           "ldr_input_value": 121
         },errors: [],
-        warnings: [
-          "ldr_input_alert"
-        ]
+        warnings: []
       },
     });
   });

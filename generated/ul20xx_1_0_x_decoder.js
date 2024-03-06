@@ -540,12 +540,12 @@ function decodeMulticastConfig(dataView, result, err) {
     err.errors.push('invalid_multicast_device');
     return;
   }
-  result.multicast_device =  dev;
+  result.multicast_device = dev;
   result.devaddr = bytesToHexStr(dataView.getRaw(4).reverse());
 
   result.nwkskey = bytesToHexStr(dataView.getRaw(16));
 
-  result.appskey =  bytesToHexStr(dataView.getRaw(16));
+  result.appskey = bytesToHexStr(dataView.getRaw(16));
 }
 
 function decodeClearConfig(dataView, result, err) {
@@ -814,7 +814,7 @@ function decodeDriverMemoryPartial(dataView, result, err) {
 function decodeDriverMemoryPartialSized(dataView, result, err) {
   decodeDriverMemoryPartial(dataView, result, err);
   var size = dataView.getUint8();
-  result.read_size__bytes= size;
+  result.read_size__bytes = size;
   return size;
 }
 
@@ -1220,8 +1220,6 @@ function decodeFport61(dataView, result, err) {
   switch (header) {
     case 0x80:
       result.packet_type = 'dig_input_alert';
-      err.warnings.push('dig_input_alert');
-
       if (len === 2) {
         result.dig_input_event_counter = dataView.getUint16();
       }
@@ -1240,7 +1238,6 @@ function decodeFport61(dataView, result, err) {
         err.errors.push('invalid_packet_length');
         return;
       }
-      err.warnings.push('ldr_input_alert');
 
       var state = dataView.getUint8Bits().getBits(1);
       var val = dataView.getUint8();
@@ -1282,6 +1279,10 @@ function decodeFport61(dataView, result, err) {
       result.voltage__V = dataView.getUint16();
 
       result.power_factor = dataView.getUint8() / 100;
+      return;
+    case 0x85:
+      result.packet_type = 'light_sensor_notification';
+      result.active_dim_step = dataView.getUint8();
       return;
     default:
       err.errors.push('invalid_packet_type');
