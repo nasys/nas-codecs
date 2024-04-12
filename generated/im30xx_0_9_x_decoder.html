@@ -20,7 +20,7 @@
   
         <option value="24">24 - Status</option>
         <option value="25">25 - Usage</option>
-        <option value="50">50 - Configuartions</option>
+        <option value="50">50 - Configuration</option>
         <option value="51">51 - DFU COMMAND</option>
         <option value="60">60 - Commands</option>
         <option value="99">99 - System Messages</option>
@@ -31,7 +31,7 @@
   <input type="text" id="payload_raw" size="100"><br><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2024-02-13T12:34:28.514Z</div>
+<div class="footer">Generated at 2024-04-12T14:25:19.832Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -1173,7 +1173,7 @@ function decodeRaw(fport, bytes){
   try {
     decodeByFport(fport, bytes, res, err);
   } catch (error) {
-    err.errors.push(error.message);
+    err.errors.push("decoder_error " + error.message);
   } 
   return { data: res, errors: err.errors, warnings: err.warnings };
 }
@@ -1297,7 +1297,7 @@ const dataInputHandler = function(e) {
       var filtered = filterForBase64(raw);
       document.getElementById('payload_raw').value = filtered;
   
-      var buffer = base64ToBytes(filtered);
+      var buffer = Array.from(base64ToBytes(filtered));
   
     }
     else {
@@ -1311,9 +1311,10 @@ const dataInputHandler = function(e) {
   
       var buffer = hexToBytes(filtered);
     }
-    replaceUrlParams(fport, filtered);
     var res = decodeRaw(fport, buffer);
     setOutput(res);
+    var hex_buf = buffer.reduce((a, b) => a + b.toString(16).padStart(2, '0'), '')
+    replaceUrlParams(fport, hex_buf);
 }
 
 document.getElementById('payload_raw').addEventListener('input', dataInputHandler);  

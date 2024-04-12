@@ -1,3 +1,9 @@
+
+# Version 0.10.0 12.04.2024
+  - UL20xx 1.1.x decoder decodes dimming_level__percent 0xFF to 'n/a' instead of 'ignore'
+  - CM30xx preliminary OMS decoding
+  - warning messages streamlined
+
 # Version 0.9.0 13.02.2024
   - Added UL20xx 1.1.x Encoder
   - Decoders now support URL inputs (fport and hex)

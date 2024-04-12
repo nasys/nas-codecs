@@ -35,7 +35,7 @@ function addressEncode(addr_in, err) {
     } if (addr_in.toLowerCase().indexOf('dali_single_') !== -1) {
         return (addr_int * 2);
     } if (addr_in.toLowerCase().indexOf('invalid') !== -1) {
-        err.warnings.push("invaid_address");
+        err.warnings.push("invaid_address "+addr_in);
         return 'invaid_address'
     }
 }
@@ -341,7 +341,7 @@ function light_sensor_config(data, pack, err){
     pack.addUint8(strLookup(data.dim_steps.length, {'disabled': 0xFF}, err), 'step_count');
 
     var bits1 = new BitPack(err);
-    bits1.addBit(data.alert_on_every_step, 'alert_on_every_step');
+    bits1.addBit(data.notification_on_every_step, 'notification_on_every_step');
     bits1.addBit(data.light_sensor_clamps_profile, 'light_sensor_clamps_profile');
     bits1.addBit(data.light_sensor_clamps_dig, 'light_sensor_clamps_dig');
     bits1.addBit(data.interpolate_steps, 'interpolate_steps');
@@ -719,7 +719,7 @@ export function rawEncode(data){
     try{
         var fport = encode_packet(jdata, pack, err);
     } catch (error) {
-        err.errors.push(error.message);
+        err.errors.push("encoder_error " + error.message);
     }
         
     return {bytes: pack.buffer, fPort: fport, warnings: err.warnings, errors: err.errors};

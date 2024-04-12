@@ -26,6 +26,7 @@ function profileReason(reason, err) {
     case 253:
       return 'manual_active';
     case 255:
+      err.errors.push('unknown_reason');
       return 'unknown';
     default:
       err.errors.push('invalid_reason');
@@ -860,7 +861,7 @@ function dimmingSourceParser(dataView, err) {
 
   source.address = addressParse(dataView.getUint8(), null, err);
   source.reason = profileReason(dataView.getUint8(), err);
-  source.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'ignore');
+  source.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'n/a');
   source.status = daliStatus(dataView.getUint8Bits(), source.address, err);
   return source;
 }
@@ -1371,7 +1372,7 @@ export function decodeRaw(fport, bytes) {
   try {
     decodeByFport(fport, bytes, res, err);
   } catch (error) {
-    err.errors.push(error.message);
+    err.errors.push("decoder_error " + error.message);
   }
   return { data: res, errors: err.errors, warnings: err.warnings };
 }

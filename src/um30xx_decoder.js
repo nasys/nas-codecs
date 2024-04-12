@@ -1,6 +1,6 @@
 import { BinaryExtract } from './util/extract';
 import { objToList, intToHexStr } from './util/misc';
-import { decode_mbus } from './util/tmbus_wrapper';
+import { decode_mbus, byte_arr_2_hex } from './util/tmbus_wrapper';
 
 // FORMATTER AND CONVERTER FUNCTIONS
 function mbusStatus(status, err) {
@@ -397,15 +397,12 @@ function usageAndStatusParser(buffer, result, err) {
       mbus_res.version = dataView.getUint8();
       mbus_res.medium = mbusMedium(dataView.getUint8());
     }
-    var hex_buf = [];
-    while (dataView.offset < dataView.buffer.length) {
-      var hex = intToHexStr(dataView.getUint8(), 2);
-      hex_buf.push(hex);
-    }
-    var mbus_hex = hex_buf.join('');
-    mbus_res.data_records_raw = mbus_hex;
+
+    var mbus_buf = dataView.getRaw(dataView.availableLen());
+    mbus_res.data_records_raw = byte_arr_2_hex(mbus_buf).toUpperCase();
+
     mbus_res.data_records = {};
-    var decoded_tmbus = decode_mbus(mbus_hex);
+    var decoded_tmbus = decode_mbus(mbus_buf);
     for (var key in decoded_tmbus) {
       mbus_res.data_records[key] = decoded_tmbus[key];
     }
@@ -494,7 +491,7 @@ function generalConfigurationParser(buffer, result, err) {
     result.pulse_1 = pulseConfigParse(dataView, err);
   }
   if (pulse2Sent) {
-    result.pulse_2 = pulseConfigParse( dataView, err);
+    result.pulse_2 = pulseConfigParse(dataView, err);
   }
 }
 
@@ -634,7 +631,7 @@ function sysMessagesParser(buffer, result, err) {
     result.packet_type = 'faulty_downlink_packet';
     result.packet_fport = dataView.getUint8();
     result.packet_error_reason = packetErrorReasonFormatter(dataView.getUint8(), err);
-    err.warnings.push('faulty_downlink_packet: ' + result.packet_error_reason);
+    err.warnings.push('faulty_downlink_packet ' + result.packet_error_reason);
   } else if (packetType === 0x00) {
     result.packet_type = 'boot_packet';
     result.device_serial = serialFormat(dataView.getUint32());
@@ -731,7 +728,7 @@ export function decodeRaw(fport, bytes) {
   try {
     decodeByPacketHeader(fport, bytes, res, err);
   } catch (error) {
-    err.errors.push(error.message);
+    err.errors.push("decoder_error " + error.message);
   }
   return { data: res, errors: err.errors, warnings: err.warnings };
 }

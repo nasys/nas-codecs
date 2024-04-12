@@ -1135,7 +1135,7 @@ function decodeRaw(fport, bytes){
   try {
     decodeByFport(fport, bytes, res, err);
   } catch (error) {
-    err.errors.push(error.message);
+    err.errors.push("decoder_error " + error.message);
   } 
   return { data: res, errors: err.errors, warnings: err.warnings };
 }

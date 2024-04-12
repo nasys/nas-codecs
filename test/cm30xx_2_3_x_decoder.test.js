@@ -326,7 +326,7 @@ describe('CM30xx tests', () => {
           packet_error_reason: 'value_error',
           packet_fport: 50,
         },errors: [],
-        warnings: ['faulty_downlink_packet: value_error'],
+        warnings: ['faulty_downlink_packet value_error'],
       },
     });
   });

@@ -33,7 +33,7 @@
   <input type="text" id="payload_raw" size="100"><br><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2024-03-06T11:58:17.852Z</div>
+<div class="footer">Generated at 2024-04-12T14:25:08.412Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -259,6 +259,7 @@ function profileReason(reason, err) {
     case 253:
       return 'manual_active';
     case 255:
+      err.errors.push('unknown_reason');
       return 'unknown';
     default:
       err.errors.push('invalid_reason');
@@ -1050,7 +1051,7 @@ function dimmingSourceParser(dataView, err) {
 
   source.address = addressParse(dataView.getUint8(), null, err);
   source.reason = profileReason(dataView.getUint8(), err);
-  source.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'ignore');
+  source.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'n/a');
   source.status = daliStatus(dataView.getUint8Bits(), source.address, err);
   return source;
 }
@@ -1662,7 +1663,7 @@ function decodeRaw(fport, bytes) {
   try {
     decodeByFport(fport, bytes, res, err);
   } catch (error) {
-    err.errors.push(error.message);
+    err.errors.push("decoder_error " + error.message);
   }
   return { data: res, errors: err.errors, warnings: err.warnings };
 }
@@ -1786,7 +1787,7 @@ const dataInputHandler = function(e) {
       var filtered = filterForBase64(raw);
       document.getElementById('payload_raw').value = filtered;
   
-      var buffer = base64ToBytes(filtered);
+      var buffer = Array.from(base64ToBytes(filtered));
   
     }
     else {
@@ -1800,9 +1801,10 @@ const dataInputHandler = function(e) {
   
       var buffer = hexToBytes(filtered);
     }
-    replaceUrlParams(fport, filtered);
     var res = decodeRaw(fport, buffer);
     setOutput(res);
+    var hex_buf = buffer.reduce((a, b) => a + b.toString(16).padStart(2, '0'), '')
+    replaceUrlParams(fport, hex_buf);
 }
 
 document.getElementById('payload_raw').addEventListener('input', dataInputHandler);  

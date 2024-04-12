@@ -1,24 +1,25 @@
-import { tmbus, hs2a, ln, sum, b2hs } from "../third_party/tmbus/tmbus.js";
-import {pad, intToHexStr} from './misc';
+import { tmbus, ln, sum, b2hs } from "../third_party/tmbus/tmbus.js";
+import { pad, intToHexStr } from './misc';
+
+
+function _ba2hs(a, s) {
+  var r = [], i = 0;
+  while (i < ln(a)) r.push(b2hs(a[i++]));
+  return r.join(s || "");
+}
 
 // Function that assembles fake bytes around variable block to from valid mbus frame.
-function invoke_tmbus(variable_block_hex) {
-  var block_arr = hs2a(variable_block_hex);
+function invoke_tmbus(block_arr) {
   var len = ln(block_arr) + 21;
 
   var data_arr = [
     0x68, len - 6, len - 6, 0x68, 0x08, 0x02, 0x72, 0x78, 0x56, 0x34,
     0x12, 0x24, 0x40, 0x01, 0x07, 0x55, 0x00, 0x00, 0x00,
-  ].concat(block_arr);
+  ].concat(Array.from(block_arr));
   var crc = sum(data_arr, 4, len - 2);
   data_arr.push(crc, 0x16);
 
-  let data_hex = "";
-  for (var value of data_arr) {
-    data_hex += b2hs(value);
-  }
-
-  var res = tmbus(data_hex);
+  var res = tmbus(_ba2hs(data_arr));
   return { data: res.data, errors: res.errors };
 }
 
@@ -36,8 +37,8 @@ function convert_units(unit) {
 
 function convert_time_to_iso(x) {
   var iso_time = x.y + '-' + pad(x.m, 2) + '-' + pad(x.d, 2);
-  if (x.hr){
-      iso_time += 'T' + pad(x.hr, 2) + ':' + pad(x.mi, 2);
+  if (x.hr) {
+    iso_time += 'T' + pad(x.hr, 2) + ':' + pad(x.mi, 2);
   }
   return iso_time;
 }
@@ -76,17 +77,17 @@ function convert_datarecords(data) {
       }
     }
 
-    var func_lookup = {"Instantaneous" : "", "Maximum": "_max", "Minimum": "_min", "During error state": "_during_error"};
+    var func_lookup = { "Instantaneous": "", "Maximum": "_max", "Minimum": "_min", "During error state": "_during_error" };
     var func_str = "";
     if (obj.func) {
       func_str = func_lookup[obj.func];
     }
     var tariff_str = '';
-    if (obj.tariff){
+    if (obj.tariff) {
       tariff_str = 'tariff' + obj.tariff + '_';
     }
     var subunit_str = '';
-    if (obj.device){
+    if (obj.device) {
       subunit_str = 'subunit' + obj.device + '_';
     }
     var value = obj.value;
@@ -97,7 +98,7 @@ function convert_datarecords(data) {
     var unit_str = "";
     if (obj.unit) {
       unit_str = '__' + convert_units(obj.unit);
-      if (obj.unit == "binary"){
+      if (obj.unit == "binary") {
         var len = obj.dif[0] & 0x0F;
         value = "0x" + intToHexStr(obj.value, len * 2);
       }
@@ -113,7 +114,14 @@ function convert_datarecords(data) {
   return result;
 }
 
-export function decode_mbus(hex) {
-    var decoded_tmbus = invoke_tmbus(hex);
-    return convert_datarecords(decoded_tmbus.data);
+export function decode_mbus(byte_array) {
+  var decoded_tmbus = invoke_tmbus(byte_array);
+  return convert_datarecords(decoded_tmbus.data);
+}
+
+export function byte_arr_2_hex(byte_arr) {
+  var s = "";
+  var r = [], i = 0;
+  while (i < ln(byte_arr)) r.push(b2hs(byte_arr[i++]));
+  return r.join(s || "");
 }

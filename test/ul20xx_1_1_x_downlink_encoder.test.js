@@ -27,7 +27,7 @@ describe('UL20xx packet encoder', () => {
       }
     };
     var res = rawEncode(data);
-    expect(res.warnings).toEqual(["ldr_on_threshold_low_key_not_found"]);    
+    expect(res.warnings).toEqual(["ldr_on_threshold_low key_not_found"]);    
   });
 
   test('50_deprecated_ldr_input_config_packet modified', () => {

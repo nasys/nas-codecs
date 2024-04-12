@@ -207,7 +207,7 @@ describe('Status and usage', () => {
               }
             }
           ]
-        },errors: [],
+        }, errors: [],
         warnings: [
           "dali_connection_error"
         ]
@@ -240,7 +240,7 @@ describe('Status and usage', () => {
             {
               "address": "dali_single_7",
               "reason": "relay_off",
-              "dimming_level__percent": "ignore",
+              "dimming_level__percent": "n/a",
               "status": {
                 "driver_error": false,
                 "lamp_failure": false,
@@ -253,7 +253,7 @@ describe('Status and usage', () => {
               }
             }
           ]
-        },errors: [],
+        }, errors: [],
         warnings: [
           "invalid_timestamp"
         ]
@@ -286,7 +286,7 @@ describe('Status and usage', () => {
               "lamp_on_time__s": 19918800
             }
           ]
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -308,7 +308,7 @@ describe('Commands', () => {
               "dimming_level__percent": 100
             }
           ]
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -323,7 +323,7 @@ describe('Commands', () => {
         data: {
           "packet_type": "custom_dali_request",
           "query_data_raw": "48A1FE48A2A848A3FE48A4FE48A507"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -338,10 +338,10 @@ describe('Commands', () => {
         data: {
           "packet_type": "custom_dali_command",
           "dali_command": "027F0321032B"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       }
-      
+
       ,
     });
   });
@@ -365,7 +365,7 @@ describe('Commands', () => {
               "dimming_curve": "logarithmic"
             }
           ]
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -383,7 +383,7 @@ describe('Commands', () => {
           "memory_bank": 0,
           "memory_address": 3,
           "memory_value": "0607EDFACE82E5"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -397,7 +397,7 @@ describe('Commands', () => {
       expected: {
         data: {
           "packet_type": "driver_memory_write"
-        },errors: [],
+        }, errors: [],
         warnings: [
           "driver_memory_write_failed"
         ]
@@ -417,7 +417,7 @@ describe('Alerts, notifications', () => {
           "packet_type": "dig_input_notification",
           "dig_input_on": true,
           "dig_input_event_counter": 6
-        },errors: [],
+        }, errors: [],
         warnings: []
       },
 
@@ -434,7 +434,7 @@ describe('Alerts, notifications', () => {
           "packet_type": "ldr_input_notification",
           "ldr_input_on": false,
           "ldr_input_value": 121
-        },errors: [],
+        }, errors: [],
         warnings: []
       },
     });
@@ -463,7 +463,7 @@ describe('Alerts, notifications', () => {
               }
             }
           ]
-        },errors: [],
+        }, errors: [],
         warnings: [
           "dali_single_1 lamp_failure"
         ]
@@ -487,7 +487,7 @@ describe('Alerts, notifications', () => {
           "power__W": 89,
           "voltage__V": 229,
           "power_factor": 0.86
-        },errors: [],
+        }, errors: [],
         warnings: [
           "metering_over_current"
         ]
@@ -522,7 +522,7 @@ describe('Boot, etc sys packets', () => {
           "reset_reason": [
             "soft_reset"
           ]
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -551,8 +551,8 @@ describe('Boot, etc sys packets', () => {
           "dali_addressed_driver_count": 0,
           "dali_unadressed_driver_found": false,
           "reset_reason": []
-        },errors: [],
-          warnings: [
+        }, errors: [],
+        warnings: [
           "invalid_timestamp"
         ]
       },
@@ -569,7 +569,7 @@ describe('Boot, etc sys packets', () => {
           "packet_type": "invalid_downlink_packet",
           "downlink_from_fport": 50,
           "error_reason": "unsupported_header"
-        },errors: [],
+        }, errors: [],
         warnings: [
           "downlink_error unsupported_header"
         ]

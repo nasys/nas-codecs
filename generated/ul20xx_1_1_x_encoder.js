@@ -8,28 +8,23 @@ function BitPack(err) {
 }
 
 BitPack.prototype.addBit = function (val, key) {
-  if (typeof val === 'string')
-  {
+  if (typeof val === 'string') {
     val = val.toLowerCase();
   }
   var val_int = parseInt(val);
-  if (val === "true" || val === true || val_int === 1)
-  {
+  if (val === "true" || val === true || val_int === 1) {
     var val_bool = true;
   }
-  else if (val === "false" || val === false || val_int === 0)
-  {
+  else if (val === "false" || val === false || val_int === 0) {
     var val_bool = false;
   }
-  else
-  {
+  else {
     var val_bool = false;
-    this.err.warnings.push(key + "_invalid_boolean_value");
+    this.err.warnings.push(key + " invalid_boolean_value_or_key_not_found");
   }
 
-  if (this.offset + 1 >= 8)
-  {
-    this.err.errors.push(key + "_too_many_bits");
+  if (this.offset + 1 >= 8) {
+    this.err.errors.push(key + " too_many_bits");
   }
 
   this.data_byte |= val_bool << this.offset;
@@ -40,11 +35,10 @@ BitPack.prototype.addBits = function (val, lengthBits, key) {
   val = parseInt(val);
   if (val === null) // TODO
   {
-    this.err.warnings.push(key + "_invalid_bits");
+    this.err.warnings.push(key + " invalid_bits");
   }
-  if (this.offset + lengthBits > 8)
-  {
-    this.err.errors.push(key + "_too_many_bits");
+  if (this.offset + lengthBits > 8) {
+    this.err.errors.push(key + " too_many_bits");
   }
 
   var mask = Math.pow(2, lengthBits) - 1;
@@ -66,33 +60,32 @@ BinaryPack.prototype.length = function () {
 };
 
 BinaryPack.prototype.int_invalid = function (val, val_int, val_min, val_max, key) {
-  if (val === undefined)
-  {
-    this.err.warnings.push(key+"_key_not_found");
+  if (val === undefined) {
+    this.err.warnings.push(key + " key_not_found");
     return true;
   }
   if (isNaN(val_int)) {
-    this.err.warnings.push(key+"_value_not_integer");
+    this.err.warnings.push(key + " value_not_integer");
     return true;
   }
   if (val_int < val_min) {
-    this.err.warnings.push(key+"_value_too_small");
+    this.err.warnings.push(key + " value_too_small");
     return true;
   }
   if (val_int > val_max) {
-    this.err.warnings.push(key+"_value_too_large");
+    this.err.warnings.push(key + " value_too_large");
     return true;
   }
   return false;
 };
 
-BinaryPack.prototype.addFloat = function(val, key){
+BinaryPack.prototype.addFloat = function (val, key) {
   var value = parseFloat(val);
   if (isNaN(value)) {
-    this.err.warnings.push(key+"_value_not_integer");
+    this.err.warnings.push(key + " value_not_integer");
     return true;
   }
-  
+
   var bytes = 0;
   switch (value) {
     case Number.POSITIVE_INFINITY: bytes = 0x7F800000; break;
@@ -118,20 +111,19 @@ BinaryPack.prototype.addFloat = function(val, key){
 
       bytes = bytes | (exponent << 23);
       bytes = bytes | (significand & ~(-1 << 23));
-    break;
+      break;
   }
   this.addInt32(bytes, key);
 };
 
-BinaryPack.prototype.addUint8Arr = function(val) {
+BinaryPack.prototype.addUint8Arr = function (val) {
   for (var c = 0; c < val.length; c += 2)
-  this.buffer.push(parseInt(val.substr(c, 2), 16));
+    this.buffer.push(parseInt(val.substr(c, 2), 16));
 };
 
 BinaryPack.prototype.addUint8 = function (val, key) {
   var val_int = parseInt(val);
-  if (this.int_invalid(val, val_int, 0, 255, key))
-  {
+  if (this.int_invalid(val, val_int, 0, 255, key)) {
     this.buffer.push(0);
     return;
   }
@@ -140,8 +132,7 @@ BinaryPack.prototype.addUint8 = function (val, key) {
 
 BinaryPack.prototype.addInt8 = function (val, key) {
   var val_int = parseInt(val);
-  if (this.int_invalid(val, val_int, -128, 127, key))
-  {
+  if (this.int_invalid(val, val_int, -128, 127, key)) {
     this.buffer.push(0);
     return;
   }
@@ -150,8 +141,7 @@ BinaryPack.prototype.addInt8 = function (val, key) {
 
 BinaryPack.prototype.addUint16 = function (val, key) {
   var val_int = parseInt(val.toString(2).slice(-16), 2);
-  if (this.int_invalid(val, val_int, 0, 65535, key))
-  {
+  if (this.int_invalid(val, val_int, 0, 65535, key)) {
     this.buffer.push(0);
     this.buffer.push(0);
     return;
@@ -162,8 +152,7 @@ BinaryPack.prototype.addUint16 = function (val, key) {
 
 BinaryPack.prototype.addInt16 = function (val, key) {
   var val_int = parseInt(val);
-  if (this.int_invalid(val, val_int, -32768, 32767, key))
-  {
+  if (this.int_invalid(val, val_int, -32768, 32767, key)) {
     this.buffer.push(0);
     this.buffer.push(0);
     return;
@@ -175,8 +164,7 @@ BinaryPack.prototype.addInt16 = function (val, key) {
 
 BinaryPack.prototype.addUint32 = function (val, key) {
   var val_int = parseInt(val);
-  if (this.int_invalid(val, val_int, 0, 4294967295, key))
-  {
+  if (this.int_invalid(val, val_int, 0, 4294967295, key)) {
     this.buffer.push(0);
     this.buffer.push(0);
     this.buffer.push(0);
@@ -191,8 +179,7 @@ BinaryPack.prototype.addUint32 = function (val, key) {
 
 BinaryPack.prototype.addInt32 = function (val, key) {
   var val_int = parseInt(val);
-  if (this.int_invalid(val, val_int, -2147483648, 2147483647, key))
-  {
+  if (this.int_invalid(val, val_int, -2147483648, 2147483647, key)) {
     this.buffer.push(0);
     this.buffer.push(0);
     this.buffer.push(0);
@@ -241,7 +228,7 @@ function addressEncode(addr_in, err) {
     } if (addr_in.toLowerCase().indexOf('dali_single_') !== -1) {
         return (addr_int * 2);
     } if (addr_in.toLowerCase().indexOf('invalid') !== -1) {
-        err.warnings.push("invaid_address");
+        err.warnings.push("invaid_address "+addr_in);
         return 'invaid_address'
     }
 }
@@ -547,7 +534,7 @@ function light_sensor_config(data, pack, err){
     pack.addUint8(strLookup(data.dim_steps.length, {'disabled': 0xFF}, err), 'step_count');
 
     var bits1 = new BitPack(err);
-    bits1.addBit(data.alert_on_every_step, 'alert_on_every_step');
+    bits1.addBit(data.notification_on_every_step, 'notification_on_every_step');
     bits1.addBit(data.light_sensor_clamps_profile, 'light_sensor_clamps_profile');
     bits1.addBit(data.light_sensor_clamps_dig, 'light_sensor_clamps_dig');
     bits1.addBit(data.interpolate_steps, 'interpolate_steps');
@@ -925,7 +912,7 @@ function rawEncode(data){
     try{
         var fport = encode_packet(jdata, pack, err);
     } catch (error) {
-        err.errors.push(error.message);
+        err.errors.push("encoder_error " + error.message);
     }
         
     return {bytes: pack.buffer, fPort: fport, warnings: err.warnings, errors: err.errors};

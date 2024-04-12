@@ -219,6 +219,7 @@ function profileReason(reason, err) {
     case 253:
       return 'manual_active';
     case 255:
+      err.errors.push('unknown_reason');
       return 'unknown';
     default:
       err.errors.push('invalid_reason');
@@ -337,7 +338,7 @@ function decodeLightSensorConfig(dataView, result, err) {
     return;
   }
   var bits = dataView.getUint8Bits();
-  result.alert_on_every_step = bits.getBits(1);
+  result.notification_on_every_step = bits.getBits(1);
   result.light_sensor_clamps_profile = bits.getBits(1);
   result.light_sensor_clamps_dig = bits.getBits(1);
   result.interpolate_steps = bits.getBits(1);
@@ -352,7 +353,7 @@ function decodeLightSensorConfig(dataView, result, err) {
   }
 }
 
-function decodeDimNotifyConfig(dataView, result, err){
+function decodeDimNotifyConfig(dataView, result, err) {
   result.packet_type = 'dim_notify_config_packet';
   var rdly = dataView.getUint8();
   result.random_delay__s = rdly === 0xff ? 'disabled' : rdly * 5;
@@ -393,8 +394,8 @@ function decodeDigInputConfigNew(dataView, result, err) {
   var bits = dataView.getUint8Bits();
   result.dig_mode_button = bits.getBits(1);
   result.polarity_high_or_rising = bits.getBits(1);
-  result.alert_on_activation = bits.getBits(1);
-  result.alert_on_inactivation = bits.getBits(1);
+  result.notification_on_activation = bits.getBits(1);
+  result.notification_on_inactivation = bits.getBits(1);
 
   result.address = addressParse(dataView.getUint8(), "all_devices", err);
 
@@ -629,7 +630,7 @@ function decodeMeteringAlertConfig(dataView, result, err) {
 }
 
 function decodeFadeConfig(dataView, result, err) {
-  result.packet_type = 'fade_config_packet' ;
+  result.packet_type = 'fade_config_packet';
   result.fade_duration__s = decodeFade(dataView.getUint8(), err);
 }
 
@@ -642,12 +643,12 @@ function decodeMulticastConfig(dataView, result, err) {
     err.errors.push('invalid_multicast_device');
     return;
   }
-  result.multicast_device =  dev;
+  result.multicast_device = dev;
   result.devaddr = bytesToHexStr(dataView.getRaw(4).reverse());
 
   result.nwkskey = bytesToHexStr(dataView.getRaw(16));
 
-  result.appskey =  bytesToHexStr(dataView.getRaw(16));
+  result.appskey = bytesToHexStr(dataView.getRaw(16));
 }
 
 function decodeClearConfig(dataView, result, err) {
@@ -886,7 +887,7 @@ function decodeStatusRequest(dataView, result, err) {
   result.usage_requested = bits.getBits(1);
   result.status_requested = bits.getBits(1);
   result.dim_map_report_requested = bits.getBits(1);
-  
+
   if (result.dim_map_report_requested && dataView.availableLen() > 0) {
     result.drivers = [];
     while (dataView.availableLen()) {
@@ -904,7 +905,7 @@ function decodeDriverMemoryPartial(dataView, result, err) {
 function decodeDriverMemoryPartialSized(dataView, result, err) {
   decodeDriverMemoryPartial(dataView, result, err);
   var size = dataView.getUint8();
-  result.read_size__bytes= size;
+  result.read_size__bytes = size;
   return size;
 }
 
@@ -952,7 +953,7 @@ function decodeTimedDimmingCommand(dataView, result, err) {
 }
 
 function decodeAddressDaliDriver(dataView, result, err) {
-  result.packet_type = 'address_dali_driver' ;
+  result.packet_type = 'address_dali_driver';
   result.address = addressParse(dataView.getUint8(), 'rescan_dali_bus', err);
 }
 
@@ -1010,7 +1011,7 @@ function dimmingSourceParser(dataView, err) {
 
   source.address = addressParse(dataView.getUint8(), null, err);
   source.reason = profileReason(dataView.getUint8(), err);
-  source.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'ignore');
+  source.dimming_level__percent = decodeDimmingLevel(dataView.getUint8(), 'n/a');
   source.status = daliStatus(dataView.getUint8Bits(), source.address, err);
   return source;
 }
@@ -1024,7 +1025,7 @@ function formatLightLx(lx) {
 }
 
 function calcLightLx(light_raw) {
-  if (light_raw === 0xFFFF){
+  if (light_raw === 0xFFFF) {
     return 'unavailable'
   }
   var light_val = light_raw & 0x7FFF;
@@ -1433,9 +1434,7 @@ function decodeFport61(dataView, result, err) {
   var len = rawByte2 >> 4;
   switch (header) {
     case 0x80:
-      result.packet_type = 'dig_input_alert';
-      err.warnings.push('dig_input_alert');
-
+      result.packet_type = 'dig_input_notification';
       if (len === 2) {
         result.dig_input_event_counter = dataView.getUint16();
       }
@@ -1449,12 +1448,11 @@ function decodeFport61(dataView, result, err) {
       }
       return;
     case 0x81:
-      result.packet_type = 'ldr_input_alert';
+      result.packet_type = 'ldr_input_notification';
       if (len !== 2) {
         err.errors.push('invalid_packet_length');
         return;
       }
-      err.warnings.push('ldr_input_alert');
 
       var state = dataView.getUint8Bits().getBits(1);
       var val = dataView.getUint8();
@@ -1496,6 +1494,10 @@ function decodeFport61(dataView, result, err) {
       result.voltage__V = dataView.getUint16();
 
       result.power_factor = dataView.getUint8() / 100;
+      return;
+    case 0x85:
+      result.packet_type = 'light_sensor_notification';
+      result.active_dim_step = dataView.getUint8();
       return;
     default:
       err.errors.push('invalid_packet_type');
@@ -1621,7 +1623,7 @@ function decodeRaw(fport, bytes) {
   try {
     decodeByFport(fport, bytes, res, err);
   } catch (error) {
-    err.errors.push(error.message);
+    err.errors.push("decoder_error " + error.message);
   }
   return { data: res, errors: err.errors, warnings: err.warnings };
 }

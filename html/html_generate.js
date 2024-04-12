@@ -25,7 +25,8 @@ if (device_name == 'CM30xx') {
         <option value="60">60 - Commands</option>
         <option value="61">61 - Event Notification</option>
         <option value="62">62 - Diagnostic</option>
-        <option value="99">99 - System Messages</option>`;
+        <option value="99">99 - System Messages</option>
+        <option value="20">20 - OMS over LoRaWAN</option>`
 } else if (device_name == 'UM30xx') {
   if (device_firmware == '4.0.x') {
     var script_filename = 'generated/um30xx_4_0_x_decoder.js';
@@ -228,7 +229,7 @@ const dataInputHandler = function(e) {
       var filtered = filterForBase64(raw);
       document.getElementById('payload_raw').value = filtered;
   
-      var buffer = base64ToBytes(filtered);
+      var buffer = Array.from(base64ToBytes(filtered));
   
     }
     else {
@@ -242,9 +243,10 @@ const dataInputHandler = function(e) {
   
       var buffer = hexToBytes(filtered);
     }
-    replaceUrlParams(fport, filtered);
     var res = decodeRaw(fport, buffer);
     setOutput(res);
+    var hex_buf = buffer.reduce((a, b) => a + b.toString(16).padStart(2, '0'), '')
+    replaceUrlParams(fport, hex_buf);
 }
 
 document.getElementById('payload_raw').addEventListener('input', dataInputHandler);  

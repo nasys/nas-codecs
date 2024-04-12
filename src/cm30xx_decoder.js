@@ -2,6 +2,7 @@ import { BinaryExtract } from './util/extract';
 import {
   pad, bytesToHexStr, intToHexStr, objToList,
 } from './util/misc';
+import { decode_mbus } from './util/tmbus_wrapper';
 
 // FORMATTER AND CONVERTER FUNCTIONS
 function meterStatusFormat(status, err) {
@@ -498,7 +499,7 @@ function sysMessagesParser(dataView, packet_type, result, err) {
     result.packet_type = 'faulty_downlink_packet';
     result.packet_fport = dataView.getUint8();
     result.packet_error_reason = packetErrorReasonFormatter(dataView.getUint8());
-    err.warnings.push('faulty_downlink_packet: ' + result.packet_error_reason);
+    err.warnings.push('faulty_downlink_packet ' + result.packet_error_reason);
   } else if (packet_type === 0x00) {
     result.packet_type = 'boot_packet';
     result.device_serial = serialFormat(dataView.getUint32());
@@ -541,6 +542,22 @@ function sysMessagesParser(dataView, packet_type, result, err) {
   }
 }
 
+function omsParser(dataView, packet_type, result, err) {
+  if (packet_type == 0x7A) {
+    // Short wM-Bus header
+    result.packet_type = "oms_usage_packet"
+    result.header_access_num = dataView.getUint8();
+    result.header_status = dataView.getUint8();
+    result.header_packet_synchronous = dataView.getUint16() === 0x2000;
+
+    var decoded_tmbus = decode_mbus(dataView.getRaw(dataView.availableLen()));
+    for (var key in decoded_tmbus) {
+      result['oms_' + key] = decoded_tmbus[key];
+    }
+  }
+}
+
+
 function checkFport(fport, expectedFport, err) {
   if (fport !== expectedFport) {
     err.errors.push('wrong fport or header');
@@ -571,6 +588,9 @@ function decodeByPacketHeader(fport, bytes, result, err) {
   } else if (packet_type === 0x00 || packet_type === 0x01 || packet_type === 0x13) {
     sysMessagesParser(dataView, packet_type, result, err);
     checkFport(fport, 99, err);
+  } else if (packet_type === 0x7A || packet_type == 0x72) {
+    omsParser(dataView, packet_type, result, err);
+    checkFport(fport, 20, err);
   } else {
     err.errors.push('invalid_packet_type');
   }
@@ -587,7 +607,7 @@ export function decodeRaw(fport, bytes) {
   try {
     decodeByPacketHeader(fport, bytes, res, err);
   } catch (error) {
-    err.errors.push(error.message);
+    err.errors.push("decoder_error " + error.message);
   }
   return { data: res, errors: err.errors, warnings: err.warnings };
 }
