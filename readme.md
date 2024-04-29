@@ -1,9 +1,8 @@
 # NAS Payload Codec
 ## Supported devices
-- __cm30xx__: _CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130_ with 1.3.x and 2.3.x firmwares. Note: 1.3.x and 2.3.x protocol is identical, major version number signifies used radio chipset.
-- __ul20xx__: _UL2002, UL2014, UL2020, UL2021, UL2030_ with 1.0.x and 1.1.x firmwares. Note: does not support _legacy_status_packet_.
-- __um30xx__: _UM3070, UM3081, UM3090, UM3100, UM3110_ with 4.0.x firmware.
-
+- __cm30xx__: _CM3011, CM3013, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130_ with 1.3.x and 2.3.x firmwares. Note: 1.3.x and 2.3.x protocol is identical, major version number signifies used radio chipset.
+- __ul20xx__: _UL2002, UL2003, UL2014, UL2020, UL2021, UL2023, UL2030, UL2033, UL2053_ with 1.0.x and 1.1.x firmwares. Note: does not support _legacy_status_packet_.
+- __um30xx__: _UM3070, UM3081, UM3090, UM3100, UM3110, UM3140_ with 4.0.x firmware.
 - __im30xx__: _IM3060, IM3100_
 
 ## Live decoding example

@@ -16,7 +16,7 @@ if (device_name == 'CM30xx') {
   }
   var device_firmware_str = '1.3.x / 2.3.x';
   var default_payload = '04C10084433F254E00752B036BD1164A337C44983938';
-  var supported_devices = 'Supported devices: CM3011, CM3021, CM3022, CM3030, CM3040, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares.';
+  var supported_devices = 'Supported devices: CM3011, CM3013, CM3021, CM3022, CM3030, CM3040, CM3061, CM3061, CM3080, CM3120, CM3130 with 1.3.x and 2.3.x firmwares.';
   var fport_options = `
         <option value="25">25 - Usage / Status</option>
         <option value="49">49 - Config Requests</option>
@@ -35,7 +35,7 @@ if (device_name == 'CM30xx') {
   }
   var device_firmware_str = device_firmware;
   var default_payload = '82826BD1164A337C432326B29AD03C0138271501170600002090241262700374301C00';
-  var supported_devices = 'Supported devices: UM3070, UM3081, UM3090, UM3100, UM3110 with ' + device_firmware + ' firmware.';
+  var supported_devices = 'Supported devices: UM3070, UM3081, UM3090, UM3100, UM3110, UM3140 with ' + device_firmware + ' firmware.';
   var fport_options = `
         <option value="24">24 - Status</option>
         <option value="25">25 - Usage</option>
@@ -49,7 +49,7 @@ if (device_name == 'CM30xx') {
 } else if (device_name == 'UL20xx') {
   var device_firmware_str = device_firmware;
   if (device_firmware == '1.0.x') {
-    var supported_devices = 'Supported devices: UL2002, UL2014, UL2020, UL2021, UL2030 with 1.0.x firmwares.';
+    var supported_devices = 'Supported devices: UL2002, UL2003, UL2014, UL2020, UL2021, UL2023, UL2030, UL2031, UL2033 with 1.0.x firmwares.';
     var script_filename = 'generated/ul20xx_1_0_x_decoder.js';
     var default_payload = 'DFD41D5E004B041502AE05050AFF32030306FF00';
     var fport_options = `
@@ -62,7 +62,7 @@ if (device_name == 'CM30xx') {
     <option value="61">61 - Event Notification</option>
     <option value="99">99 - System Messages</option>`;
   } else if (device_firmware == '1.1.x') {
-    var supported_devices = 'Supported devices: UL2002, UL2014, UL2020, UL2021, UL2023, UL2030, UL2031, UL2033, UL2053 with 1.1.x firmwares.';
+    var supported_devices = 'Supported devices: UL2002, UL2003, UL2014, UL2020, UL2021, UL2023, UL2030, UL2033, UL2053 with 1.1.x firmwares.';
     var script_filename = 'generated/ul20xx_1_1_x_decoder.js';
     var default_payload = '01F37F205E8244320916200701D20294550401FE50190012501900';
     var fport_options = `
