@@ -39,7 +39,7 @@
     <pre><code id="payload_strick"></code></pre>
   </div>
 </div>
-<div class="footer">Generated at 2024-04-12T14:25:11.914Z</div>
+<div class="footer">Generated at 2024-05-30T09:21:09.767Z</div>
 <script>
 /// CODEC JAVASCRIPT STARTS FROM HERE
 
@@ -2710,7 +2710,7 @@ function decodeFport61(dataView, result, err) {
       return;
     case 0x85:
       result.packet_type = 'light_sensor_notification';
-      result.active_dim_step = dataView.getUint8();
+      result.active_dim_step = rawByte2;
       return;
     default:
       err.errors.push('invalid_packet_type');

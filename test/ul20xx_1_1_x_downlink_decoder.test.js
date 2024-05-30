@@ -10,7 +10,7 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "status_config_request"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -24,7 +24,7 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "calendar_config_request"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -39,7 +39,7 @@ describe('Config requests', function () {
         data: {
           "packet_type": "profile_config_request",
           "profile_id": "all_profiles"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -53,7 +53,7 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "fade_config_request"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -67,7 +67,7 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "holiday_config_request"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -81,7 +81,7 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "dali_monitor_config_request"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -95,7 +95,7 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "fallback_dim_config_request"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -109,7 +109,7 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "location_config_request"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -123,7 +123,7 @@ describe('Config requests', function () {
       expected: {
         data: {
           "packet_type": "lumalink_config_request"
-        },errors: [],
+        }, errors: [],
         warnings: [],
       },
     });
@@ -142,7 +142,24 @@ describe('Commands', function () {
           "usage_requested": false,
           "status_requested": false,
           "dim_map_report_requested": true
-        },errors: [],
+        }, errors: [],
+        warnings: [],
+      },
+    });
+  });
+});
+
+describe('Alert notifications', function () {
+  describe('dim_map_report_request from DS', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 61,
+      data: '8501',
+      expected: {
+        data: {
+          "packet_type": "light_sensor_notification",
+          "active_dim_step": 1,
+        }, errors: [],
         warnings: [],
       },
     });

@@ -1629,7 +1629,7 @@ function decodeFport61(dataView, result, err) {
       return;
     case 0x85:
       result.packet_type = 'light_sensor_notification';
-      result.active_dim_step = dataView.getUint8();
+      result.active_dim_step = rawByte2;
       return;
     default:
       err.errors.push('invalid_packet_type');

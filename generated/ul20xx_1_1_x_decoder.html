@@ -33,7 +33,7 @@
   <input type="text" id="payload_raw" size="100"><br><br>
 <p id="demo"></p>
 </div>
-<div class="footer">Generated at 2024-04-29T10:46:44.232Z</div>
+<div class="footer">Generated at 2024-05-30T09:21:02.479Z</div>
 <script>
 
 /// CODEC JAVASCRIPT STARTS FROM HERE
@@ -1537,7 +1537,7 @@ function decodeFport61(dataView, result, err) {
       return;
     case 0x85:
       result.packet_type = 'light_sensor_notification';
-      result.active_dim_step = dataView.getUint8();
+      result.active_dim_step = rawByte2;
       return;
     default:
       err.errors.push('invalid_packet_type');
