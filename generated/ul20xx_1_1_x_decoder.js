@@ -676,18 +676,18 @@ function decodeMulticastConfig(dataView, result, err) {
 function decodeClearConfig(dataView, result, err) {
   result.packet_type = 'clear_config_packet';
   switch (dataView.getUint8()) {
-    case 0x01:
-      result.reset_target = 'ldr_input_config';
-      break;
-    case 0x03:
-      result.reset_target = 'dig_input_config';
-      break;
     case 0x21:
       result.reset_target = 'profile_config';
       result.address = addressParse(dataView.getUint8(), 'all_profiles', err);
       break;
     case 0x23:
       result.reset_target = 'holiday_config';
+      break;
+    case 0x28:
+      result.reset_target = 'dig_input_config';
+      break;
+    case 0x29:
+      result.reset_target = 'light_sensor_config';
       break;
     case 0x52:
       result.reset_target = 'multicast_config';

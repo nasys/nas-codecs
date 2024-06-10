@@ -629,11 +629,11 @@ function encodeMulticast(multicast, err){
 function clear_config(data, pack, err){
     pack.addUint8(0xFF);
     switch(data.reset_target){
-        case 'ldr_input_config':
-            pack.addUint8(0x01);
+        case 'light_sensor_config':
+            pack.addUint8(0x29);
             break;
         case 'dig_input_config':
-            pack.addUint8(0x03);
+            pack.addUint8(0x28);
             break;
         case 'profile_config':
             pack.addUint8(0x21);

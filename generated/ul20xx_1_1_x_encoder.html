@@ -39,7 +39,7 @@
     <pre><code id="payload_strick"></code></pre>
   </div>
 </div>
-<div class="footer">Generated at 2024-06-10T09:24:07.144Z</div>
+<div class="footer">Generated at 2024-06-10T10:47:23.639Z</div>
 <script>
 /// CODEC JAVASCRIPT STARTS FROM HERE
 
@@ -674,11 +674,11 @@ function encodeMulticast(multicast, err){
 function clear_config(data, pack, err){
     pack.addUint8(0xFF);
     switch(data.reset_target){
-        case 'ldr_input_config':
-            pack.addUint8(0x01);
+        case 'light_sensor_config':
+            pack.addUint8(0x29);
             break;
         case 'dig_input_config':
-            pack.addUint8(0x03);
+            pack.addUint8(0x28);
             break;
         case 'profile_config':
             pack.addUint8(0x21);
@@ -1897,18 +1897,18 @@ function decodeMulticastConfig(dataView, result, err) {
 function decodeClearConfig(dataView, result, err) {
   result.packet_type = 'clear_config_packet';
   switch (dataView.getUint8()) {
-    case 0x01:
-      result.reset_target = 'ldr_input_config';
-      break;
-    case 0x03:
-      result.reset_target = 'dig_input_config';
-      break;
     case 0x21:
       result.reset_target = 'profile_config';
       result.address = addressParse(dataView.getUint8(), 'all_profiles', err);
       break;
     case 0x23:
       result.reset_target = 'holiday_config';
+      break;
+    case 0x28:
+      result.reset_target = 'dig_input_config';
+      break;
+    case 0x29:
+      result.reset_target = 'light_sensor_config';
       break;
     case 0x52:
       result.reset_target = 'multicast_config';

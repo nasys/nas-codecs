@@ -404,15 +404,15 @@ describe('Config packts', () => {
     });
   });
 
-  test('clear_config_packet (LDR) from DS', () => {
+  test('clear_config_packet (lux sensor) from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 50,
-      data: 'FF01',
+      data: 'FF29',
       expected: {
         data: {
           "packet_type": "clear_config_packet",
-          "reset_target": "ldr_input_config"
+          "reset_target": "light_sensor_config"
         },errors: [],
         warnings: [],
       },
@@ -423,7 +423,7 @@ describe('Config packts', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 50,
-      data: 'FF03',
+      data: 'FF28',
       expected: {
         data: {
           "packet_type": "clear_config_packet",

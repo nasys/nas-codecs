@@ -610,13 +610,13 @@ export function decodeMulticastConfig(dataView, result, err) {
 export function decodeClearConfig(dataView, result, err) {
   result.packet_type = 'clear_config_packet';
   switch (dataView.getUint8()) {
+    // #ifdef VER1_0
     case 0x01:
       result.reset_target = 'ldr_input_config';
       break;
     case 0x03:
       result.reset_target = 'dig_input_config';
       break;
-    // #ifdef VER1_0
     case 0x04:
       result.reset_target = 'profile_config';
       result.address = addressParse(dataView.getUint8(), 'all_profiles', err);
@@ -634,6 +634,12 @@ export function decodeClearConfig(dataView, result, err) {
       break;
     case 0x23:
       result.reset_target = 'holiday_config';
+      break;
+    case 0x28:
+      result.reset_target = 'dig_input_config';
+      break;
+    case 0x29:
+      result.reset_target = 'light_sensor_config';
       break;
     // #endif
     case 0x52:
