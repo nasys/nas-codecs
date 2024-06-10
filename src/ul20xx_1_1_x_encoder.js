@@ -365,7 +365,7 @@ function dim_notify_config(data, pack, err){
 
 function interface_type_config(data, pack, err){
     pack.addUint8(0x2B);
-    var lookup = {"dali":0, "analog_0_10v": 1, "not_overriden": 255};
+    var lookup = {"dali":0, "analog_0_10v": 1, "factory_default": 255};
     pack.addUint8(lookup[data["interface_type"]], 'interface_type');
 }
 

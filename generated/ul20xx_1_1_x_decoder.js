@@ -370,7 +370,7 @@ function decodeInterfaceType(val, err) {
       err.errors.push('not_supported');
       return 'not_supported';
     case 254:
-      return 'not_overridden';
+      return 'factory_default';
     default:
       err.errors.push('invalid_value');
       return 'invalid_value';
