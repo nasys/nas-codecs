@@ -518,7 +518,7 @@ describe('Boot, etc sys packets', () => {
           "dali_supply_state__V": "bus_high",
           "dali_power_source_external": "external",
           "dali_addressed_driver_count": 1,
-          "dali_unadressed_driver_found": false,
+          "dali_unaddressed_driver_found": false,
           "reset_reason": [
             "soft_reset"
           ]
@@ -549,7 +549,7 @@ describe('Boot, etc sys packets', () => {
           "dali_supply_state__V": "bus_high",
           "dali_power_source_external": "internal",
           "dali_addressed_driver_count": 0,
-          "dali_unadressed_driver_found": false,
+          "dali_unaddressed_driver_found": false,
           "reset_reason": []
         }, errors: [],
         warnings: [

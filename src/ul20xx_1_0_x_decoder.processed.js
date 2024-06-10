@@ -137,6 +137,28 @@ export function decodeDimNotifyConfig(dataView, result, err) {
   result.packet_limit__s = dataView.getUint8() * 60;
 }
 
+function decodeInterfaceType(val, err) {
+  switch (val) {
+    case 0:
+      return 'dali';
+    case 1:
+      return 'analog_0_10v';
+    case 254:
+      err.errors.push('not_supported');
+      return 'not_supported';
+    case 254:
+      return 'not_overridden';
+    default:
+      err.errors.push('invalid_value');
+      return 'invalid_value';
+  }
+}
+
+export function decodeInterfaceTypeConfig(dataView, result, err) {
+  result.packet_type = 'interface_type_config_packet';
+  result.interface_type = decodeInterfaceType(dataView.getUint8(), err);
+}
+
 export function decodeDimmingLevel(level, ffName) {
   if (level === 0xFF) {
     return ffName;
@@ -1111,7 +1133,7 @@ function bootParser(dataView, result, err) {
   var driver = dataView.getUint8Bits();
   result.dali_addressed_driver_count = driver.getBits(7);
   var unadressed = driver.getBits(1);
-  result.dali_unadressed_driver_found = unadressed;
+  result.dali_unaddressed_driver_found = unadressed;
   if (unadressed) {
     err.warnings.push("unadressed_dali_driver_on_bus")
   }
@@ -1261,7 +1283,7 @@ function decodeFport61(dataView, result, err) {
       return;
     case 0x85:
       result.packet_type = 'light_sensor_notification';
-      result.active_dim_step = dataView.getUint8();
+      result.active_dim_step = rawByte2;
       return;
     default:
       err.errors.push('invalid_packet_type');

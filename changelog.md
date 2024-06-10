@@ -1,3 +1,7 @@
+# Version 0.11.0 07.06.2024  
+  - UL20xx decoder dali_unadressed_driver_found -> dali_unaddressed_driver_found
+  - UL20xx 1.1.x interface_type_config_packet added
+  - UL20xx 1.1.x encoder dim_notify_config_request fixed
 
 # Version 0.10.0 12.04.2024
   - UL20xx 1.1.x decoder decodes dimming_level__percent 0xFF to 'n/a' instead of 'ignore'

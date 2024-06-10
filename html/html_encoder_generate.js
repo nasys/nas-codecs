@@ -10,7 +10,7 @@ console.log('Generating for: ' + device_name + ' ' + device_firmware);
 if (device_name == 'UL20xx') {
   var device_firmware_str = device_firmware;
 if (device_firmware == '1.1.x') {
-    var supported_devices = 'Supported devices: UL2002, UL2014, UL2020, UL2021, UL2023, UL2030, UL2031, UL2033, UL2053 with 1.1.x firmwares.';
+    var supported_devices = 'Supported devices: UL2002, UL2014, UL2020, UL2021, UL2023, UL2024, UL2030, UL2033, UL2034, UL2053 with 1.1.x firmwares.';
     var script_filename = 'generated/ul20xx_1_1_x_encoder.js';
     var packet_lookup = 'html/extra_html_files/ul20xx_encoder_packet_lookup.js'
     var decoder_file = 'generated/ul20xx_1_1_x_decoder.js';

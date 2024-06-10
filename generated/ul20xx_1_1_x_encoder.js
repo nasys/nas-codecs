@@ -556,6 +556,12 @@ function dim_notify_config(data, pack, err){
     pack.addUint8((data.packet_limit__s / 60), 'packet_limit__s');
 }
 
+function interface_type_config(data, pack, err){
+    pack.addUint8(0x2B);
+    var lookup = {"dali":0, "analog_0_10v": 1, "not_overriden": 255};
+    pack.addUint8(lookup[data["interface_type"]], 'interface_type');
+}
+
 function multicast_config(data, pack, err){
     pack.addUint8(0x52);
     pack.addUint8(data.multicast_device, 'multicast_device');
@@ -707,7 +713,7 @@ function encode_conf_requests(data, pack, err){
         case 'light_sensor_config_request':
             pack.addUint8(0x29);
             break;
-        case 'dim_notify_config_packet':
+        case 'dim_notify_config_request':
             pack.addUint8(0x2A);
             break;
         case 'multicast_config_request':
@@ -837,6 +843,8 @@ function encode_packet(data, pack, err) {
         light_sensor_config(data, pack, err);
     } else if (data.packet_type === 'dim_notify_config_packet'){
         dim_notify_config(data, pack, err);
+    } else if (data.packet_type === 'interface_type_config_packet'){
+        interface_type_config(data, pack);
     } else if (data.packet_type === 'multicast_config_packet'){
         multicast_config(data, pack, err);
     } else if (data.packet_type === 'clear_config_packet'){

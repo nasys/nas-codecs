@@ -360,6 +360,28 @@ function decodeDimNotifyConfig(dataView, result, err) {
   result.packet_limit__s = dataView.getUint8() * 60;
 }
 
+function decodeInterfaceType(val, err) {
+  switch (val) {
+    case 0:
+      return 'dali';
+    case 1:
+      return 'analog_0_10v';
+    case 254:
+      err.errors.push('not_supported');
+      return 'not_supported';
+    case 254:
+      return 'not_overridden';
+    default:
+      err.errors.push('invalid_value');
+      return 'invalid_value';
+  }
+}
+
+function decodeInterfaceTypeConfig(dataView, result, err) {
+  result.packet_type = 'interface_type_config_packet';
+  result.interface_type = decodeInterfaceType(dataView.getUint8(), err);
+}
+
 function decodeDimmingLevel(level, ffName) {
   if (level === 0xFF) {
     return ffName;
@@ -754,6 +776,9 @@ function decodeFport50(dataView, result, err) {
       return;
     case 0x2A:
       decodeDimNotifyConfig(dataView, result);
+      return;
+    case 0x2B:
+      decodeInterfaceTypeConfig(dataView, result, err);
       return;
     case 0x53:
       decodeMulticastFcntConfig(dataView, result);
@@ -1347,7 +1372,7 @@ function bootParser(dataView, result, err) {
   var driver = dataView.getUint8Bits();
   result.dali_addressed_driver_count = driver.getBits(7);
   var unadressed = driver.getBits(1);
-  result.dali_unadressed_driver_found = unadressed;
+  result.dali_unaddressed_driver_found = unadressed;
   if (unadressed) {
     err.warnings.push("unadressed_dali_driver_on_bus");
   }
@@ -1568,6 +1593,12 @@ function decodeFport49(dataView, result, err) {
       return;
     case 0x29:
       result.packet_type = 'light_input_config_request';
+      return;
+    case 0x2A:
+      result.packet_type = 'dim_notify_config_request';
+      return;
+    case 0x2B:
+      result.packet_type = 'interface_type_config_request';
       return;
     default:
       err.errors.push('invalid_packet_type');

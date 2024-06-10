@@ -115,6 +115,21 @@ describe('Config requests', function () {
     });
   });
 
+  describe('interface_type_config_packet from DS', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 50,
+      data: '2B01',
+      expected: {
+        data: {
+          "packet_type": "interface_type_config_packet",
+          "interface_type": "analog_0_10v",
+        }, errors: [],
+        warnings: [],
+      },
+    });
+  });
+
   describe('lumalink_config_request from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
