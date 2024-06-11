@@ -23,7 +23,7 @@ Or download respective .html file in [generated](https://github.com/nasys/nas-co
 [UL20xx 1.1.x live encoder](https://nasys.github.io/nas-codecs/generated/ul20xx_1_1_x_encoder.html)
 
 ## Using on TTN (or Chirpstack)
-- open minified .js file for appropriate device from gerenated folder.
+- open minified .js file for appropriate device from generated folder.
 - click on file (like /generated/ul20xx_1_0_x_decoder.min.js)
 - click on Raw
 - copy everything

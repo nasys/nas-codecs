@@ -1,18 +1,4 @@
 var config_packet_list = {
-    'deprecated_ldr_input_config_packet':{"data": {
-        "packet_type": "deprecated_ldr_input_config_packet",
-        "ldr_off_threshold_high": 80,
-        "ldr_on_threshold_low": 40,
-        "trigger_alert_enabled": false
-      }},
-    'deprecated_dig_input_config_packet': {"data": {
-        "packet_type": "deprecated_dig_input_config_packet",
-        "light_on_duration__s": 30,
-        "signal_edge_rising": false,
-        "trigger_alert_enabled": false,
-        "address": "dali_broadcast",
-        "dimming_level__percent": 100
-      }},
     'status_config_packet':{"data": {
         "packet_type": "status_config_packet",
         "status_interval__s": 600
@@ -132,7 +118,7 @@ var config_packet_list = {
     }},
     'light_sensor_config_packet': {"data": {
       "packet_type": "light_sensor_config_packet",
-      "alert_on_every_step": false,
+      "notification_on_every_step": false,
       "light_sensor_clamps_profile": true,
       "light_sensor_clamps_dig": true,
       "interpolate_steps": true,
@@ -237,5 +223,33 @@ var config_packet_list = {
     }},
     'dali_identify': {"data": {
       "packet_type": "dali_identify"
-    }}
-    };
+    }},
+    'deprecated_ldr_input_config_packet':{"data": {
+      "packet_type": "deprecated_ldr_input_config_packet",
+      "ldr_off_threshold_high": 80,
+      "ldr_on_threshold_low": 40,
+      "trigger_alert_enabled": false
+    }},
+    'deprecated_dig_input_config_packet': {"data": {
+      "packet_type": "deprecated_dig_input_config_packet",
+      "light_on_duration__s": 30,
+      "signal_edge_rising": false,
+      "trigger_alert_enabled": false,
+      "address": "dali_broadcast",
+      "dimming_level__percent": 100
+    }},
+    'deprecated_ldr_input_config_packet':{"data": {
+      "packet_type": "deprecated_ldr_input_config_packet",
+      "ldr_off_threshold_high": 80,
+      "ldr_on_threshold_low": 40,
+      "trigger_alert_enabled": false
+    }},
+    'deprecated_dig_input_config_packet': {"data": {
+      "packet_type": "deprecated_dig_input_config_packet",
+      "light_on_duration__s": 30,
+      "signal_edge_rising": false,
+      "trigger_alert_enabled": false,
+      "address": "dali_broadcast",
+      "dimming_level__percent": 100
+    }},
+  };
