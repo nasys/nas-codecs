@@ -172,7 +172,7 @@ describe('Alert notifications', function () {
       data: '8501',
       expected: {
         data: {
-          "packet_type": "light_sensor_notification",
+          "packet_type": "light_sensor_notification_deprecated",
           "active_dim_step": 1,
         }, errors: [],
         warnings: [],

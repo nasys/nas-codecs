@@ -5,18 +5,22 @@
 - __um30xx__: _UM3070, UM3081, UM3090, UM3100, UM3110, UM3140_ with 4.0.x firmware.
 - __im30xx__: _IM3060, IM3100_
 
-## Live decoding example
-[CM30xx 1.3.x / 2.3.x live decoder](https://nasys.github.io/nas-codecs/generated/cm30xx_2_3_x_decoder.html)
+
+## Live decoding in browser
+[UL20xx 1.1.x live decoder](https://nasys.github.io/nas-codecs/generated/ul20xx_1_1_x_decoder.html)
 
 [UL20xx 1.0.x live decoder](https://nasys.github.io/nas-codecs/generated/ul20xx_1_0_x_decoder.html)
 
-[UL20xx 1.1.x live decoder](https://nasys.github.io/nas-codecs/generated/ul20xx_1_1_x_decoder.html)
+[CM30xx 1.3.x / 2.3.x live decoder](https://nasys.github.io/nas-codecs/generated/cm30xx_2_3_x_decoder.html)
 
 [UM30xx live decoder](https://nasys.github.io/nas-codecs/generated/um30xx_4_0_x_decoder.html)
 
 [IM30xx 0.9.x / 0.10.x live decoder](https://nasys.github.io/nas-codecs/generated/im30xx_0_9_x_decoder.html)
 
 Or download respective .html file in [generated](https://github.com/nasys/nas-codecs/tree/main/generated) folder.
+
+## Live encoding in browser
+[UL20xx 1.1.x live encoder](https://nasys.github.io/nas-codecs/generated/ul20xx_1_1_x_encoder.html)
 
 ## Using on TTN (or Chirpstack)
 - open minified .js file for appropriate device from gerenated folder.

@@ -1539,7 +1539,7 @@ function decodeFport61(dataView, result, err) {
       result.power_factor = dataView.getUint8() / 100;
       return;
     case 0x85:
-      result.packet_type = 'light_sensor_notification';
+      result.packet_type = 'light_sensor_notification_deprecated';
       result.active_dim_step = rawByte2;
       return;
     default:
