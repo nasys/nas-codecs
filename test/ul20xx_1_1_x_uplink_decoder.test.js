@@ -38,7 +38,7 @@ describe('Status and usage', () => {
           "dimming_source": [
             {
               "address": "dali_broadcast",
-              "reason": "calendar_dusk_step",
+              "reason": "calendar_dusk_step_0",
               "dimming_level__percent": 25,
               "status": {
                 "driver_error": false,
@@ -53,7 +53,7 @@ describe('Status and usage', () => {
             },
             {
               "address": "dali_single_9",
-              "reason": "calendar_dusk_step",
+              "reason": "calendar_dusk_step_0",
               "dimming_level__percent": 25,
               "status": {
                 "driver_error": false,
@@ -81,7 +81,7 @@ describe('Status and usage', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 23,
-      data: '01 F37F205E 82C4 32 09 16 20 09 01 D2 02 9455 04 01 2100 FE 50 19 00 12 50 19 00',
+      data: '01 F37F205E 82C4 32 09 16 20 09 01 D2 02 9455 04 01 2100 FE 51 19 00 12 3F 19 00',
       expected: {
         data: {
           "packet_type": "status_packet",
@@ -112,7 +112,7 @@ describe('Status and usage', () => {
           "dimming_source": [
             {
               "address": "dali_broadcast",
-              "reason": "calendar_dusk_step",
+              "reason": "calendar_dusk_step_1",
               "dimming_level__percent": 25,
               "status": {
                 "driver_error": false,
@@ -127,7 +127,7 @@ describe('Status and usage', () => {
             },
             {
               "address": "dali_single_9",
-              "reason": "calendar_dusk_step",
+              "reason": "calendar_dawn_step_15",
               "dimming_level__percent": 25,
               "status": {
                 "driver_error": false,
@@ -158,7 +158,7 @@ describe('Status and usage', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 23,
-      data: '00 F37F205E 92 32 09 16 00  FE 50 19 00  12 50 19 00',
+      data: '00 F37F205E 92 32 09 16 00  FE 71 19 00  12 81 19 00',
       expected: {
         data: {
           "packet_type": "status_packet",
@@ -178,7 +178,7 @@ describe('Status and usage', () => {
           "dimming_source": [
             {
               "address": "dali_broadcast",
-              "reason": "calendar_dusk_step",
+              "reason": "dig_active",
               "dimming_level__percent": 25,
               "status": {
                 "driver_error": false,
@@ -193,7 +193,7 @@ describe('Status and usage', () => {
             },
             {
               "address": "dali_single_9",
-              "reason": "calendar_dusk_step",
+              "reason": "light_monitor_step_1",
               "dimming_level__percent": 25,
               "status": {
                 "driver_error": false,

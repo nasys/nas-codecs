@@ -202,12 +202,55 @@ function profileReason(reason, err) {
     case 0x22:
       return 'calendar_night';
     case 0x30:
-      return 'calendar_dawn_step';
+    case 0x31:
+    case 0x32:
+    case 0x33:
+    case 0x34:
+    case 0x35:
+    case 0x36:
+    case 0x37:
+    case 0x38:
+    case 0x39:
+    case 0x3A:
+    case 0x3B:
+    case 0x3C:
+    case 0x3D:
+    case 0x3E:
+    case 0x3F:
+      return 'calendar_dawn_step_' + (reason - 0x30);
     case 0x50:
-      return 'calendar_dusk_step';
+    case 0x51:
+    case 0x52:
+    case 0x53:
+    case 0x54:
+    case 0x55:
+    case 0x56:
+    case 0x57:
+    case 0x58:
+    case 0x59:
+    case 0x5A:
+    case 0x5B:
+    case 0x5C:
+    case 0x5D:
+    case 0x5E:
+    case 0x5F:
+      return 'calendar_dusk_step_' + (reason - 0x50);
+    case 0x70:
+      return 'dig_inactive';
+    case 0x71:
+      return 'dig_active';
+    case 0x80:
+    case 0x81:
+    case 0x82:
+    case 0x83:
+    case 0x84:
+    case 0x85:
+    case 0x86:
+    case 0x87:
+        return 'light_monitor_step_' + (reason - 0x80);
     case 245:
       return 'relay_off';
-    // eslint-disable-next-line no-duplicate-case
+      // eslint-disable-next-line no-duplicate-case
     case 248:
       return 'fallback_active';
     case 246:
