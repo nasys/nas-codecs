@@ -898,6 +898,7 @@ function convert_datarecords(data) {
     }
     var subunit_str = '';
     if (obj.device) {
+
       subunit_str = 'subunit' + obj.device + '_';
     }
     var value = obj.value;
@@ -1687,5 +1688,3 @@ function Decoder(bytes, fport) {
 function Decode(fport, bytes) {
   return decodeRaw(fport, bytes);
 }
-
-

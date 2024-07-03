@@ -1,0 +1,80 @@
+
+{
+    "type": "up",
+    "payload": {
+        "applicationID": "430",
+        "applicationName": "hanneskask",
+        "deviceName": "Test_codec_LCU_1_1",
+        "devEUI": "cLPVsCAHMgg=",
+        "rxInfo": [
+            {
+                "gatewayID": "cLPVsCAAAX4=",
+                "time": "2024-07-01T13:43:42.236186Z",
+                "timeSinceGPSEpoch": null,
+                "rssi": -57,
+                "loRaSNR": 9.75,
+                "channel": 6,
+                "rfChain": 0,
+                "board": 0,
+                "antenna": 0,
+                "location": {
+                    "latitude": 0,
+                    "longitude": 0,
+                    "altitude": 0,
+                    "source": "UNKNOWN",
+                    "accuracy": 0
+                },
+                "fineTimestampType": "NONE",
+                "context": "n+Rm/A==",
+                "uplinkID": "CxOIe3mIS92+N8ObgFPA1Q==",
+                "crcStatus": "CRC_OK"
+            },
+            {
+                "gatewayID": "cLPVsCADKGg=",
+                "time": null,
+                "timeSinceGPSEpoch": null,
+                "rssi": -127,
+                "loRaSNR": -4.2,
+                "channel": 6,
+                "rfChain": 0,
+                "board": 0,
+                "antenna": 0,
+                "location": {
+                    "latitude": -48.87667,
+                    "longitude": -123.39333,
+                    "altitude": 15,
+                    "source": "UNKNOWN",
+                    "accuracy": 0
+                },
+                "fineTimestampType": "NONE",
+                "context": "nhJSnA==",
+                "uplinkID": "PfpP36UkQk6pL4fmKsKFrg==",
+                "crcStatus": "CRC_OK"
+            }
+        ],
+        "txInfo": {
+            "frequency": 867700000,
+            "modulation": "LORA",
+            "loRaModulationInfo": {
+                "bandwidth": 125,
+                "spreadingFactor": 12,
+                "codeRate": "4/5",
+                "polarizationInversion": false
+            }
+        },
+        "adr": true,
+        "dr": 0,
+        "fCnt": 3,
+        "fPort": 23,
+        "data": "AY6ygmYgAEcHGgACAd7+IQAA",
+        
+        "objectJSON": "{\"data\":{\"active_alerts\":{\"lamp_error_alert_in_24h\":false,\"power_alert_in_24h\":false,\"power_factor_alert_in_24h\":false,\"voltage_alert_in_24h\":false},\"device_unix_epoch\":\"2024-07-01T13:43:42.000Z\",\"dimming_source\":[{\"address\":\"dali_broadcast\",\"dimming_level__percent\":0,\"reason\":\"calendar_day\",\"status\":{\"driver_error\":false,\"fade_running\":false,\"lamp_failure\":false,\"lamp_on\":false,\"limit_error\":false,\"missing_short_address\":false,\"power_failure\":false,\"reset_state\":false}}],\"downlink_rssi__dBm\":-71,\"downlink_snr__dB\":7,\"mcu_temperature__C\":26,\"packet_type\":\"status_packet\",\"sensor_source\":{\"ldr_input\":222},\"status\":{\"dali_connection_error\":false,\"ext_rtc_warning\":false,\"internal_relay_closed\":false,\"lumalink_connected\":false,\"lumalink_connected_after_boot\":false,\"metering_com_error\":true,\"open_drain_output_on\":false}},\"errors\":[],\"warnings\":[\"metering_com_error\"]}",
+        
+        "tags": {},
+        "confirmedUplink": false,
+        "devAddr": "guTIZg==",
+        "publishedAt": "2024-07-01T13:43:46.875848807Z",
+        "deviceProfileID": "8b8f3654-40e5-45f6-aaaf-9def64eb4072",
+        "deviceProfileName": "EU868-LCU-1.1"
+    }
+}

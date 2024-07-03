@@ -1,3 +1,8 @@
+# Version 0.11.2 03.07.2024
+ - tmbus_wrapper supports now ES5
+ - UM30xx_4_0_X and CM30xx_2_3_X now work in chirpstack V3
+ - Created a guide on chirpstack parser usage
+
 # Version 0.11.0 10.06.2024  
   - UL20xx decoder dali_unadressed_driver_found -> dali_unaddressed_driver_found
   - UL20xx 1.1.x interface_type_config_packet added

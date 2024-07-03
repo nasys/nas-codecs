@@ -1,0 +1,79 @@
+{
+    "type": "up",
+    "payload": {
+        "applicationID": "430",
+        "applicationName": "hanneskask",
+        "deviceName": "OIR_test_device",
+        "devEUI": "cLPVsCAEiDY=",
+        "rxInfo": [
+            {
+                "gatewayID": "cLPVsCAAAX4=",
+                "time": "2024-07-03T08:05:50.816461Z",
+                "timeSinceGPSEpoch": null,
+                "rssi": -59,
+                "loRaSNR": 8.75,
+                "channel": 3,
+                "rfChain": 0,
+                "board": 0,
+                "antenna": 0,
+                "location": {
+                    "latitude": 0,
+                    "longitude": 0,
+                    "altitude": 0,
+                    "source": "UNKNOWN",
+                    "accuracy": 0
+                },
+                "fineTimestampType": "NONE",
+                "context": "I3SzhA==",
+                "uplinkID": "/QtoBYYWTVGjjqNBWo8d+w==",
+                "crcStatus": "CRC_OK"
+            },
+            {
+                "gatewayID": "cLPVsCADKGg=",
+                "time": null,
+                "timeSinceGPSEpoch": null,
+                "rssi": -126,
+                "loRaSNR": -1.8,
+                "channel": 3,
+                "rfChain": 0,
+                "board": 0,
+                "antenna": 0,
+                "location": {
+                    "latitude": -48.87667,
+                    "longitude": -123.39333,
+                    "altitude": 15,
+                    "source": "UNKNOWN",
+                    "accuracy": 0
+                },
+                "fineTimestampType": "NONE",
+                "context": "IZvbLA==",
+                "uplinkID": "2MmfSqE+R/WyttwNYFEMXw==",
+                "crcStatus": "CRC_OK"
+            }
+        ],
+        "txInfo": {
+            "frequency": 867100000,
+            "modulation": "LORA",
+            "loRaModulationInfo": {
+                "bandwidth": 125,
+                "spreadingFactor": 12,
+                "codeRate": "4/5",
+                "polarizationInversion": false
+            }
+        },
+        "adr": true,
+        "dr": 0,
+        "fCnt": 104,
+        "fPort": 25,
+        "data": "AoAFAA==",
+
+        "objectJSON": "{\"data\":{\"active_alerts\":{\"low_battery\":false,\"pulse_1_trigger_alert\":false,\"pulse_2_trigger_alert\":false},\"app_connected_within_a_day\":true,\"meter_actuality_duration__minutes\":5,\"meter_actuality_duration_formatted\":\"5 minutes\",\"packet_type\":\"usage_packet\"},\"errors\":[],\"warnings\":[]}",
+        
+        "tags": {},
+        "confirmedUplink": false,
+        "devAddr": "gqhWew==",
+        "publishedAt": "2024-07-03T08:05:57.927856606Z",
+        "deviceProfileID": "179bba14-3ee4-42d4-b4db-81039888b3e7",
+        "deviceProfileName": "EU868_OIR"
+    }
+}
