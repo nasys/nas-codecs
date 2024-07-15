@@ -31,7 +31,7 @@ Or download respective .html file in [generated](https://github.com/nasys/nas-co
 - repeat it for Downlink aswell
 
 ## Supported platforms
-- Chirpstack
+- Chirpstack (how to use chirpstack decoder: https://github.com/nasys/nas-codecs/blob/main/NAS%20Codec%20ChirpstackInstallation%20Guide.md)
 - The Things Network (add as Custom Javascript Formatter to both Uplink and Downlink)
 - easily adoptable to anything that uses javascript
 - at least useful starting point for porting to other platforms / languages

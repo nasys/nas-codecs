@@ -1,3 +1,7 @@
+# Version 0.11.3 15.07.2024
+ - UM30xx_decoder removed privact_mode_active
+ - Added link to readme for Chirpstack Installation guide
+
 # Version 0.11.2 03.07.2024
  - tmbus_wrapper supports now ES5
  - UM30xx_4_0_X and CM30xx_2_3_X now work in chirpstack V3

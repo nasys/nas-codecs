@@ -380,7 +380,6 @@ function generalConfigurationParser(dataView, result, err) {
     result.meter_unit = meterUnitFormat(bits3.getBits(2), err);
     unitPost = result.meter_unit !== '' ? '__' + result.meter_unit : '';
     unitPerHour = unitPost ? unitPost + "_per_h" : "";
-    result.privacy_mode_active = bits3.getBits(1);
   }
 
   if (configuredParameters.meter_volume_sent) {
