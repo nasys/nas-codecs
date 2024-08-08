@@ -1,3 +1,9 @@
+# Version 0.11.4 08.08.2024
+ - UL20xx_1_1_x:
+    - ignore_gnss added to calendar_config_packet 
+    - request_gnss_notification added to status_usage_request
+    - location_notification packet added
+
 # Version 0.11.3 15.07.2024
  - UM30xx_decoder removed privact_mode_active
  - Added link to readme for Chirpstack Installation guide

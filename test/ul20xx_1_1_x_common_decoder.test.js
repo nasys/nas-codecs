@@ -167,6 +167,7 @@ describe('Config packts', () => {
           "calendar_prefers_meta_pos": false,
           "calendar_clamps_profiles": false,
           "calendar_clamps_dig": false,
+          "ignore_gnss": false,
           "latitude__deg": 48.77,
           "longitude__deg": 13.84,
           "sunrise_steps": [

@@ -344,6 +344,7 @@ export function decodeCalendarConfigV11(dataView, result) {
   result.calendar_prefers_meta_pos = bits.getBits(1);
   result.calendar_clamps_profiles = bits.getBits(1);
   result.calendar_clamps_dig = bits.getBits(1);
+  result.ignore_gnss = bits.getBits(1);
 
   result.latitude__deg = dataView.getInt16() / 100;
   result.longitude__deg = dataView.getInt16() / 100;
@@ -862,6 +863,7 @@ export function decodeStatusRequest(dataView, result, err) {
   result.usage_requested = bits.getBits(1);
   result.status_requested = bits.getBits(1);
   result.dim_map_report_requested = bits.getBits(1);
+  result.request_gnss_notification = bits.getBits(1);
 
   if (result.dim_map_report_requested && dataView.availableLen() > 0) {
     result.drivers = [];
@@ -1310,7 +1312,7 @@ function usageConsumptionParse(dataView, err) {
     result.driver_operating_time__h = Math.round(dataView.getUint32() / 3600);
   }
   if (bits.getBits(1)) {
-    result.lamp_on_time__s = dataView.getUint32();
+    result.lamp_on_time__h = Math.round((dataView.getUint32()/3600)*10) / 10;
   }
   return result;
 }
@@ -1584,6 +1586,22 @@ function decodeFport61(dataView, result, err) {
     case 0x85:
       result.packet_type = 'deprecated_light_sensor_notification';
       result.active_dim_step = rawByte2;
+      return;
+    case 0x86:
+      result.packet_type = 'location_notification';
+      var loc_status = rawByte2;
+      if (loc_status === 0x00){
+        result.location_status = 'good_fix';
+        result.latitude__deg = dataView.getFloat().toFixed(6);
+        result.longitude__deg = dataView.getFloat().toFixed(6);
+        result.last_fix_utc_time = decodeUnixEpoch(dataView.getUint32());
+      } else if (loc_status === 0x01){
+        result.location_status = 'no_fix';
+      } else if (loc_status === 0x02 || loc_status === 0xFF){
+        result.location_status = 'internal_error';
+      } else {
+        result.location_status = 'invalid_status';
+      }
       return;
     default:
       err.errors.push('invalid_packet_type');

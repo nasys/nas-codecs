@@ -344,6 +344,7 @@ export function decodeCalendarConfigV11(dataView, result) {
   result.calendar_prefers_meta_pos = bits.getBits(1);
   result.calendar_clamps_profiles = bits.getBits(1);
   result.calendar_clamps_dig = bits.getBits(1);
+  result.ignore_gnss = bits.getBits(1);
 
   result.latitude__deg = dataView.getInt16() / 100;
   result.longitude__deg = dataView.getInt16() / 100;
@@ -862,6 +863,7 @@ export function decodeStatusRequest(dataView, result, err) {
   result.usage_requested = bits.getBits(1);
   result.status_requested = bits.getBits(1);
   result.dim_map_report_requested = bits.getBits(1);
+  result.request_gnss_notification = bits.getBits(1);
 
   if (result.dim_map_report_requested && dataView.availableLen() > 0) {
     result.drivers = [];
@@ -1310,7 +1312,7 @@ function usageConsumptionParse(dataView, err) {
     result.driver_operating_time__h = Math.round(dataView.getUint32() / 3600);
   }
   if (bits.getBits(1)) {
-    result.lamp_on_time__s = dataView.getUint32();
+    result.lamp_on_time__h = Math.round((dataView.getUint32()/3600)*10) / 10;
   }
   return result;
 }

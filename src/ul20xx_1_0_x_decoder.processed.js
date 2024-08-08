@@ -249,31 +249,6 @@ export function decodeZenithStep(dataView) {
   return step;
 }
 
-export function decodeCalendarConfigV11(dataView, result) {
-  result.packet_type = 'calendar_config_packet';
-
-  var steps = dataView.getUint8Bits();
-  var sunriseSteps = steps.getBits(4);
-  var sunsetSteps = steps.getBits(4);
-
-  var bits = dataView.getUint8Bits();
-  result.calendar_prefers_meta_pos = bits.getBits(1);
-  result.calendar_clamps_profiles = bits.getBits(1);
-  result.calendar_clamps_dig = bits.getBits(1);
-
-  result.latitude__deg = dataView.getInt16() / 100;
-  result.longitude__deg = dataView.getInt16() / 100;
-
-  result.sunrise_steps = [];
-  result.sunset_steps = [];
-
-  for (var i1 = 0; i1 < sunriseSteps; i1 += 1) {
-    result.sunrise_steps.push(decodeZenithStep(dataView));
-  }
-  for (var i2 = 0; i2 < sunsetSteps; i2 += 1) {
-    result.sunset_steps.push(decodeZenithStep(dataView));
-  }
-}
 
 export function decodeStatusConfig(dataView, result) {
   result.packet_type = 'status_config_packet';
@@ -1014,7 +989,7 @@ function usageConsumptionParse(dataView, err) {
   if (bits.getBits(1)) {
     var sec = dataView.getUint32();
     if (addr === 0xFF) sec = sec;
-    result.lamp_on_time__s = sec;
+    result.lamp_on_time__h = Math.round((sec/3600)*10) / 10;
   }
   return result;
 }

@@ -184,7 +184,7 @@ describe('Status and usage', () => {
               "address": "internal_measurement",
               "active_energy__Wh": 1,
               "active_power__W": 4,
-              "lamp_on_time__s": 0
+              "lamp_on_time__h": 0
             },
             {
               "address": "dali_single_9",
@@ -193,7 +193,7 @@ describe('Status and usage', () => {
               "load_side_energy__Wh": 0,
               "load_side_power__W": 0,
               "driver_operating_time__h": 125,
-              "lamp_on_time__s": 17
+              "lamp_on_time__h": 0
             }
           ]
         }, errors: [],
@@ -215,7 +215,7 @@ describe('Status and usage', () => {
               "address": "internal_measurement",
               "active_energy__Wh": 1,
               "active_power__W": 4,
-              "lamp_on_time__s": 0
+              "lamp_on_time__h": 0
             },
             {
               "address": "invalid",
@@ -224,14 +224,14 @@ describe('Status and usage', () => {
               "load_side_energy__Wh": 0,
               "load_side_power__W": 0,
               "driver_operating_time__h": 125,
-              "lamp_on_time__s": 17
+              "lamp_on_time__h": 0
             }
           ]
         }, errors: [],
         warnings: [
           "invalid_address"
         ]
-      },
+      }
     });
   });
 });

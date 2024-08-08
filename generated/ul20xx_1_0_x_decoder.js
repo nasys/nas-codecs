@@ -368,6 +368,7 @@ function decodeCalendarConfigV10(dataView, result) {
   result.longitude__deg = lon;
 }
 
+
 function decodeStatusConfig(dataView, result) {
   result.packet_type = 'status_config_packet';
   result.status_interval__s = dataView.getUint32();
@@ -1014,7 +1015,7 @@ function usageConsumptionParse(dataView, err) {
   if (bits.getBits(1)) {
     var sec = dataView.getUint32();
     if (addr === 0xFF) sec = sec;
-    result.lamp_on_time__s = sec;
+    result.lamp_on_time__h = Math.round((sec/3600)*10) / 10;
   }
   return result;
 }

@@ -272,7 +272,7 @@ describe('Status and usage', () => {
           "consumption": [
             {
               "address": "internal_measurement",
-              "lamp_on_time__s": 19918800
+              "lamp_on_time__h": 5533
             },
             {
               "address": "dali_single_9",
@@ -283,7 +283,7 @@ describe('Status and usage', () => {
               "power_factor": 0.93,
               "mains_voltage__V": 229,
               "driver_operating_time__h": 13279,
-              "lamp_on_time__s": 19918800
+              "lamp_on_time__h": 5533
             }
           ]
         }, errors: [],
@@ -357,6 +357,7 @@ describe('Commands', () => {
           "status_requested": false,
           "usage_requested": false,
           "dim_map_report_requested": true,
+          "request_gnss_notification": false,
           "drivers": [
             {
               "address": "dali_single_9",

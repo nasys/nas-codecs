@@ -130,6 +130,38 @@ describe('Config requests', function () {
     });
   });
 
+  describe('calendar_config_packet from DS', () => {
+    testPacket({
+      decoderFn: decodeRaw,
+      fport: 50,
+      data: '20 11 08 0D13 6805 05 00 FE 19',
+      expected: {
+        data: {
+          "packet_type": "calendar_config_packet",
+          "calendar_prefers_meta_pos": false,
+          "calendar_clamps_profiles": false,
+          "calendar_clamps_dig": false,
+          "ignore_gnss": true,
+          "latitude__deg": 48.77,
+          "longitude__deg": 13.84,
+          "sunrise_steps": [
+            {
+              "dimming_level__percent": 0,
+              "zenith_angle__deg": "90.83",
+            },
+          ],
+            "sunset_steps": [
+            {
+              "dimming_level__percent": 25,
+              "zenith_angle__deg": "89.67",
+            },
+          ],
+        }, errors: [],
+        warnings: [],
+      },
+    });
+  });
+
   describe('lumalink_config_request from DS', () => {
     testPacket({
       decoderFn: decodeRaw,
@@ -150,13 +182,14 @@ describe('Commands', function () {
     testPacket({
       decoderFn: decodeRaw,
       fport: 60,
-      data: '0504',
+      data: '0508',
       expected: {
         data: {
           "packet_type": "status_usage_request",
           "usage_requested": false,
           "status_requested": false,
-          "dim_map_report_requested": true
+          "dim_map_report_requested": false,
+          "request_gnss_notification": true,
         }, errors: [],
         warnings: [],
       },
@@ -169,11 +202,14 @@ describe('Alert notifications', function () {
     testPacket({
       decoderFn: decodeRaw,
       fport: 61,
-      data: '8501',
+      data: '8600B3046942B3EFB341EE68B466',
       expected: {
         data: {
-          "packet_type": "deprecated_light_sensor_notification",
-          "active_dim_step": 1,
+          "packet_type": "location_notification",
+          "location_status": "good_fix",
+          "latitude__deg": "58.254589",
+          "longitude__deg": "22.492041",
+          "last_fix_utc_time": "2024-08-08T06:42:54.000Z"
         }, errors: [],
         warnings: [],
       },

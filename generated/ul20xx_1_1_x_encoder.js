@@ -345,6 +345,7 @@ function encode_calendar_config(data, pack, err){
     bits2.addBit(data.calendar_prefers_meta_pos, 'calendar_prefers_meta_pos');
     bits2.addBit(data.calendar_clamps_profiles, 'calendar_clamps_profiles');
     bits2.addBit(data.calendar_clamps_dig, 'calendar_clamps_dig');
+    bits2.addBit(data.ignore_gnss, 'ignore_gnss');
     pack.addUint8(bits2.data_byte);
 
     pack.addInt16(data.latitude__deg * 100, "latitude__deg");
@@ -762,6 +763,12 @@ function status_usage_request(data, pack, err){
         var bits1 = new BitPack(err);
         bits1.addBit(data.usage_requested, 'usage_requested');
         bits1.addBit(data.status_requested, 'status_requested');
+        bits1.addBit(false, 'dim_map_report_requested');
+        if (!data.request_gnss_notification){
+            bits1.addBit(false, 'request_gnss_notification');
+        } else {
+            bits1.addBit(data.request_gnss_notification, 'request_gnss_notification');
+        }
         pack.addUint8(bits1.data_byte);
     }
 }
