@@ -483,8 +483,8 @@ function location_config(data, pack, err){
     pack.addUint8(0x26);
     var enc_address = utf8ToArr(data.address);
     pack.addUint8(enc_address.length, 'address_length');
-    pack.addUint32(strLookup(data.latitude__deg * 10000000, {'not_configured': 0x7FFFFFFF}, err), 'latitude__deg');
-    pack.addUint32(strLookup(data.longitude__deg * 10000000, {'not_configured': 0x7FFFFFFF}, err), 'longitude__deg');
+    pack.addInt32(strLookup(data.latitude__deg * 10000000, {'not_configured': 0x7FFFFFFF}, err), 'latitude__deg');
+    pack.addInt32(strLookup(data.longitude__deg * 10000000, {'not_configured': 0x7FFFFFFF}, err), 'longitude__deg');
     for (var i = 0; i < enc_address.length; i++){
         pack.addUint8(enc_address[i]);
     }
