@@ -47,6 +47,12 @@ describe('UL20xx packet encoder', () => {
     test_decode_encode(bytes, fport);
   });
 
+  test('50_dig_input_config_packet DS', () => {
+    var bytes = hexToBytes("28 00 03 FE 64 FF 0000 7800");
+    var fport = 50;
+    test_decode_encode(bytes, fport);
+  });
+
   test('50_status_config_packet DS', () => {
     var bytes = hexToBytes("0758020000");
     var fport = 50;

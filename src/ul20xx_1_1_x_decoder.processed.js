@@ -273,12 +273,15 @@ export function decodeDigInputConfigNew(dataView, result, err) {
   if (index === 0xFF) {
     return;
   }
+  result.dig_enabled = index;
 
   var bits = dataView.getUint8Bits();
   result.dig_mode_button = bits.getBits(1);
   result.polarity_high_or_rising = bits.getBits(1);
   result.notification_on_activation = bits.getBits(1);
   result.notification_on_inactivation = bits.getBits(1);
+  bits.getBits(3); // 3 bits reserved!
+  result.source_d4i_motion_sensor = bits.getBits(1);
 
   result.address = addressParse(dataView.getUint8(), "all_devices", err);
 

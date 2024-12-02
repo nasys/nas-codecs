@@ -320,21 +320,26 @@ function lumalink_config(data, pack, err){
 
 function dig_input_config(data, pack, err){
     pack.addUint8(0x28);
-    pack.addUint8(strLookup(data.dig_index, {'enable_dig': 0x00, 'disable_dig': 0xFF}), 'dig_index');
+    pack.addUint8(strLookup(data.dig_enabled, {'dig_enabled': 0x00, 'dig_disabled': 0xFF}), 'dig_enabled');
 
     var bits1 = new BitPack(err);
     bits1.addBit(data.dig_mode_button, 'dig_mode_button');
     bits1.addBit(data.polarity_high_or_rising, 'polarity_high_or_rising');
-    bits1.addBit(data.alert_on_activation, 'alert_on_activation');
-    bits1.addBit(data.alert_on_inactivation, 'alert_on_inactivation');
+    bits1.addBit(data.notification_on_activation, 'notification_on_activation');
+    bits1.addBit(data.notification_on_inactivation, 'notification_on_inactivation');
+    bits1.addBits(0, 3, "");
+    if (!('source_d4i_motion_sensor' in data)){
+        bits1.addBit(0, 'source_d4i_motion_sensor');
+    } else {
+        bits1.addBit(data.source_d4i_motion_sensor, 'source_d4i_motion_sensor');
+    }
     pack.addUint8(bits1.data_byte);
-
     pack.addUint8(addressEncode(data.address, err), 'address');
     pack.addUint8(strLookup(data.active_dimming_level__percent, {'inactive': 0xFF}, err), 'active_dimming_level__percent');
     pack.addUint8(strLookup(data.inactive_dimming_level__percent, {'inactive': 0xFF}, err), 'inactive_dimming_level__percent');
 
     pack.addUint16(data.on_delay__s, 'on_delay__s');
-    pack.addUint16(data.on_delay__s, 'on_delay__s');
+    pack.addUint16(data.off_delay__s, 'off_delay__s');
 }
 
 function light_sensor_config(data, pack, err){

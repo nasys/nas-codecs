@@ -126,7 +126,7 @@ describe('Config packts', () => {
           "signal_edge_rising": true,
           "trigger_alert_enabled": false,
           "address": "dali_broadcast",
-          "dimming_level__percent": 50
+          "dimming_level__percent": 50,
         }, errors: [],
           warnings: [],
       },
@@ -137,14 +137,16 @@ describe('Config packts', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 50,
-      data: '28 00 03 FE 64 FF 0000 7800',
+      data: '280113FE64FF00007800',
       expected: {
         data: {
           "packet_type": "dig_input_config_packet",
+          "dig_enabled": 1,
           "dig_mode_button": true,
           "polarity_high_or_rising": true,
           "notification_on_activation": false,
           "notification_on_inactivation": false,
+          "source_d4i_motion_sensor": false,
           "address": "dali_broadcast",
           "active_dimming_level__percent": 100,
           "inactive_dimming_level__percent": "inactive",

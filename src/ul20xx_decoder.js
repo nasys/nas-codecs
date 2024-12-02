@@ -298,12 +298,15 @@ export function decodeDigInputConfigNew(dataView, result, err) {
   if (index === 0xFF) {
     return;
   }
+  result.dig_enabled = index;
 
   var bits = dataView.getUint8Bits();
   result.dig_mode_button = bits.getBits(1);
   result.polarity_high_or_rising = bits.getBits(1);
   result.notification_on_activation = bits.getBits(1);
   result.notification_on_inactivation = bits.getBits(1);
+  bits.getBits(3); // 3 bits reserved!
+  result.source_d4i_motion_sensor = bits.getBits(1);
 
   result.address = addressParse(dataView.getUint8(), "all_devices", err);
 
@@ -1772,8 +1775,12 @@ function decodeFport49(dataView, result, err) {
       return;
     case 0x08:
       result.packet_type = 'profile_config_request';
-      var id = dataView.getUint8();
-      result.profile_id = id === 0xFF ? 'all_profiles' : id;
+      if (dataView.buffer.length <= 1){
+        result.profile_id = 'no_profiles';
+      } else {
+        var id = dataView.getUint8();
+        result.profile_id = id === 0xFF ? 'all_profiles' : id;
+      }
       return;
     case 0x0A:
       result.packet_type = 'default_dim_config_request';

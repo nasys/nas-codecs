@@ -24,8 +24,9 @@ BitPack.prototype.addBit = function (val, key) {
     this.err.warnings.push(key + " invalid_boolean_value_or_key_not_found");
   }
 
-  if (this.offset + 1 >= 8) {
+  if (this.offset >= 8) {
     this.err.errors.push(key + " too_many_bits");
+    throw new Error("too many bits");
   }
 
   this.data_byte |= val_bool << this.offset;

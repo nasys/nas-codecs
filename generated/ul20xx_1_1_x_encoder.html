@@ -39,7 +39,7 @@
     <pre><code id="payload_strick"></code></pre>
   </div>
 </div>
-<div class="footer">Generated at 2024-08-19T11:03:46.118Z</div>
+<div class="footer">Generated at 2024-12-02T10:30:43.471Z</div>
 <script>
 /// CODEC JAVASCRIPT STARTS FROM HERE
 
@@ -68,8 +68,9 @@ BitPack.prototype.addBit = function (val, key) {
     this.err.warnings.push(key + " invalid_boolean_value_or_key_not_found");
   }
 
-  if (this.offset + 1 >= 8) {
+  if (this.offset >= 8) {
     this.err.errors.push(key + " too_many_bits");
+    throw new Error("too many bits");
   }
 
   this.data_byte |= val_bool << this.offset;
@@ -558,21 +559,26 @@ function lumalink_config(data, pack, err){
 
 function dig_input_config(data, pack, err){
     pack.addUint8(0x28);
-    pack.addUint8(strLookup(data.dig_index, {'enable_dig': 0x00, 'disable_dig': 0xFF}), 'dig_index');
+    pack.addUint8(strLookup(data.dig_enabled, {'dig_enabled': 0x00, 'dig_disabled': 0xFF}), 'dig_enabled');
 
     var bits1 = new BitPack(err);
     bits1.addBit(data.dig_mode_button, 'dig_mode_button');
     bits1.addBit(data.polarity_high_or_rising, 'polarity_high_or_rising');
-    bits1.addBit(data.alert_on_activation, 'alert_on_activation');
-    bits1.addBit(data.alert_on_inactivation, 'alert_on_inactivation');
+    bits1.addBit(data.notification_on_activation, 'notification_on_activation');
+    bits1.addBit(data.notification_on_inactivation, 'notification_on_inactivation');
+    bits1.addBits(0, 3, "");
+    if (!('source_d4i_motion_sensor' in data)){
+        bits1.addBit(0, 'source_d4i_motion_sensor');
+    } else {
+        bits1.addBit(data.source_d4i_motion_sensor, 'source_d4i_motion_sensor');
+    }
     pack.addUint8(bits1.data_byte);
-
     pack.addUint8(addressEncode(data.address, err), 'address');
     pack.addUint8(strLookup(data.active_dimming_level__percent, {'inactive': 0xFF}, err), 'active_dimming_level__percent');
     pack.addUint8(strLookup(data.inactive_dimming_level__percent, {'inactive': 0xFF}, err), 'inactive_dimming_level__percent');
 
     pack.addUint16(data.on_delay__s, 'on_delay__s');
-    pack.addUint16(data.on_delay__s, 'on_delay__s');
+    pack.addUint16(data.off_delay__s, 'off_delay__s');
 }
 
 function light_sensor_config(data, pack, err){
@@ -1093,11 +1099,12 @@ var config_packet_list = {
     }},
     'dig_input_config_packet':{"data": {
       "packet_type": "dig_input_config_packet",
-      "dig_index": 1,
+      "dig_enabled": 1,
       "dig_mode_button": true,
       "polarity_high_or_rising": true,
-      "alert_on_activation": false,
-      "alert_on_inactivation": false,
+      "notification_on_activation": false,
+      "notification_on_inactivation": false,
+      "source_d4i_motion_sensor": false,
       "address": "dali_broadcast",
       "active_dimming_level__percent": 100,
       "inactive_dimming_level__percent": "inactive",
@@ -1697,12 +1704,15 @@ function decodeDigInputConfigNew(dataView, result, err) {
   if (index === 0xFF) {
     return;
   }
+  result.dig_enabled = index;
 
   var bits = dataView.getUint8Bits();
   result.dig_mode_button = bits.getBits(1);
   result.polarity_high_or_rising = bits.getBits(1);
   result.notification_on_activation = bits.getBits(1);
   result.notification_on_inactivation = bits.getBits(1);
+  bits.getBits(3); // 3 bits reserved!
+  result.source_d4i_motion_sensor = bits.getBits(1);
 
   result.address = addressParse(dataView.getUint8(), "all_devices", err);
 

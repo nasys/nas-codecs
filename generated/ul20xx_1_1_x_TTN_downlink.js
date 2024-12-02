@@ -23,8 +23,9 @@ BitPack.prototype.addBit = function (val, key) {
     this.err.warnings.push(key + " invalid_boolean_value_or_key_not_found");
   }
 
-  if (this.offset + 1 >= 8) {
+  if (this.offset >= 8) {
     this.err.errors.push(key + " too_many_bits");
+    throw new Error("too many bits");
   }
 
   this.data_byte |= val_bool << this.offset;
@@ -483,8 +484,8 @@ function location_config(data, pack, err){
     pack.addUint8(0x26);
     var enc_address = utf8ToArr(data.address);
     pack.addUint8(enc_address.length, 'address_length');
-    pack.addUint32(strLookup(data.latitude__deg * 10000000, {'not_configured': 0x7FFFFFFF}, err), 'latitude__deg');
-    pack.addUint32(strLookup(data.longitude__deg * 10000000, {'not_configured': 0x7FFFFFFF}, err), 'longitude__deg');
+    pack.addInt32(strLookup(data.latitude__deg * 10000000, {'not_configured': 0x7FFFFFFF}, err), 'latitude__deg');
+    pack.addInt32(strLookup(data.longitude__deg * 10000000, {'not_configured': 0x7FFFFFFF}, err), 'longitude__deg');
     for (var i = 0; i < enc_address.length; i++){
         pack.addUint8(enc_address[i]);
     }
@@ -513,21 +514,22 @@ function lumalink_config(data, pack, err){
 
 function dig_input_config(data, pack, err){
     pack.addUint8(0x28);
-    pack.addUint8(strLookup(data.dig_index, {'enable_dig': 0x00, 'disable_dig': 0xFF}), 'dig_index');
+    pack.addUint8(strLookup(data.dig_enabled, {'dig_enabled': 0x00, 'dig_disabled': 0xFF}), 'dig_enabled');
 
     var bits1 = new BitPack(err);
     bits1.addBit(data.dig_mode_button, 'dig_mode_button');
     bits1.addBit(data.polarity_high_or_rising, 'polarity_high_or_rising');
-    bits1.addBit(data.alert_on_activation, 'alert_on_activation');
-    bits1.addBit(data.alert_on_inactivation, 'alert_on_inactivation');
+    bits1.addBit(data.notification_on_activation, 'notification_on_activation');
+    bits1.addBit(data.notification_on_inactivation, 'notification_on_inactivation');
+    bits1.addBits(0, 3, "");
+    bits1.addBit(data.source_d4i_motion_sensor, 'source_d4i_motion_sensor');
     pack.addUint8(bits1.data_byte);
-
     pack.addUint8(addressEncode(data.address, err), 'address');
     pack.addUint8(strLookup(data.active_dimming_level__percent, {'inactive': 0xFF}, err), 'active_dimming_level__percent');
     pack.addUint8(strLookup(data.inactive_dimming_level__percent, {'inactive': 0xFF}, err), 'inactive_dimming_level__percent');
 
     pack.addUint16(data.on_delay__s, 'on_delay__s');
-    pack.addUint16(data.on_delay__s, 'on_delay__s');
+    pack.addUint16(data.off_delay__s, 'off_delay__s');
 }
 
 function light_sensor_config(data, pack, err){
@@ -763,7 +765,12 @@ function status_usage_request(data, pack, err){
         var bits1 = new BitPack(err);
         bits1.addBit(data.usage_requested, 'usage_requested');
         bits1.addBit(data.status_requested, 'status_requested');
-        bits1.addBit(data.request_gnss_notification, 'request_gnss_notification');
+        bits1.addBit(false, 'dim_map_report_requested');
+        if (!data.request_gnss_notification){
+            bits1.addBit(false, 'request_gnss_notification');
+        } else {
+            bits1.addBit(data.request_gnss_notification, 'request_gnss_notification');
+        }
         pack.addUint8(bits1.data_byte);
     }
 }
@@ -1300,12 +1307,15 @@ function decodeDigInputConfigNew(dataView, result, err) {
   if (index === 0xFF) {
     return;
   }
+  result.dig_enabled = index;
 
   var bits = dataView.getUint8Bits();
   result.dig_mode_button = bits.getBits(1);
   result.polarity_high_or_rising = bits.getBits(1);
   result.notification_on_activation = bits.getBits(1);
   result.notification_on_inactivation = bits.getBits(1);
+  bits.getBits(3); // 3 bits reserved!
+  result.source_d4i_motion_sensor = bits.getBits(1);
 
   result.address = addressParse(dataView.getUint8(), "all_devices", err);
 

@@ -1325,8 +1325,12 @@ function decodeFport49(dataView, result, err) {
       return;
     case 0x08:
       result.packet_type = 'profile_config_request';
-      var id = dataView.getUint8();
-      result.profile_id = id === 0xFF ? 'all_profiles' : id;
+      if (dataView.buffer.length <= 1){
+        result.profile_id = 'no_profiles';
+      } else {
+        var id = dataView.getUint8();
+        result.profile_id = id === 0xFF ? 'all_profiles' : id;
+      }
       return;
     case 0x0A:
       result.packet_type = 'default_dim_config_request';

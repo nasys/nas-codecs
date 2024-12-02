@@ -1,3 +1,8 @@
+# Version 0.12.0 02.12.2024
+ - UL20xx_1_1_x:
+    - added source_d4i_motion_sensor
+    - minor bug fixes
+
 # Version 0.11.4 08.08.2024
  - UL20xx_1_1_x:
     - ignore_gnss added to calendar_config_packet 

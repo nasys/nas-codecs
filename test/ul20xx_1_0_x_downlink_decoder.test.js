@@ -62,11 +62,11 @@ describe('Config requests', () => {
     testPacket({
       decoderFn: decodeRaw,
       fport: 49,
-      data: '0806',
+      data: '08',
       expected: {
         data: {
           packet_type: 'profile_config_request',
-          profile_id: 6
+          profile_id: 'no_profiles'
         }, errors: [],
         warnings: [],
       },
