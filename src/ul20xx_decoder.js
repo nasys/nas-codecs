@@ -864,6 +864,34 @@ function daliStatus(bits, address, err) {
   return status;
 }
 
+function tiltSensorAlerts(bits, result, err) {
+  if (bits.data === 0xFF) return result;
+  var tiltalerts = [];
+  if (bits.getBits(1)){
+    tiltalerts.push('data_ok');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('motion_in_15s');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('motion_in_1h');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('motion_in_24h');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('shake_in_15s');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('shake_in_1h');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('shake_in_24h');
+  }
+  result.tilt_sensor_alerts = tiltalerts
+  return result;
+}
+
 export function decodeDaliStatus(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
@@ -1182,6 +1210,7 @@ function decodeSensorSource(dataView, header, result, err) {
     return 1;
   }
   if (header == 0x08) {
+    tilt_sensor_alerts = tiltSensorAlerts(dataView.getUint8Bits(),result, err)
     var deg = dataView.getUint8();
     if (deg == 0xFF) {
       deg = null;

@@ -1,3 +1,7 @@
+# Version 0.12.1 07.10.2024
+  -UL20xx_1_1x:
+    - added tilt_sensor_alerts
+
 # Version 0.12.0 02.12.2024
  - UL20xx_1_1_x:
     - added source_d4i_motion_sensor
