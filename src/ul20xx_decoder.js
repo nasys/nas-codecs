@@ -1216,7 +1216,7 @@ function decodeSensorSource(dataView, header, result, err) {
       deg = null;
     }
     result.sensor_source.tilt_sensor__deg = deg;
-    return 1;
+    return 2;
   }
   return 0;
 }
