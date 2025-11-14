@@ -377,8 +377,8 @@ function bootParser(dataView, result, err){
   result.kamstrup_tariff = meter_tariff(raw_kamstrup_tariff, err);
   result.kamstrup_pulse_input_a = pulse_input(raw_kamstrup_pulse_input_a, err);
   result.kamstrup_pulse_input_b = pulse_input(raw_kamstrup_pulse_input_b, err);
-  result.kamstrup_leakage_limits_v1_v2 = meter_leakage_limit(raw_kamstrup_leakage_limits_v1_v2);
-  result.kamstrup_leakage_limit_cold_ina_inb = leakage_limit_cold(raw_kamstrup_leakage_limit_cold_ina_inb);
+  result.kamstrup_leakage_limits_v1_v2 = meter_leakage_limit(raw_kamstrup_leakage_limits_v1_v2, err);
+  result.kamstrup_leakage_limit_cold_ina_inb = leakage_limit_cold(raw_kamstrup_leakage_limit_cold_ina_inb, err);
 
   intToHexStr(dataView.getUint32(), 8);
 
