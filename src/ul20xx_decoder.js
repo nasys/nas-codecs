@@ -107,14 +107,14 @@ function profileReason(reason, err) {
 function decodeDigHighPriority(value) {
   switch (value) {
     case 0x00:
-      return '_inactive_';
+      return 'inactive';
     case 0x01:
-      return '_always_';
+      return 'always';
     case 0x02:
-      return '_only_over_zero_';
+      return 'only_over_zero';
     case 0x03:
     default:
-      return '_inactive_';
+      return 'inactive';
   }
 }
 
