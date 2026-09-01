@@ -88,6 +88,20 @@ function profileReason(reason, err) {
   }
 }
 
+function decodeDigHighPriority(value) {
+  switch (value) {
+    case 0x00:
+      return '_inactive_';
+    case 0x01:
+      return '_always_';
+    case 0x02:
+      return '_only_over_zero_';
+    case 0x03:
+    default:
+      return '_inactive_';
+  }
+}
+
 export function addressParse(addr, ffStr, err) {
   if (addr === 0x01) {
     return 'analog_0_10v';
@@ -280,7 +294,8 @@ export function decodeDigInputConfigNew(dataView, result, err) {
   result.polarity_high_or_rising = bits.getBits(1);
   result.notification_on_activation = bits.getBits(1);
   result.notification_on_inactivation = bits.getBits(1);
-  bits.getBits(3); // 3 bits reserved!
+  result.dig_high_priority = decodeDigHighPriority(bits.getBits(2));
+  bits.getBits(1); // 1 bit reserved!
   result.source_d4i_motion_sensor = bits.getBits(1);
 
   result.address = addressParse(dataView.getUint8(), "all_devices", err);

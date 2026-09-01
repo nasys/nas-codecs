@@ -88,6 +88,20 @@ function profileReason(reason, err) {
   }
 }
 
+function decodeDigHighPriority(value) {
+  switch (value) {
+    case 0x00:
+      return '_inactive_';
+    case 0x01:
+      return '_always_';
+    case 0x02:
+      return '_only_over_zero_';
+    case 0x03:
+    default:
+      return '_inactive_';
+  }
+}
+
 export function addressParse(addr, ffStr, err) {
   if (addr === 0x01) {
     return 'analog_0_10v';
@@ -280,7 +294,8 @@ export function decodeDigInputConfigNew(dataView, result, err) {
   result.polarity_high_or_rising = bits.getBits(1);
   result.notification_on_activation = bits.getBits(1);
   result.notification_on_inactivation = bits.getBits(1);
-  bits.getBits(3); // 3 bits reserved!
+  result.dig_high_priority = decodeDigHighPriority(bits.getBits(2));
+  bits.getBits(1); // 1 bit reserved!
   result.source_d4i_motion_sensor = bits.getBits(1);
 
   result.address = addressParse(dataView.getUint8(), "all_devices", err);
@@ -777,6 +792,34 @@ function daliStatus(bits, address, err) {
   return status;
 }
 
+function tiltSensorAlerts(bits, result, err) {
+  if (bits.data === 0xFF) return result;
+  var tiltalerts = [];
+  if (bits.getBits(1)){
+    tiltalerts.push('data_ok');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('motion_in_15s');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('motion_in_1h');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('motion_in_24h');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('shake_in_15s');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('shake_in_1h');
+  }
+  if (bits.getBits(1)){
+    tiltalerts.push('shake_in_24h');
+  }
+  result.tilt_sensor_alerts = tiltalerts
+  return result;
+}
+
 export function decodeDaliStatus(dataView, err) {
   var result = {};
   var addr = dataView.getUint8();
@@ -1079,12 +1122,13 @@ function decodeSensorSource(dataView, header, result, err) {
     return 1;
   }
   if (header == 0x08) {
+    tilt_sensor_alerts = tiltSensorAlerts(dataView.getUint8Bits(),result, err)
     var deg = dataView.getUint8();
     if (deg == 0xFF) {
       deg = null;
     }
     result.sensor_source.tilt_sensor__deg = deg;
-    return 1;
+    return 2;
   }
   return 0;
 }

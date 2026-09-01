@@ -522,7 +522,11 @@ function dig_input_config(data, pack, err){
     bits1.addBit(data.notification_on_activation, 'notification_on_activation');
     bits1.addBit(data.notification_on_inactivation, 'notification_on_inactivation');
     bits1.addBits(0, 3, "");
-    bits1.addBit(data.source_d4i_motion_sensor, 'source_d4i_motion_sensor');
+    if (!('source_d4i_motion_sensor' in data)){
+        bits1.addBit(0, 'source_d4i_motion_sensor');
+    } else {
+        bits1.addBit(data.source_d4i_motion_sensor, 'source_d4i_motion_sensor');
+    }
     pack.addUint8(bits1.data_byte);
     pack.addUint8(addressEncode(data.address, err), 'address');
     pack.addUint8(strLookup(data.active_dimming_level__percent, {'inactive': 0xFF}, err), 'active_dimming_level__percent');
@@ -1122,6 +1126,20 @@ function bytesToHexStr(byteArr) {
   return res;
 }
 
+function decodeDigHighPriority(value) {
+  switch (value) {
+    case 0x00:
+      return '_inactive_';
+    case 0x01:
+      return '_always_';
+    case 0x02:
+      return '_only_over_zero_';
+    case 0x03:
+    default:
+      return '_inactive_';
+  }
+}
+
 function addressParse(addr, ffStr, err) {
   if (addr === 0x01) {
     return 'analog_0_10v';
@@ -1314,7 +1332,8 @@ function decodeDigInputConfigNew(dataView, result, err) {
   result.polarity_high_or_rising = bits.getBits(1);
   result.notification_on_activation = bits.getBits(1);
   result.notification_on_inactivation = bits.getBits(1);
-  bits.getBits(3); // 3 bits reserved!
+  result.dig_high_priority = decodeDigHighPriority(bits.getBits(2));
+  bits.getBits(1); // 1 bit reserved!
   result.source_d4i_motion_sensor = bits.getBits(1);
 
   result.address = addressParse(dataView.getUint8(), "all_devices", err);
