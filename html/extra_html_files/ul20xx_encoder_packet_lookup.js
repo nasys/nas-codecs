@@ -110,6 +110,7 @@ var config_packet_list = {
       "polarity_high_or_rising": true,
       "notification_on_activation": false,
       "notification_on_inactivation": false,
+      "dig_high_priority": "inactive",
       "source_d4i_motion_sensor": false,
       "address": "dali_broadcast",
       "active_dimming_level__percent": 100,

@@ -198,7 +198,7 @@ function strLookup(val, lookup, err)
 {
     if (typeof val !== 'string')
     {
-        return val;        
+        return val;
     }
     for (var key in lookup)
     {
@@ -217,7 +217,7 @@ function strLookup(val, lookup, err)
 function addressEncode(addr_in, err) {
     var addr_int = parseInt(addr_in.replace(/\D/g,''));
     // if (!isNaN(addr_int)) {
-    //     return addr_int;} 
+    //     return addr_int;}
     if (addr_in === 'analog_0_10v') {
       return 0x01;
     } if (addr_in === 'dali_broadcast') {
@@ -512,6 +512,23 @@ function lumalink_config(data, pack, err){
     pack.addUint8(lumalink_decode(data.access_mode, err));
 }
 
+function encodeDigHighPriority(value, err) {
+    switch (value) {
+        case 'inactive':
+        case 0:
+            return 0x00;
+        case 'always':
+        case 1:
+            return 0x01;
+        case 'only_over_zero':
+        case 2:
+            return 0x02;
+        default:
+            err.warnings.push('invalid_dig_high_priority');
+            return 0x00;
+    }
+}
+
 function dig_input_config(data, pack, err){
     pack.addUint8(0x28);
     pack.addUint8(strLookup(data.dig_enabled, {'dig_enabled': 0x00, 'dig_disabled': 0xFF}), 'dig_enabled');
@@ -521,7 +538,19 @@ function dig_input_config(data, pack, err){
     bits1.addBit(data.polarity_high_or_rising, 'polarity_high_or_rising');
     bits1.addBit(data.notification_on_activation, 'notification_on_activation');
     bits1.addBit(data.notification_on_inactivation, 'notification_on_inactivation');
-    bits1.addBits(0, 3, "");
+
+    if (!('dig_high_priority' in data)) {
+    bits1.addBits(0x00, 2, 'dig_high_priority');
+    } else {
+        bits1.addBits(
+            encodeDigHighPriority(data.dig_high_priority, err),
+            2,
+            'dig_high_priority'
+        );
+    }
+
+    bits1.addBit(0, 'reserved');
+
     if (!('source_d4i_motion_sensor' in data)){
         bits1.addBit(0, 'source_d4i_motion_sensor');
     } else {
@@ -572,7 +601,7 @@ function interface_type_config(data, pack, err){
 function multicast_config(data, pack, err){
     pack.addUint8(0x52);
     pack.addUint8(data.multicast_device, 'multicast_device');
-    
+
     if (data.devaddr.length != 8) {
         err.warnings.push("invalid_devaddr_length");
     }
@@ -611,7 +640,7 @@ function encodeProfile(profile, err){
             return 0xFF;
         default:
             err.warnings.push('unkown_profile');
-            return 0xFF;  
+            return 0xFF;
     }
 }
 
@@ -729,7 +758,7 @@ function encode_conf_requests(data, pack, err){
             break;
         default:
             err.warnings.push('invalid_request_packet');
-            break;   
+            break;
     }
 }
 
@@ -935,7 +964,7 @@ function rawEncode(data){
     } catch (error) {
         err.errors.push("encoder_error " + error.message);
     }
-        
+
     return {bytes: pack.buffer, fPort: fport, warnings: err.warnings, errors: err.errors};
 }
 
