@@ -243,7 +243,7 @@ function convertMonth(data){
 
 function encode_holiday_config(data, pack, err){
     pack.addUint8(0x23);
-    pack.addUint8(data.holidays.length <= 25 ?data.holidays.length: 'invalid', 'holiday_length');
+    pack.addUint8(data.holidays.length <= 24 ?data.holidays.length: 'invalid', 'holiday_length');
 
     for (var i = 0; i < data.holidays.length; i++){
         var Month_Day = convertMonth(data.holidays[i])

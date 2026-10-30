@@ -107,8 +107,8 @@ describe('UL20xx packet encoder', () => {
     test_decode_encode(bytes, fport);
   });
 
-  test('50_holiday_config_packet max 25 holidays', () => {
-    var bytes = hexToBytes('2319' + '0101'.repeat(25));
+  test('50_holiday_config_packet max 24 holidays', () => {
+    var bytes = hexToBytes('2318' + '0101'.repeat(24));
     var fport = 50;
     test_decode_encode(bytes, fport);
   });
