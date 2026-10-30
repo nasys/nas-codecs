@@ -107,6 +107,12 @@ describe('UL20xx packet encoder', () => {
     test_decode_encode(bytes, fport);
   });
 
+  test('50_holiday_config_packet max 25 holidays', () => {
+    var bytes = hexToBytes('2319' + '0101'.repeat(25));
+    var fport = 50;
+    test_decode_encode(bytes, fport);
+  });
+
   test('50_location_config_packet DS', () => {
     var bytes = hexToBytes('2612AC5E6D230017C10EC396C3B662696B75205374722E20322D3136');
     var fport = 50;
